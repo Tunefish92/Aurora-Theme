@@ -49,8 +49,8 @@ _(Stats page)_:
 _(Automatic updates)_:
 : <input type="hidden" name="autoupdate" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="autoupdate" value="yes"<?= ($aurora['autoupdate'] ?? 'yes') === 'yes' ? ' checked' : '' ?>> _(Install new versions automatically)_</label>
 
-> Once an hour the plugin looks for a newer release on GitHub and installs it. You get an Unraid
-> notification after each automatic update.
+> Once an hour the plugin looks for a newer release on GitHub and installs it quietly. Only a
+> failed update shows an Unraid notification; every check is noted in the system log.
 
 &nbsp;
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">

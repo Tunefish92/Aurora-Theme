@@ -2,7 +2,8 @@
 <?php
 // Automatic updates for the Aurora Theme, run every hour by cron (autoupdate.cron).
 // When "Automatic updates" is on, it installs the newest GitHub release if it is newer than
-// the installed version, the same way the settings page's "Update now" button does.
+// the installed version, the same way the settings page's "Update now" button does. A successful
+// update is quiet (no Unraid notification); a failed one raises a warning.
 // The outcome of the last check is kept in /var/lib/aurora-theme/autoupdate.json for that page.
 require '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
 
@@ -21,6 +22,8 @@ function finish(string $result, string $message, string $version = ''): void
 {
     @mkdir(dirname(STATUS_FILE), 0755, true);
     file_put_contents(STATUS_FILE, json_encode(['time' => time(), 'result' => $result, 'message' => $message, 'version' => $version]) . "\n");
+    // Every run leaves one line in the system log (Tools > System Log, tag aurora-theme).
+    exec('/usr/bin/logger -t aurora-theme ' . escapeshellarg("automatic update: $message"));
     echo "$message\n";
     exit($result === 'failed' ? 1 : 0);
 }
@@ -56,8 +59,8 @@ if (strcmp($available, $installed) <= 0) {
 
 exec('/usr/local/sbin/plugin install ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $output, $status);
 if (aurora_installed_version() === $available) {
-    notify('Aurora Theme updated', "Version $available was installed automatically (was $installed).", 'normal');
     finish('updated', "Updated from $installed to $available.", $available);
 }
+exec('/usr/bin/logger -t aurora-theme ' . escapeshellarg('automatic update: plugin install said: ' . trim(implode(' ', array_slice($output, -6)))));
 notify('Aurora Theme update failed', "Version $available could not be installed automatically.", 'warning');
 finish('failed', "Installing $available failed: " . trim(implode(' ', array_slice($output, -3))), $installed);
