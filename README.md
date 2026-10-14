@@ -17,13 +17,13 @@ A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional 
 In Unraid, go to **Plugins → Install Plugin**, paste this address and click **Install**:
 
 ```
-https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/main/Aurora-Theme.plg
+https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg
 ```
 
 Or over SSH:
 
 ```
-plugin install https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/main/Aurora-Theme.plg
+plugin install https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg
 ```
 
 Requires Unraid 7.2 or newer. The theme follows the Dynamix colour theme in *Settings → Display Settings*: **Black** gives the dark look, **White** the light one; the round button at the top right switches between the two. Other Dynamix themes are left unchanged.
@@ -42,7 +42,7 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 - **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top.
 - **Users**: user cards with avatars or coloured initials, roles, search and an "Add user" button.
 - **Stats**: its own Stats tab with CPU, memory, network and disk charts, collected once a minute. It replaces the Dynamix System Statistics plugin, so remove that one first.
-- **Settings page**: switches for colours, layout, enhancements and the Stats tab; automatic updates (on by default, checked hourly), a "Check for updates" button and an update button, all using the last install location; a form to open a GitHub issue.
+- **Settings page**: switches for colours, layout, enhancements and the Stats tab; updates from the GitHub releases, automatically (on by default, checked hourly) or with "Check for updates" and "Update now"; a form that opens a pre-filled GitHub issue.
 
 ## If something looks wrong
 

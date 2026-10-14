@@ -49,62 +49,30 @@ _(Stats page)_:
 _(Automatic updates)_:
 : <input type="hidden" name="autoupdate" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="autoupdate" value="yes"<?= ($aurora['autoupdate'] ?? 'yes') === 'yes' ? ' checked' : '' ?>> _(Install new versions automatically)_</label>
 
-> Once an hour the plugin looks at the location it was last installed from (see **Update** below)
-> and installs a newer version from there. You get an Unraid notification after each automatic update.
+> Once an hour the plugin looks for a newer release on GitHub and installs it. You get an Unraid
+> notification after each automatic update.
 
 &nbsp;
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
 </form>
 
 <?php
-// "Update": reinstall from wherever this plugin was last installed from. The location is
-// recorded by the install script; only a plain path or URL ending in .plg is ever run.
-$auroraSourceFile = '/boot/config/plugins/Aurora-Theme/update-source';
-$auroraSource = is_file($auroraSourceFile) ? trim((string) file_get_contents($auroraSourceFile)) : '';
-$auroraSourceOk = (bool) preg_match('#^(/|https?://)[A-Za-z0-9._~:/@%+,=-]+\.plg$#', $auroraSource);
-$auroraIsUrl = (bool) preg_match('#^https?://#', $auroraSource);
-$auroraPlgVersion = function (string $file): string {
-    $xml = is_file($file) ? @simplexml_load_file($file) : false;
-    return $xml ? (string) $xml['version'] : '';
-};
-$auroraInstalled = $auroraPlgVersion('/boot/config/plugins/Aurora-Theme.plg');
-$auroraAvailable = $auroraSourceOk && !$auroraIsUrl ? $auroraPlgVersion($auroraSource) : '';
-// One state drives the update card: available, current, url, missing, invalid or none.
-if (!$auroraSource) {
-    $auroraState = 'none';
-} elseif (!$auroraSourceOk) {
-    $auroraState = 'invalid';
-} elseif ($auroraIsUrl) {
-    $auroraState = 'url';
-} elseif ($auroraAvailable === '') {
-    $auroraState = 'missing';
-} elseif (strcmp($auroraAvailable, $auroraInstalled) > 0) {
-    $auroraState = 'available';
-} else {
-    $auroraState = 'current';
-}
-$auroraCard = [
-    'available' => ['fa-arrow-circle-down', 'Update available', "Version $auroraAvailable is ready (installed: $auroraInstalled)."],
-    'current' => ['fa-check-circle', 'Up to date', "Installed version $auroraInstalled. The file at the install location holds the same or an older version."],
-    'url' => ['fa-cloud-download', 'Update from the web', 'The update downloads the install address again and installs it if it is newer.'],
-    'missing' => ['fa-question-circle', 'Install file not found', 'The file at the install location is not there right now, or it cannot be read.'],
-    'invalid' => ['fa-exclamation-circle', 'Install location not usable', 'The recorded location contains characters that are not allowed here; update from the Plugins page instead.'],
-    'none' => ['fa-info-circle', 'No install location yet', 'Install the plugin once from a file path or URL; that location is remembered for updates.'],
-][$auroraState];
+// "Update": the plugin is updated from its GitHub releases (include/UpdateLib.php).
+require_once '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
+$auroraInstalled = aurora_installed_version();
 // Outcome of the last automatic check (scripts/autoupdate.php); kept in RAM, so empty after a reboot.
 $auroraAuto = json_decode((string) @file_get_contents('/var/lib/aurora-theme/autoupdate.json'), true) ?: [];
 $auroraAutoOn = ($aurora['autoupdate'] ?? 'yes') === 'yes';
-$auroraCanUpdate = in_array($auroraState, ['available', 'url']);
+$auroraAutoNewer = ($auroraAuto['result'] ?? '') !== 'updated' && !empty($auroraAuto['version']) && strcmp((string) $auroraAuto['version'], $auroraInstalled) > 0;
 $auroraRepo = '@@GITHUB_REPO@@';
 ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/settings.css') ?>">
 <div class="title"><span class="left"><i class="fa fa-cloud-download title"></i>_(Update)_</span></div>
-<div class="tft-update-card tft-state-<?= $auroraState ?>">
-<div class="tft-update-icon"><i class="fa <?= $auroraCard[0] ?>" id="tft-update-icon"></i></div>
+<div class="tft-update-card tft-state-current">
+<div class="tft-update-icon"><i class="fa fa-github" id="tft-update-icon"></i></div>
 <div class="tft-update-text">
-<strong id="tft-update-title"><?= htmlspecialchars($auroraCard[1]) ?></strong>
-<span id="tft-update-message"><?= htmlspecialchars($auroraCard[2]) ?></span>
-<?php if ($auroraSource): ?><code><?= htmlspecialchars($auroraSource) ?></code><?php endif; ?>
+<strong id="tft-update-title">Version <?= htmlspecialchars($auroraInstalled ?: 'unknown') ?></strong>
+<span id="tft-update-message">Updates come from the plugin's releases on GitHub. Use "Check for updates" to look for a newer one now.</span>
 <span class="tft-auto-status<?= ($auroraAuto['result'] ?? '') === 'failed' ? ' tft-auto-failed' : '' ?>"><i class="fa <?= $auroraAutoOn ? 'fa-refresh' : 'fa-pause-circle' ?>"></i> <?php
 if (!$auroraAutoOn) {
     echo 'Automatic updates are off.';
@@ -114,37 +82,17 @@ if (!$auroraAutoOn) {
     echo 'Automatic updates on. The first check runs within the hour.';
 }
 ?></span>
-<button type="button" class="tft-link-button" onclick="auroraEditSource(true)"><i class="fa fa-pencil"></i> Change location</button>
+<a class="tft-link" href="https://github.com/<?= htmlspecialchars($auroraRepo) ?>/releases" target="_blank" rel="noopener noreferrer"><i class="fa fa-external-link"></i> Release notes on GitHub</a>
 </div>
 <div class="tft-update-actions">
-<?php if ($auroraSourceOk): ?><button type="button" class="tft-button" id="tft-check-button" onclick="auroraCheck(this)"><i class="fa fa-search"></i> Check for updates</button><?php endif; ?>
-<button type="button" class="tft-button tft-button-primary" id="tft-update-button" onclick="auroraUpdate(this)"<?= $auroraCanUpdate ? '' : ' hidden' ?>><i class="fa fa-download"></i> <?= $auroraState === 'available' ? 'Update now' : 'Check and update' ?></button>
+<button type="button" class="tft-button" id="tft-check-button" onclick="auroraCheck(this)"><i class="fa fa-search"></i> Check for updates</button>
+<button type="button" class="tft-button tft-button-primary" id="tft-update-button" onclick="auroraUpdate(this)"<?= $auroraAutoNewer ? '' : ' hidden' ?>><i class="fa fa-download"></i> Update now</button>
 </div>
 </div>
 <p class="tft-source-problem" id="tft-update-note" role="status"></p>
-<div class="tft-source-form" id="tft-source-form" hidden>
-<label class="tft-field"><span>Install from</span><input type="text" id="tft-source-input" value="<?= htmlspecialchars($auroraSource) ?>" placeholder="/mnt/user/share/folder/Aurora-Theme.plg or https://…/Aurora-Theme.plg"></label>
-<p class="tft-source-problem" id="tft-source-problem" role="alert"></p>
-<div class="tft-issue-actions"><button type="button" class="tft-button tft-button-primary" onclick="auroraSaveSource()"><i class="fa fa-check"></i> Save location</button><button type="button" class="tft-button" onclick="auroraEditSource(false)">Cancel</button></div>
-</div>
 <script>
-function auroraEditSource(show) {
-  document.getElementById('tft-source-form').hidden = !show;
-  if (show) document.getElementById('tft-source-input').focus();
-}
-function auroraSaveSource() {
-  var problem = document.getElementById('tft-source-problem');
-  var body = new URLSearchParams({ source: document.getElementById('tft-source-input').value.trim(), csrf_token: window.csrf_token || '' });
-  fetch('/plugins/Aurora-Theme/include/update-source.php', { method: 'POST', credentials: 'same-origin', body: body })
-    .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
-    .then(function (result) {
-      if (!result.ok) throw new Error(result.data.error || 'The location could not be saved.');
-      location.reload();
-    })
-    .catch(function (error) { problem.textContent = error.message; });
-}
-// "Check for updates": asks the server for the version at the install location and shows the
-// answer in the card; the update button appears when there is something newer.
+// "Check for updates": asks the server for the newest GitHub release and shows the answer in
+// the card; the update button appears when there is something newer.
 function auroraCheck(button) {
   if (button.disabled) return;
   var label = button.innerHTML;
@@ -196,7 +144,7 @@ function auroraUpdate(button) {
     button.dataset.label = button.innerHTML;
     button.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Starting…';
   }
-  openPlugin(<?= json_encode('plugin install ' . ($auroraSourceOk ? $auroraSource : '')) ?>, 'Update Aurora Theme', '', 'refresh');
+  openPlugin(<?= json_encode('plugin install ' . AURORA_RELEASE_PLG) ?>, 'Update Aurora Theme', '', 'refresh');
   if (!button) return;
   var waited = 0;
   var watch = setInterval(function () {
@@ -240,6 +188,8 @@ function auroraUpdate(button) {
       'Stats page' => (string) ($aurora['stats'] ?? ''),
   ]) ?>;
   var kinds = { Bug: 'Bug', Missing: 'Not implemented', Feature: 'Feature', Design: 'Design' };
+  // GitHub's standard labels; GitHub applies them only for people allowed to label issues.
+  var labels = { Bug: 'bug', Missing: 'enhancement', Feature: 'enhancement', Design: 'enhancement' };
   var kind = 'Bug';
   var title = document.getElementById('tft-issue-title');
   var body = document.getElementById('tft-issue-body');
@@ -259,7 +209,7 @@ function auroraUpdate(button) {
         + '\n- Browser: ' + navigator.userAgent;
     }
     var url = 'https://github.com/' + repo + '/issues/new?title=' + encodeURIComponent('[' + kinds[kind] + '] ' + title.value.trim())
-      + '&body=' + encodeURIComponent(text);
+      + '&body=' + encodeURIComponent(text) + '&labels=' + encodeURIComponent(labels[kind]);
     window.open(url, '_blank', 'noopener');
   });
 })();
