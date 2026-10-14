@@ -1,0 +1,433 @@
+/*
+ * Sidebar layout for Unraid's top-navigation themes (Black, White).
+ * Moves #menu to the left edge on wide screens; phones and tablets keep the stock top bar.
+ * Active when <html> has the tp-sidebar class, which the plugin sets from its settings.
+ */
+@media (min-width: 1024px) and (max-width: 1359px) {
+    :root.tp-sidebar.Theme--nav-top #UserProfile > div:first-of-type {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root.tp-sidebar.Theme--nav-top {
+        --tp-sidebar-width: 22rem;
+        --tp-sidebar-line: rgba(255, 255, 255, 0.08);
+
+        /* The Apps tab keeps its search bar below a top menu; with the menu in the sidebar it
+           belongs at the very top. */
+        --search-area-top: 0;
+
+        /* The slim top bar sits on the page surface, so its text uses the normal text colours. */
+        --header-text-primary: var(--tp-text, var(--text-color));
+        --header-text-secondary: var(--tp-muted, var(--alt-text-color));
+
+        body {
+            padding-left: var(--tp-sidebar-width);
+        }
+
+        #header {
+            min-height: 6.4rem;
+            padding-left: 2.4rem;
+            border-bottom: 1px solid var(--tp-border, var(--border-color));
+            color: var(--text-color);
+            background-color: var(--tp-elevated, var(--background-color));
+            background-image: none;
+        }
+
+        /* Unraid's logo, version and update badge become the sidebar's brand block. They stay
+           where they are in the page and are only positioned over the top of the sidebar. */
+        #header unraid-header-os-version {
+            --color-header-text-secondary: var(--tp-header-muted, #a7b0c0);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--tp-sidebar-width);
+            padding: 1.6rem 1.4rem 0;
+            box-sizing: border-box;
+        }
+
+        #header unraid-header-os-version > div {
+            max-width: none;
+            margin: 0;
+            gap: 1.2rem;
+        }
+
+        /* Version and update notice share one row under the logo */
+        #header unraid-header-os-version > div > div {
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 1.2rem;
+            margin: 0;
+        }
+
+        /* Version: just the number, prominent, without the info icon. The element still opens
+           Unraid's version menu when clicked. */
+        #header unraid-header-os-version span[role="button"][aria-haspopup] {
+            justify-content: flex-start;
+            gap: 0.8rem;
+            color: var(--tp-header-text, #ffffff);
+            font: 700 2rem/1.2 var(--tp-font-heading, inherit);
+            letter-spacing: -0.01em;
+            text-decoration: none;
+        }
+
+        #header unraid-header-os-version span[role="button"][aria-haspopup] > svg {
+            display: none;
+        }
+
+        #header unraid-header-os-version span[role="button"][aria-haspopup]:hover {
+            color: var(--tp-primary-ii, var(--brand-orange));
+        }
+
+        /* Update notice: a round icon button beside the version, with a slow pulse. Its text is
+           hidden; the tooltip still says which version is available. */
+        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) {
+            justify-content: center;
+            gap: 0;
+            width: 2.8rem;
+            height: 2.8rem;
+            padding: 0;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 0;
+            white-space: nowrap;
+            background: var(--tp-gradient, var(--brand-orange));
+            box-shadow: 0 8px 20px -8px var(--tp-primary, var(--brand-orange));
+            animation: tp-update-pulse 2.6s ease-in-out infinite;
+            transition: transform 0.35s;
+        }
+
+        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):hover {
+            transform: translateY(-1px);
+        }
+
+        /* Unraid's bell is replaced by a download-to-tray arrow, drawn here so it needs no
+           extra file; the arrow dips gently to suggest "ready to install". */
+        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) > span {
+            display: none;
+        }
+
+        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):before {
+            width: 1.7rem;
+            height: 1.7rem;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v10.5'/%3E%3Cpath d='M7.5 10l4.5 4.5 4.5-4.5'/%3E%3Cpath d='M4.5 16.5v1.5a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-1.5'/%3E%3C/svg%3E") center / contain no-repeat;
+            animation: tp-update-dip 1.8s ease-in-out infinite;
+            content: "";
+        }
+
+        #menu {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            width: var(--tp-sidebar-width);
+            padding: 12rem 1.2rem 4rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-right: 1px solid var(--tp-sidebar-line);
+            border-bottom: 0;
+            background-color: var(--header-background-color);
+            scrollbar-width: thin;
+        }
+
+        #footer {
+            left: var(--tp-sidebar-width);
+            width: calc(100% - var(--tp-sidebar-width));
+        }
+
+        /* ---- Top right: uptime chip, server identity, notification and menu buttons.
+           This is Unraid's profile component; only its own elements are restyled. */
+        #UserProfile {
+            flex-direction: row;
+            align-items: center;
+            gap: 1.4rem;
+            padding: 0 2.4rem 0 0;
+        }
+
+        /* Uptime and licence line becomes a quiet chip */
+        #UserProfile > div:first-of-type {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.5rem 0.6rem 0.5rem 1.2rem;
+            border: 1px solid var(--tp-border, var(--border-color));
+            border-radius: 999px;
+            color: var(--tp-muted, var(--alt-text-color));
+            font-family: var(--tp-font-heading, inherit);
+            font-weight: 500;
+            white-space: nowrap;
+            background-color: var(--tp-subtle, var(--mild-background-color));
+        }
+
+        #UserProfile > div:first-of-type em {
+            margin-left: 0.2rem;
+            padding: 0.2rem 0.8rem;
+            border-radius: 999px;
+            color: var(--tp-primary-text, #ffffff);
+            font-style: normal;
+            background: var(--tp-gradient, var(--brand-orange));
+        }
+
+        #UserProfile > div:last-of-type {
+            gap: 0.8rem;
+        }
+
+        /* Server identity: icon tile, name on top, description underneath */
+        #UserProfile > div:last-of-type > div:first-child {
+            display: grid;
+            grid-template-columns: auto auto;
+            align-items: center;
+            column-gap: 1rem;
+            margin-right: 0.6rem;
+        }
+
+        #UserProfile > div:last-of-type > div:first-child:before {
+            display: grid;
+            grid-row: 1 / span 2;
+            place-items: center;
+            width: 3.4rem;
+            height: 3.4rem;
+            border-radius: 50%;
+            color: #ffffff;
+            font: normal 1.4rem/1 FontAwesome;
+            background: var(--tp-gradient, var(--brand-orange));
+            box-shadow: 0 4px 10px -4px var(--tp-primary, transparent);
+            content: "\f233";
+        }
+
+        #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+            grid-row: 2;
+            grid-column: 2;
+            color: var(--tp-muted, var(--alt-text-color));
+            font-size: 1.1rem;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        #UserProfile > div:last-of-type > div:first-child > span:nth-child(2) {
+            display: none !important;
+        }
+
+        #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+            grid-row: 1;
+            grid-column: 2;
+            font: 600 1.4rem/1.3 var(--tp-font-heading, inherit);
+            letter-spacing: -0.01em;
+        }
+
+        /* Notification bell and menu as round buttons */
+        #UserProfile > div:last-of-type > span[role="button"] {
+            justify-content: center;
+            width: 3.6rem;
+            height: 3.6rem;
+            min-height: 0;
+            padding: 0;
+            border: 1px solid var(--tp-border, var(--border-color));
+            border-radius: 50%;
+            color: var(--tp-muted, var(--alt-text-color));
+            background-color: var(--tp-elevated, transparent);
+            transition: border-color 0.35s, color 0.35s, transform 0.35s;
+        }
+
+        #UserProfile > div:last-of-type > span[role="button"]:hover,
+        #UserProfile > div:last-of-type > span[role="button"][data-state="open"] {
+            border-color: var(--tp-primary, var(--brand-orange));
+            color: var(--tp-primary, var(--brand-orange));
+            transform: translateY(-1px);
+        }
+
+        #UserProfile > div:last-of-type > span[role="button"] svg[data-slot="icon"]:first-child {
+            width: 1.8rem;
+            height: 1.8rem;
+            color: inherit;
+        }
+
+        /* "Connected server" card, added by scripts/enhance.js */
+        .tp-server {
+            display: block;
+        }
+
+        .nav-tile {
+            /* Keep full height on short screens; the sidebar scrolls instead of squeezing. */
+            flex: none;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 2px;
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+            line-height: normal;
+            white-space: normal;
+            background-color: transparent;
+        }
+
+        /* ---- Main menu entries */
+        .nav-tile:not(.right) .nav-item {
+            display: block;
+            text-align: left;
+        }
+
+        .nav-tile:not(.right) .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+            min-height: 3.6rem;
+            padding: 0 1.1rem;
+            border-radius: 8px;
+        }
+
+        .nav-tile:not(.right) .nav-item:hover a {
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-tile:not(.right) .nav-item.active a {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* The active marker becomes a bar on the left edge instead of an underline. */
+        .nav-tile:not(.right) .nav-item:after {
+            top: 0.8rem;
+            bottom: 0.8rem;
+            left: 0;
+            width: 3px;
+            height: auto;
+            border-radius: 2px;
+            background: linear-gradient(180deg, var(--tp-primary, var(--brand-orange)), var(--tp-primary-ii, var(--brand-red)));
+            transform: scaleY(0);
+            transform-origin: center;
+        }
+
+        .nav-tile:not(.right) .nav-item:hover:after,
+        .nav-tile:not(.right) .nav-item:focus:after {
+            transform: scaleY(0);
+        }
+
+        .nav-tile:not(.right) .nav-item.active:after {
+            transform: scaleY(1);
+        }
+
+        /* Icons for the stock tabs; tabs added by other plugins get a neutral dot. */
+        .nav-tile:not(.right) .nav-item a:before {
+            flex: none;
+            width: 1.8rem;
+            font: normal 1.5rem/1 FontAwesome;
+            text-align: center;
+            opacity: 0.7;
+            content: "\f111";
+        }
+
+        .nav-tile:not(.right) .nav-item.active a:before {
+            color: var(--tp-primary-ii, var(--brand-orange));
+            opacity: 1;
+        }
+
+        .nav-tile:not(.right) .nav-item a[href$="/Dashboard"]:before { content: "\f0e4"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Main"]:before { content: "\f0a0"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Shares"]:before { content: "\f07c"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Users"]:before { content: "\f0c0"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Settings"]:before { content: "\f013"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Plugins"]:before { content: "\f12e"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Docker"]:before { content: "\f1b3"; }
+        .nav-tile:not(.right) .nav-item a[href$="/VMs"]:before { content: "\f108"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Apps"]:before { content: "\f009"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Stats"]:before { content: "\f080"; }
+        .nav-tile:not(.right) .nav-item a[href$="/Tools"]:before { content: "\f0ad"; }
+
+        /* ---- Utility buttons (lock, search, terminal, log, ...): a "Quick actions" card of
+           icon tiles at the bottom of the sidebar */
+        .nav-tile.right {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.6rem;
+            margin-top: auto;
+            padding: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-tile.right:before {
+            grid-column: 1 / -1;
+            margin-bottom: 0.2rem;
+            color: var(--tp-header-muted, #a7b0c0);
+            font: 600 1rem var(--tp-font-heading, inherit);
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            opacity: 0.75;
+            content: "Quick actions";
+        }
+
+        /* Unraid leaves empty placeholders between the buttons; they would take up tiles. */
+        .nav-tile.right .nav-user:empty {
+            display: none;
+        }
+
+        .nav-tile.right .nav-item,
+        .nav-tile.right .nav-user {
+            display: block;
+        }
+
+        .nav-tile.right .nav-item a,
+        .nav-tile.right .nav-user a {
+            display: grid;
+            place-items: center;
+            aspect-ratio: 1;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            color: var(--tp-header-muted, #a7b0c0);
+            font-size: 1.5rem;
+            line-height: 1;
+            background-color: rgba(255, 255, 255, 0.04);
+            transition: transform 0.35s, color 0.35s, border-color 0.35s, background-color 0.35s, box-shadow 0.35s;
+        }
+
+        .nav-tile.right .nav-item a .system,
+        .nav-tile.right .nav-user a .system {
+            padding: 0;
+        }
+
+        .nav-tile.right .nav-item:after,
+        .nav-tile.right .nav-user:after {
+            display: none;
+        }
+
+        .nav-tile.right .nav-item:hover a,
+        .nav-tile.right .nav-item a:focus-visible,
+        .nav-tile.right .nav-user:hover a {
+            border-color: transparent;
+            color: #ffffff;
+            background: var(--tp-gradient, var(--brand-orange));
+            box-shadow: 0 6px 14px -6px var(--tp-primary, transparent);
+            transform: translateY(-2px);
+        }
+
+        /* Coloured state icons (the lock) turn white with the rest on hover. */
+        .nav-tile.right .nav-item:hover a b,
+        .nav-tile.right .nav-item a:focus-visible b {
+            color: inherit !important;
+        }
+    }
+}
+
+@keyframes tp-update-pulse {
+    0%, 100% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 0 var(--tp-primary-soft, rgba(255, 140, 47, 0.3)); }
+    50% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 6px transparent; }
+}
+
+@keyframes tp-update-dip {
+    0%, 60%, 100% { transform: translateY(-1px); }
+    30% { transform: translateY(1.5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #header unraid-header-os-version span[role="button"],
+    #header unraid-header-os-version span[role="button"]:before {
+        animation: none !important;
+    }
+}

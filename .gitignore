@@ -1,0 +1,11 @@
+# Saved pages and files from the server: they contain the licence key file, server GUID,
+# registration name, session tokens and plugin configuration. Never publish them.
+current_unraid/
+unraid_files/
+
+# Test leftovers
+.tft-share-test/
+__pycache__/
+
+# Design prototype, not part of the plugin
+index.html

@@ -1,0 +1,24 @@
+Menu="Tasks:90"
+Type="xmenu"
+Title="Stats"
+Tag="bar-chart"
+Markdown="false"
+Cond="(parse_plugin_cfg('Aurora-Theme')['stats'] ?? 'yes') == 'yes'"
+---
+<?php
+// File systems for the "Disk utilisation" list; sizes in disks.ini are in KiB.
+$auroraStatsDisks = [];
+foreach (($disks ?? []) as $auroraDisk) {
+    $auroraDiskSize = (float) ($auroraDisk['fsSize'] ?? 0);
+    if ($auroraDiskSize <= 0) continue;
+    $auroraStatsDisks[] = [
+        'name' => (string) ($auroraDisk['name'] ?? ''),
+        'size' => $auroraDiskSize,
+        'used' => (float) ($auroraDisk['fsUsed'] ?? 0),
+    ];
+}
+?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/stats.css') ?>">
+<div id="tft-stats" data-endpoint="/plugins/Aurora-Theme/include/stats.php" data-disks="<?= htmlspecialchars(json_encode($auroraStatsDisks), ENT_QUOTES) ?>"></div>
+<script src="<?php autov('/plugins/Aurora-Theme/scripts/stats.js') ?>"></script>

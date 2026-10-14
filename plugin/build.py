@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Builds Aurora-Theme.plg, a self-contained Unraid plugin file.
+
+Every plugin file is written by a bash heredoc inside the .plg, so installing needs no
+downloads. Run: python3 plugin/build.py [version]   (version defaults to the current date and time)
+"""
+import base64
+import datetime
+import os
+import pathlib
+import shutil
+import sys
+from xml.sax.saxutils import escape
+
+NAME = "Aurora-Theme"
+AUTHOR = "Tunefish"
+# GitHub repository: updates are checked there and the settings page opens issues there.
+GITHUB_REPO = "Tunefish92/Aurora-Theme"
+PLUGIN_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{NAME}.plg"
+MIN_UNRAID = "7.2.0"
+EMHTTP = f"/usr/local/emhttp/plugins/{NAME}"
+DELIMITER = "AURORA_THEME_EOF"
+
+root = pathlib.Path(__file__).resolve().parent
+src = root / "src"
+# Unraid refuses to install a version that is not newer than the installed one, and compares
+# versions as text, so the default carries the time and every rebuild counts as an update.
+version = sys.argv[1] if len(sys.argv) > 1 else datetime.datetime.now().strftime("%Y.%m.%d.%H%M")
+
+# Installed path -> source file. The theme stylesheet lives at the repo root so it can also be
+# pasted into a browser extension for quick experiments.
+files = {str(path.relative_to(src)): path for path in sorted(src.rglob("*")) if path.is_file()}
+files["styles/theme.css"] = root.parent / "unraid-tapeory.css"
+
+# The plugin was called Tunefish-Future-Theme before. If that one is installed, its settings,
+# Docker groups, custom files and statistics move over, and it is removed, so the two never run
+# side by side (both would load their theme and claim the Stats tab).
+MIGRATE_OLD_NAME = r"""
+OLD=Tunefish-Future-Theme
+if [ -e /boot/config/plugins/$OLD.plg ] || [ -d /usr/local/emhttp/plugins/$OLD ]; then
+  for f in $OLD.cfg docker-groups.json favourites.json custom.css custom.js; do
+    src=/boot/config/plugins/$OLD/$f
+    dst=/boot/config/plugins/@NAME@/${f/$OLD/@NAME@}
+    if [ -f "$src" ] && [ ! -f "$dst" ]; then cp "$src" "$dst"; fi
+  done
+  if [ -d /var/lib/tunefish-future-theme ] && [ ! -d /var/lib/aurora-theme ]; then
+    mv /var/lib/tunefish-future-theme /var/lib/aurora-theme
+  fi
+  rm -rf /usr/local/emhttp/plugins/$OLD /boot/config/plugins/$OLD /var/lib/tunefish-future-theme
+  rm -f /boot/config/plugins/$OLD.plg /var/log/plugins/$OLD.plg
+  echo "Settings moved over from $OLD, which has been removed."
+fi
+""".strip().replace("@NAME@", NAME)
+
+install = [
+    f"rm -rf {EMHTTP}",
+    f"mkdir -p {EMHTTP}/styles {EMHTTP}/scripts {EMHTTP}/include {EMHTTP}/fonts /boot/config/plugins/{NAME}",
+    MIGRATE_OLD_NAME,
+]
+BINARY = {".woff2", ".woff", ".png", ".svg"}
+for target, path in sorted(files.items()):
+    if path.suffix in BINARY:
+        # Fonts and images travel base64-encoded and are decoded on the server.
+        encoded = base64.encodebytes(path.read_bytes()).decode("ascii")
+        install.append(f"base64 -d > {EMHTTP}/{target} <<'{DELIMITER}'\n{encoded}{DELIMITER}")
+        continue
+    text = path.read_text(encoding="utf-8").replace("@@GITHUB_REPO@@", GITHUB_REPO)
+    if not text.endswith("\n"):
+        text += "\n"
+    for forbidden in ("]]>", DELIMITER):
+        if forbidden in text:
+            sys.exit(f"{path}: contains {forbidden!r}, which would break the .plg")
+    install.append(f"cat > {EMHTTP}/{target} <<'{DELIMITER}'\n{text}{DELIMITER}")
+# Remember where this .plg was installed from, for the "Update" button on the settings page.
+# The install script is a child of "plugin install <file or URL>", so the source is read from
+# that command line. Unraid's own reinstall at boot (from the flash copy) is not recorded.
+REMEMBER_SOURCE = r"""
+pid=$PPID; src=""
+for step in 1 2 3 4 5; do
+  [ -r /proc/$pid/cmdline ] || break
+  candidate=$(tr '\0' '\n' < /proc/$pid/cmdline | grep -E '(\.plg$)|(^https?://)' | tail -n 1)
+  if [ -n "$candidate" ]; then
+    case "$candidate" in
+      /*|http://*|https://*) src="$candidate" ;;
+      *) src="$(readlink /proc/$pid/cwd)/$candidate" ;;
+    esac
+    break
+  fi
+  pid=$(awk '{print $4}' /proc/$pid/stat 2>/dev/null)
+  [ -n "$pid" ] && [ "$pid" -gt 1 ] || break
+done
+case "$src" in
+  ""|/boot/config/plugins/*|/var/log/plugins/*|/tmp/*) ;;
+  *) printf '%s\n' "$src" > /boot/config/plugins/@NAME@/update-source ;;
+esac
+""".strip().replace("@NAME@", NAME)
+
+# Login page: Unraid's login and first-password pages get one line that includes
+# include/login-head.php before </head>. The files live in RAM, so this runs at every boot
+# (Unraid reinstalls plugins then); the line does nothing once the plugin file is gone.
+LOGIN_HOOK = r"""
+for page in /usr/local/emhttp/plugins/dynamix/include/.login.php /usr/local/emhttp/plugins/dynamix/include/.set-password.php; do
+  [ -f "$page" ] || continue
+  grep -q '@NAME@/include/login-head.php' "$page" && continue
+  grep -q '</head>' "$page" || continue
+  sed -i '0,/<\/head>/s##<?php @include "/usr/local/emhttp/plugins/@NAME@/include/login-head.php"; ?>\n</head>#' "$page"
+done
+""".strip().replace("@NAME@", NAME)
+
+install += [
+    REMEMBER_SOURCE,
+    LOGIN_HOOK,
+    f"find {EMHTTP} -type d -exec chmod 755 {{}} +",
+    f"find {EMHTTP} -type f -exec chmod 644 {{}} +",
+    f"chmod 755 {EMHTTP}/scripts/collect.php {EMHTTP}/scripts/autoupdate.php",
+    "# Unraid builds the crontab from the .cron files in each plugin's folder on the flash drive.",
+    f"cat > /boot/config/plugins/{NAME}/stats.cron <<'{DELIMITER}'\n"
+    "# Aurora Theme: one statistics sample per minute\n"
+    f"* * * * * /usr/bin/php {EMHTTP}/scripts/collect.php &> /dev/null\n\n{DELIMITER}",
+    # The script itself checks the "Automatic updates" setting, so the job can stay in place.
+    f"cat > /boot/config/plugins/{NAME}/autoupdate.cron <<'{DELIMITER}'\n"
+    "# Aurora Theme: hourly check for a newer version at the install location\n"
+    f"23 * * * * /usr/bin/php {EMHTTP}/scripts/autoupdate.php &> /dev/null\n\n{DELIMITER}",
+    "/usr/local/sbin/update_cron",
+    'echo ""',
+    f'echo "{NAME} {version} is installed."',
+    'echo "Settings: Settings > User Utilities > Aurora Theme"',
+    'echo ""',
+]
+
+plg = f"""<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN>
+
+<PLUGIN name="{NAME}"
+        author="{escape(AUTHOR)}"
+        version="{version}"
+        launch="Settings/AuroraThemeSettings"
+        pluginURL="{PLUGIN_URL}"
+        icon="paint-brush"
+        min="{MIN_UNRAID}">
+
+<CHANGES>
+###{version}
+- New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
+- Optional sidebar navigation layout.
+- Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
+- Own Stats page with a built-in collector, replacing Dynamix System Statistics.
+- Docker application groups, compact container list, restyled switches and menus.
+- "Update" button on the settings page that reinstalls from the last install location.
+- Automatic updates (on by default): an hourly check installs newer versions from the install location.
+</CHANGES>
+
+<!-- Install: write all plugin files. Generated by plugin/build.py; edit the sources, not this file. -->
+<FILE Run="/bin/bash">
+<INLINE>
+<![CDATA[
+{chr(10).join(install)}
+]]>
+</INLINE>
+</FILE>
+
+<!-- Remove: delete the plugin files and its settings, including custom.css and custom.js. -->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+<![CDATA[
+rm -rf {EMHTTP}
+for page in /usr/local/emhttp/plugins/dynamix/include/.login.php /usr/local/emhttp/plugins/dynamix/include/.set-password.php; do
+  [ -f "$page" ] && sed -i '\\#{NAME}/include/login-head.php#d' "$page"
+done
+rm -rf /boot/config/plugins/{NAME}
+rm -rf /var/lib/aurora-theme
+/usr/local/sbin/update_cron
+echo ""
+echo "{NAME} has been removed."
+echo ""
+]]>
+</INLINE>
+</FILE>
+
+</PLUGIN>
+"""
+
+out = root.parent / f"{NAME}.plg"
+out.write_text(plg, encoding="utf-8")
+print(f"wrote {out} ({len(plg)} bytes, {len(files)} files, version {version})")
+
+# Also drop the build on the server's share (mounted here), from where it is installed.
+# AURORA_DEPLOY overrides the folder; set it to an empty value to skip the copy.
+deploy = os.environ.get("AURORA_DEPLOY", "/mnt/filesharing/unraid")
+if deploy and pathlib.Path(deploy).is_dir():
+    target = pathlib.Path(deploy) / out.name
+    shutil.copyfile(out, target)
+    print(f"copied to {target}")
+elif deploy:
+    print(f"not copied: {deploy} is not available")

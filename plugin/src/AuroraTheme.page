@@ -1,0 +1,76 @@
+Menu="Buttons"
+Link="nav-user"
+Title="Aurora Theme"
+---
+<?php
+// Unraid evaluates every "Buttons" page inside <head> on each page, after its own stylesheets,
+// so this is where the theme's files are attached. Link="nav-user" keeps it from adding a button.
+$aurora = parse_plugin_cfg('Aurora-Theme');
+$auroraCustomDir = '/boot/config/plugins/Aurora-Theme';
+$auroraClasses = [];
+if (($aurora['layout'] ?? 'top') == 'sidebar') $auroraClasses[] = 'tp-sidebar';
+if (($aurora['enhance'] ?? 'yes') == 'yes') $auroraClasses[] = 'tp-enhance';
+
+// Emergency switch: opening any page with ?aurora=off stops the plugin from loading anything
+// in this browser (remembered in a cookie) until a page is opened with ?aurora=on.
+$auroraSwitch = $_GET['aurora'] ?? '';
+$auroraOff = $auroraSwitch == 'off' || ($auroraSwitch != 'on' && !empty($_COOKIE['aurora_off']));
+?>
+<?php if ($auroraSwitch == 'off'): ?>
+<script>document.cookie = 'aurora_off=1; path=/; max-age=31536000; SameSite=Lax';</script>
+<?php elseif ($auroraSwitch == 'on'): ?>
+<script>document.cookie = 'aurora_off=; path=/; max-age=0; SameSite=Lax';</script>
+<?php endif; ?>
+<?php if (!$auroraOff): ?>
+<?php if (($aurora['theme'] ?? 'yes') == 'yes'): ?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/theme.css') ?>">
+<script>
+// Theme credit at the end of the footer.
+document.addEventListener('DOMContentLoaded', function () {
+  var footer = document.getElementById('copyright');
+  if (!footer || footer.querySelector('.tp-credit')) return;
+  var link = document.createElement('a');
+  link.className = 'tp-credit';
+  link.href = 'https://github.com/Tunefish92';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.title = 'Aurora Theme on GitHub';
+  link.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>Aurora Theme by <strong>Tunefish</strong>';
+  footer.append(link);
+});
+</script>
+<?php endif; ?>
+<?php if (in_array('tp-sidebar', $auroraClasses)): ?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/layout-sidebar.css') ?>">
+<?php endif; ?>
+<?php if (in_array('tp-enhance', $auroraClasses)): ?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
+<script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
+<?php
+// Docker tab: the saved application groups go straight into the page, so the list can be shown
+// grouped right away instead of waiting for a separate request.
+if (rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/') === '/Docker'):
+    $auroraGroups = json_decode((string) @file_get_contents("$auroraCustomDir/docker-groups.json"), true);
+    $auroraGroups = is_array($auroraGroups['groups'] ?? null) ? $auroraGroups['groups'] : [];
+?>
+<script>window.auroraDockerGroups = <?= json_encode($auroraGroups, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<?php endif; ?>
+<?php endif; ?>
+<?php if ($auroraClasses): ?>
+<script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
+<?php endif; ?>
+<?php if (is_file("$auroraCustomDir/custom.css")): ?>
+<style id="aurora-custom-css">
+<?= str_ireplace('</style', '<\/style', file_get_contents("$auroraCustomDir/custom.css")) ?>
+
+</style>
+<?php endif; ?>
+<?php if (is_file("$auroraCustomDir/custom.js")): ?>
+<script id="aurora-custom-js">
+document.addEventListener('DOMContentLoaded', function () {
+<?= str_ireplace('</script', '<\/script', file_get_contents("$auroraCustomDir/custom.js")) ?>
+
+});
+</script>
+<?php endif; ?>
+<?php endif; ?>

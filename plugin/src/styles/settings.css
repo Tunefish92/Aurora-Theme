@@ -1,0 +1,339 @@
+/* Settings page of the Aurora Theme: update card and the GitHub issue form. Falls back
+   to Unraid's own colours when the theme's colours are switched off. */
+.tft-update-card {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    max-width: 90rem;
+    margin: 1.4rem 0 2.4rem;
+    padding: 1.8rem 2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 18px;
+    background-color: var(--tp-elevated, var(--mild-background-color));
+}
+
+.tft-update-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 4.8rem;
+    height: 4.8rem;
+    border-radius: 50%;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 2.4rem;
+    background-color: var(--tp-subtle, var(--background-color));
+}
+
+.tft-update-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.tft-update-text strong {
+    font: 600 1.7rem/1.3 var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tft-update-text span {
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+}
+
+.tft-update-text code {
+    overflow: hidden;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+
+/* An update waiting: accent border with a glow, gradient icon, gentle pulse */
+.tft-update-card.tft-state-available {
+    border-color: var(--tp-primary, var(--brand-orange));
+    background:
+        linear-gradient(120deg, var(--tp-primary-soft, rgba(255, 140, 47, 0.12)), transparent 60%),
+        var(--tp-elevated, var(--mild-background-color));
+    box-shadow: 0 0 0 4px var(--tp-primary-soft, transparent), 0 18px 40px -24px var(--tp-primary, transparent);
+}
+
+.tft-update-card.tft-state-available .tft-update-icon {
+    color: #ffffff;
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 8px 20px -8px var(--tp-primary, transparent);
+    animation: tft-update-pulse 2.6s ease-in-out infinite;
+}
+
+.tft-update-card.tft-state-current .tft-update-icon {
+    color: var(--tp-success-text, var(--green-500));
+    background-color: var(--tp-success-bg, var(--background-color));
+}
+
+.tft-update-card.tft-state-missing .tft-update-icon,
+.tft-update-card.tft-state-invalid .tft-update-icon {
+    color: var(--tp-warn-text, var(--orange-300));
+    background-color: var(--tp-warn-bg, var(--background-color));
+}
+
+@keyframes tft-update-pulse {
+    0%, 100% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 0 var(--tp-primary-soft, rgba(255, 140, 47, 0.3)); }
+    50% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 8px transparent; }
+}
+
+/* Buttons are styled here in full, so Unraid's global button look does not leak in. */
+button.tft-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 0;
+    margin: 0;
+    padding: 1rem 2rem;
+    border: 1px solid var(--tp-input-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--text-color);
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    background: var(--tp-elevated, transparent);
+    transition: transform 0.35s, box-shadow 0.35s, filter 0.35s, opacity 0.35s;
+}
+
+button.tft-button.tft-button-primary {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 10px 22px -12px var(--tp-primary, transparent);
+}
+
+button.tft-button:hover:not(:disabled) {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+button.tft-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* ---- GitHub issue form */
+.tft-issue {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    max-width: 90rem;
+    margin: 1.4rem 0 2.4rem;
+    padding: 2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 18px;
+    background-color: var(--tp-elevated, var(--mild-background-color));
+}
+
+.tft-issue-intro {
+    margin: 0;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.tft-segment {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-self: flex-start;
+    gap: 0.2rem;
+    padding: 0.3rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    background-color: var(--tp-subtle, var(--background-color));
+}
+
+button.tft-segment-option {
+    min-width: 0;
+    margin: 0;
+    padding: 0.6rem 1.4rem;
+    border: 0;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 500 1.25rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+button.tft-segment-option:hover {
+    color: var(--text-color);
+    background: transparent;
+    transform: none;
+}
+
+button.tft-segment-option[aria-checked="true"] {
+    color: var(--tp-primary, var(--brand-orange));
+    font-weight: 600;
+    background: var(--tp-elevated, var(--mild-background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+.tft-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tft-field > span {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tft-field input,
+.tft-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem 1.2rem;
+    font-size: 1.35rem;
+    resize: vertical;
+}
+
+.tft-check {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+}
+
+.tft-issue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.6rem;
+}
+
+.tft-link {
+    color: var(--tp-primary, var(--link-text-color));
+    font: 600 1.25rem var(--tp-font-heading, inherit);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tft-update-card .tft-update-icon {
+        animation: none !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .tft-update-card {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---- Changing the update location */
+button.tft-link-button {
+    align-self: flex-start;
+    min-width: 0;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    border: 0;
+    color: var(--tp-primary, var(--link-text-color));
+    font: 600 1.2rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    background: none;
+    box-shadow: none;
+    transform: none;
+}
+
+button.tft-link-button:hover {
+    border: 0;
+    color: var(--tp-primary-ii, var(--link-text-color));
+    background: none;
+    transform: none;
+}
+
+.tft-source-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 90rem;
+    margin: -1.2rem 0 2.4rem;
+    padding: 1.8rem 2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 18px;
+    background-color: var(--tp-elevated, var(--mild-background-color));
+}
+
+.tft-source-form[hidden] {
+    display: none;
+}
+
+.tft-source-problem {
+    min-height: 1.6rem;
+    margin: 0;
+    color: var(--tp-danger, var(--red-600));
+    font-size: 1.2rem;
+    text-align: left;
+}
+
+
+/* "Automatic updates" checkbox in the settings form */
+.tft-check.tft-check-inline {
+    display: inline-flex;
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.tft-check input[type="checkbox"] {
+    width: 1.8rem;
+    height: 1.8rem;
+    margin: 0;
+    accent-color: var(--tp-primary, var(--brand-orange));
+    cursor: pointer;
+}
+
+/* Last automatic check, under the update card's text */
+.tft-update-text span.tft-auto-status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+    font-size: 1.15rem;
+}
+
+.tft-update-text span.tft-auto-status.tft-auto-failed {
+    color: var(--tp-danger, var(--red-600));
+}
+
+/* Update card buttons: "Check for updates" and the update itself, side by side. */
+.tft-update-actions {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.8rem;
+}
+
+.tft-update-actions button.tft-button[hidden] {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .tft-update-actions {
+        flex: 1 1 100%;
+        justify-content: stretch;
+    }
+
+    .tft-update-actions button.tft-button {
+        flex: 1 1 0;
+    }
+}

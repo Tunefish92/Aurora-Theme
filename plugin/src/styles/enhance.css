@@ -1,0 +1,2684 @@
+/* Elements added by scripts/enhance.js. Falls back to Unraid's own variables when the
+   Tapeory colours are switched off. */
+.tp-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 0 2rem;
+    overflow: hidden;
+    border: 1px solid var(--tp-border, var(--table-border-color));
+    border-radius: 18px;
+    background-color: var(--tp-elevated, var(--table-background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+.tp-summary-item {
+    min-width: 0;
+    padding: 1.5rem 2rem;
+}
+
+.tp-summary-item + .tp-summary-item {
+    border-left: 1px solid var(--tp-border, var(--table-border-color));
+}
+
+.tp-summary-label {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tp-summary-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    margin-top: 0.4rem;
+    font: 700 2.4rem/1.15 var(--tp-font-heading, inherit);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-summary-detail {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 400 1.1rem var(--tp-font-body, inherit);
+    letter-spacing: 0;
+}
+
+.tp-summary-value.tp-good { color: var(--green-500); }
+.tp-summary-value.tp-warn { color: var(--orange-300); }
+.tp-summary-value.tp-accent { color: var(--tp-primary, var(--link-text-color)); }
+
+@media (max-width: 767px) {
+    .tp-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tp-summary-item {
+        padding: 1.2rem 1.4rem;
+    }
+
+    .tp-summary-item:nth-child(3) {
+        border-top: 1px solid var(--tp-border, var(--table-border-color));
+        border-left: 0;
+    }
+
+    .tp-summary-item:nth-child(4) {
+        border-top: 1px solid var(--tp-border, var(--table-border-color));
+    }
+}
+
+/* ---- Top bar: breadcrumb and array status */
+.tp-crumb {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    margin-right: auto;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    white-space: nowrap;
+}
+
+.tp-crumb strong {
+    color: var(--text-color);
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+}
+
+.tp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 1rem;
+    border-radius: 999px;
+    color: var(--tp-neutral-text, var(--text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    white-space: nowrap;
+    background-color: var(--tp-neutral-bg, var(--mild-background-color));
+}
+
+.tp-pill:before {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    content: "";
+}
+
+.tp-pill.tp-good {
+    color: var(--tp-success-text, var(--green-800));
+    background-color: var(--tp-success-bg, var(--green-100));
+}
+
+.tp-pill.tp-warn {
+    color: var(--tp-warn-text, var(--orange-300));
+    background-color: var(--tp-warn-bg, var(--mild-background-color));
+}
+
+/* The top bar pieces only make sense in the sidebar layout, where the header is slim. */
+:root:not(.tp-sidebar) .tp-crumb,
+.tp-server {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .tp-crumb {
+        display: none;
+    }
+}
+
+/* ---- Sidebar: connected server */
+.tp-server-label {
+    display: block;
+    margin: 0 1rem 0.9rem;
+    color: var(--tp-header-muted, #a7b0c0);
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.tp-server-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tp-server-card b {
+    color: var(--tp-header-text, #ffffff);
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+}
+
+.tp-server-card span {
+    color: var(--tp-header-muted, #a7b0c0);
+    font: 1rem var(--tp-font-body, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Top right: dark / light switch */
+/* Phones: the header has no room for it; the theme stays switchable in Display Settings. */
+@media (max-width: 767px) {
+    #UserProfile > .tp-theme-switch {
+        display: none !important;
+    }
+}
+
+#UserProfile > .tp-theme-switch {
+    display: grid;
+    flex: none;
+    place-items: center;
+    align-self: center;
+    width: 3.6rem;
+    min-width: 0;
+    height: 3.6rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 50%;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.6rem;
+    background-color: var(--tp-elevated, transparent);
+    box-shadow: none;
+    cursor: pointer;
+    transition: border-color 0.35s, color 0.35s;
+}
+
+/* The icon shows the active theme: moon in blue while dark, sun in amber while light. */
+#UserProfile > .tp-theme-switch.tp-dark {
+    color: var(--tp-primary, var(--brand-orange));
+}
+
+#UserProfile > .tp-theme-switch:not(.tp-dark) {
+    color: #f59e0b;
+}
+
+#UserProfile > .tp-theme-switch:hover,
+#UserProfile > .tp-theme-switch:focus-visible {
+    border-color: currentColor;
+}
+
+#UserProfile > .tp-theme-switch .fa {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#UserProfile > .tp-theme-switch:hover .fa {
+    transform: rotate(-20deg) scale(1.1);
+}
+
+#UserProfile > .tp-theme-switch.tp-busy {
+    cursor: progress;
+}
+
+#UserProfile > .tp-theme-switch.tp-busy .fa {
+    animation: fa-spin 1s linear infinite;
+}
+
+/* ---- Page heading */
+.tp-heading {
+    margin: 1.4rem 0 2.4rem;
+}
+
+.tp-eyebrow {
+    margin: 0 0 0.5rem;
+    color: var(--tp-primary, var(--link-text-color));
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.115em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.tp-heading h1 {
+    margin: 0;
+    font: 600 2.7rem/1.2 var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tp-subtitle {
+    margin: 0.6rem 0 0;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+    text-align: left;
+}
+
+/* ---- Container and VM state as a pill */
+.tp-enhance .inner > span.state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.3rem;
+    padding: 0.1rem 0.9rem;
+    border-radius: 999px;
+    color: var(--tp-neutral-text, var(--text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    background-color: var(--tp-neutral-bg, var(--mild-background-color));
+}
+
+.tp-enhance .inner > span.state:before {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    content: "";
+}
+
+.tp-enhance .inner > i.started ~ span.state {
+    color: var(--tp-success-text, var(--green-800));
+    background-color: var(--tp-success-bg, var(--green-100));
+}
+
+.tp-enhance .inner > i.paused ~ span.state {
+    color: var(--tp-warn-text, var(--orange-300));
+}
+
+/* The pill's dot replaces the play / stop icon; the spinner shown while a state changes stays. */
+.tp-enhance .inner > i.started:has(~ span.state),
+.tp-enhance .inner > i.stopped:has(~ span.state),
+.tp-enhance .inner > i.paused:has(~ span.state) {
+    display: none;
+}
+
+/* ---- Docker list: hidden until it is grouped, so it never flashes in Unraid's plain order.
+   If the script does not get to it, the list appears by itself after two seconds. */
+.tp-enhance #docker_list:not(.tp-ready) {
+    visibility: hidden;
+    animation: tp-docker-reveal 0s linear 2s forwards;
+}
+
+@keyframes tp-docker-reveal {
+    to { visibility: visible; }
+}
+
+/* ---- Docker toolbar: filter tabs and search */
+.tp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    margin: 0 0 1rem;
+}
+
+.tp-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tp-toolbar button.tp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0.6rem 1.2rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 500 1.2rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.tp-toolbar button.tp-tab:hover {
+    border-color: transparent;
+    color: var(--text-color);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.tp-toolbar button.tp-tab[aria-selected="true"] {
+    border-color: var(--tp-border, var(--border-color));
+    color: var(--tp-primary, var(--link-text-color));
+    font-weight: 600;
+    background: var(--tp-elevated, var(--table-background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+.tp-tab-count {
+    font: 1rem var(--tp-font-body, inherit);
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+}
+
+.tp-toolbar input.tp-search {
+    width: 22rem;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.7rem 1rem;
+}
+
+.tp-filtered-out {
+    display: none !important;
+}
+
+.tp-segment {
+    display: inline-flex;
+    gap: 0.2rem;
+    padding: 0.3rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    background-color: var(--tp-subtle, var(--mild-background-color));
+}
+
+.tp-toolbar .tp-segment button.tp-tab {
+    padding: 0.4rem 1.2rem;
+}
+
+.tp-native-hidden {
+    display: none !important;
+}
+
+.tp-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+/* ---- Docker: compact container list
+   Unraid's own table and rows stay in place; each row becomes a grid, so columns can be hidden
+   and reordered without rebuilding anything. Cells added by enhance.js carry .tp-extra. */
+#docker_containers .tp-extra {
+    display: none;
+}
+
+#docker_containers.tp-compact,
+#docker_containers.tp-compact > thead,
+#docker_containers.tp-compact > tbody {
+    display: block;
+}
+
+#docker_containers.tp-compact > thead > tr,
+#docker_containers.tp-compact > tbody > tr.sortable {
+    display: grid;
+    grid-template-columns:
+        minmax(22rem, 2.4fr) minmax(5.5rem, 0.45fr) minmax(9rem, 0.8fr) minmax(10rem, 1fr) minmax(6rem, 0.6fr)
+        minmax(13rem, 1.3fr) minmax(12rem, 1.3fr) var(--tp-auto-column, minmax(8rem, 0.6fr)) 17.5rem;
+    align-items: center;
+    column-gap: 1.4rem;
+    padding: 0 1.9rem;
+}
+
+#docker_containers.tp-compact > tbody > tr.sortable {
+    min-height: 6.4rem;
+}
+
+/* Advanced view adds the start delay next to the autostart switch, which needs more room. */
+#docker_containers.tp-compact.tp-advanced {
+    --tp-auto-column: minmax(18rem, 0.9fr);
+}
+
+#docker_containers.tp-compact.tp-advanced > tbody > tr.sortable {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+
+#docker_containers.tp-compact > tbody > tr.tp-filtered-out {
+    display: none;
+}
+
+#docker_containers.tp-compact > thead > tr {
+    min-height: 3.9rem;
+    background-color: var(--tp-subtle, var(--table-header-background-color));
+}
+
+#docker_containers.tp-compact th,
+#docker_containers.tp-compact tr.sortable > td {
+    display: block;
+    width: auto !important;
+    min-width: 0;
+    height: auto;
+    padding: 0 !important;
+    line-height: 1.4;
+    text-align: left;
+    background-color: transparent;
+}
+
+/* Hover tint on the row instead of on each cell, with the accent bar on the left. */
+#docker_containers.tp-compact > tbody > tr.sortable {
+    box-shadow: inset 3px 0 0 transparent;
+    transition: background-color 0.35s, box-shadow 0.35s;
+}
+
+#docker_containers.tp-compact > tbody > tr.sortable:hover {
+    background-color: var(--tp-primary-soft, var(--hover-table-row-background-color));
+    box-shadow: inset 3px 0 0 var(--tp-primary, var(--brand-orange));
+}
+
+#docker_containers.tp-compact > tbody > tr.sortable:hover > td {
+    background-color: transparent;
+}
+
+/* Column order: container, web UI, status, version, cpu, memory, ports, autostart, actions */
+#docker_containers.tp-compact .tp-c-name { order: 1; }
+#docker_containers.tp-compact .tp-c-webui { order: 2; }
+#docker_containers.tp-compact .tp-c-status { order: 3; }
+#docker_containers.tp-compact .tp-c-version { order: 4; }
+#docker_containers.tp-compact .tp-c-cpu { order: 5; }
+#docker_containers.tp-compact .tp-c-mem { order: 6; }
+#docker_containers.tp-compact .tp-c-ports { order: 7; }
+#docker_containers.tp-compact .tp-c-auto { order: 8; }
+#docker_containers.tp-compact .tp-c-actions { order: 9; }
+
+#docker_containers.tp-compact .tp-c-network,
+#docker_containers.tp-compact .tp-c-ip,
+#docker_containers.tp-compact .tp-c-cport,
+#docker_containers.tp-compact .tp-c-volumes,
+#docker_containers.tp-compact .tp-c-uptime,
+#docker_containers.tp-compact th.tp-c-load {
+    display: none !important;
+}
+
+/* Unraid keeps CPU and memory in one cell and updates them live. Dissolving the cell lets its
+   two values sit in separate columns while Unraid goes on updating the same elements. */
+#docker_containers.tp-compact td.tp-c-load {
+    display: contents !important;
+}
+
+#docker_containers.tp-compact td.tp-c-load > [class^="cpu-"] { order: 5; }
+#docker_containers.tp-compact td.tp-c-load > [class^="mem-"] { order: 6; }
+
+#docker_containers.tp-compact td.tp-c-load > [class^="cpu-"],
+#docker_containers.tp-compact td.tp-c-load > [class^="mem-"] {
+    min-width: 0;
+    font: 600 1.2rem var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+#docker_containers.tp-compact td.tp-c-load > .usage-disk,
+#docker_containers.tp-compact td.tp-c-load > br {
+    display: none;
+}
+
+/* Container cell: icon, name, image */
+#docker_containers.tp-compact td.ct-name .outer {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    min-width: 0;
+    margin: 0;
+}
+
+#docker_containers.tp-compact tr.sortable > td.ct-name {
+    display: flex;
+    align-items: center;
+}
+
+#docker_containers.tp-compact td.ct-name img.img {
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 12px;
+}
+
+#docker_containers.tp-compact td.ct-name .inner {
+    display: block;
+    min-width: 0;
+}
+
+#docker_containers.tp-compact td.ct-name .appname {
+    display: block;
+    overflow: hidden;
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#docker_containers.tp-compact td.ct-name .appname a {
+    color: var(--text-color);
+}
+
+#docker_containers.tp-compact tr.sortable:hover td.ct-name .appname a {
+    color: var(--tp-primary, var(--link-text-color));
+}
+
+.tp-image {
+    display: none;
+}
+
+#docker_containers.tp-compact .tp-image {
+    display: block;
+    margin-top: 0.3rem;
+    overflow: hidden;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 1rem var(--tp-font-body, inherit);
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The state moves to its own column, and the image line replaces the "Container ID / By" block. */
+#docker_containers.tp-compact td.ct-name .inner > br,
+#docker_containers.tp-compact td.ct-name .inner > i,
+#docker_containers.tp-compact td.ct-name .inner > .state,
+#docker_containers.tp-compact td.ct-name > div.advanced {
+    display: none !important;
+}
+
+#docker_containers.tp-compact tr.sortable > td.tp-c-auto {
+    display: flex;
+    align-items: center;
+}
+
+#docker_containers.tp-compact td.tp-c-auto .switch-button-label {
+    min-width: 2.6rem;
+}
+
+/* Start delay ("wait"), shown by Unraid in advanced view for containers that autostart */
+#docker_containers.tp-compact td.tp-c-auto span[id$="-wait"] {
+    margin-left: 1.2rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+#docker_containers.tp-compact td.tp-c-auto input.wait {
+    width: 4.6rem;
+    margin: 0 0 0 0.6rem;
+    padding: 0.3rem 0.6rem;
+    text-align: center;
+}
+
+#docker_containers.tp-compact td.tp-c-ports {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 1.1rem var(--tp-font-body, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+/* WebUI link: a round gradient button with just the icon */
+a.tp-webui {
+    display: inline-grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    color: var(--tp-primary-text, #ffffff);
+    font-size: 1.5rem;
+    text-decoration: none;
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 6px 14px -6px var(--tp-primary, transparent);
+    transition: transform 0.35s, box-shadow 0.35s, filter 0.35s;
+}
+
+a.tp-webui:hover {
+    color: var(--tp-primary-text, #ffffff);
+    box-shadow: 0 0 0 4px var(--tp-primary-soft, transparent), 0 10px 20px -8px var(--tp-primary, transparent);
+    filter: brightness(1.1);
+    transform: translateY(-2px) scale(1.06);
+}
+
+a.tp-webui .fa {
+    transform: translate(0.5px, 0.5px);
+}
+
+.tp-webui-none {
+    color: var(--tp-muted, var(--alt-text-color));
+    opacity: 0.5;
+}
+
+/* Row actions */
+.tp-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.tp-actions button.tp-icon-button {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    min-width: 0;
+    height: 3rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    letter-spacing: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: color 0.35s, background-color 0.35s, transform 0.35s;
+}
+
+.tp-actions button.tp-icon-button:hover {
+    border: 0;
+    color: var(--tp-primary, var(--link-text-color));
+    background: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+    transform: translateY(-1px);
+}
+
+.tp-actions button.tp-icon-button.tp-primary {
+    color: var(--tp-primary, var(--link-text-color));
+}
+
+.tp-actions button.tp-icon-button.tp-danger:hover {
+    color: var(--red-600);
+}
+
+/* ---- Docker: application groups */
+#docker_list > tr.tp-group > td {
+    height: auto;
+    padding: 0.7rem 1.9rem;
+    border-top: 1px solid var(--tp-border, var(--table-border-color));
+    background-color: var(--tp-subtle, var(--table-header-background-color));
+}
+
+#docker_containers.tp-compact > tbody > tr.tp-group,
+#docker_containers.tp-compact > tbody > tr.tp-group > td {
+    display: block;
+}
+
+.tp-group-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tp-group-head button.tp-group-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0.3rem 0.6rem 0.3rem 0;
+    border: 0;
+    color: var(--text-color);
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.tp-group-head button.tp-group-toggle:hover {
+    border: 0;
+    color: var(--tp-primary, var(--link-text-color));
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.tp-group-toggle .fa {
+    width: 1.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    transition: transform 0.35s;
+}
+
+.tp-group.tp-collapsed .tp-group-toggle .fa {
+    transform: rotate(-90deg);
+}
+
+.tp-group-count {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 400 1.1rem var(--tp-font-body, inherit);
+    letter-spacing: 0;
+}
+
+.tp-group-head .tp-actions {
+    margin-left: auto;
+}
+
+.tp-group-menu .fa {
+    margin-right: 0.8rem;
+}
+
+/* ---- Dialogs opened by enhance.js (new group, rename, confirmations) */
+.tp-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background-color: rgba(8, 12, 20, 0.6);
+    backdrop-filter: blur(3px);
+    animation: tp-modal-fade 0.2s ease-out;
+}
+
+.tp-modal {
+    width: min(44rem, 100%);
+    padding: 2.6rem 2.6rem 2.2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 18px;
+    color: var(--text-color);
+    background-color: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-lg, 0 24px 56px -22px rgba(0, 0, 0, 0.6));
+    animation: tp-modal-rise 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tp-modal-title {
+    margin: 0;
+    font: 600 2rem/1.25 var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tp-modal-message {
+    margin: 0.8rem 0 0;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.tp-modal input.tp-modal-input {
+    display: block;
+    width: 100%;
+    margin: 1.8rem 0 0;
+    padding: 1rem 1.2rem;
+    box-sizing: border-box;
+    font-size: 1.4rem;
+}
+
+.tp-modal-problem {
+    min-height: 1.8rem;
+    margin: 0.6rem 0 0;
+    color: var(--tp-danger, var(--red-600));
+    font-size: 1.2rem;
+    text-align: left;
+}
+
+.tp-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.tp-modal-problem + .tp-modal-actions {
+    margin-top: 0.8rem;
+}
+
+.tp-modal button.tp-modal-button {
+    min-width: 9rem;
+    margin: 0;
+    padding: 0.9rem 1.8rem;
+    border: 1px solid var(--tp-input-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--text-color);
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    background: var(--tp-elevated, transparent);
+    transition: transform 0.35s, box-shadow 0.35s, border-color 0.35s, color 0.35s, opacity 0.35s;
+}
+
+.tp-modal button.tp-modal-button:hover:not(:disabled) {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+    transform: translateY(-1px);
+}
+
+.tp-modal button.tp-modal-button.tp-modal-primary {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 10px 22px -12px var(--tp-primary, transparent);
+}
+
+.tp-modal button.tp-modal-button.tp-modal-primary:hover:not(:disabled) {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+}
+
+.tp-modal button.tp-modal-button.tp-modal-danger {
+    border-color: transparent;
+    color: #ffffff;
+    background: var(--tp-danger, var(--red-600));
+}
+
+.tp-modal button.tp-modal-button.tp-modal-danger:hover:not(:disabled) {
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.tp-modal button.tp-modal-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+    transform: none;
+}
+
+@keyframes tp-modal-fade {
+    from { opacity: 0; }
+}
+
+@keyframes tp-modal-rise {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-modal-backdrop,
+    .tp-modal {
+        animation: none;
+    }
+}
+
+/* ---- Dashboard: System tile, the four usage rings as small cards */
+:root.Theme--black {
+    --tp-ring-track: #262c39;
+}
+
+:root.Theme--white {
+    --tp-ring-track: #e3e8f0;
+}
+
+.tile-system-memory-charts.tp-rings {
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: 1rem;
+}
+
+.tile-system-memory-charts.tp-rings > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.4rem 1rem 1.6rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 16px;
+    background-color: var(--tp-subtle, transparent);
+    transition: transform 0.3s;
+}
+
+.tile-system-memory-charts.tp-rings > span:hover {
+    border-color: var(--tp-input-border, var(--border-color));
+    transform: translateY(-1px);
+}
+
+.tile-system-memory-charts.tp-rings > span > a.info {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tile-system-memory-charts.tp-rings div.pie {
+    --tp-ring: var(--tp-primary, #4f8bff);
+    position: relative;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 10.4rem;
+    height: 10.4rem;
+    margin: 0;
+    border-radius: 50%;
+    transition: background 0.6s;
+}
+
+/* Boot device, log and Docker vdisk: one value each, drawn here in the level's colour. */
+.tile-system-memory-charts.tp-rings div.pie:not(#sys0) {
+    background: conic-gradient(var(--tp-ring) calc(var(--tp-p, 0) * 1%), var(--tp-ring-track) 0) !important;
+}
+
+.tile-system-memory-charts.tp-rings div.pie[data-level="warning"] {
+    --tp-ring: #f59e0b;
+}
+
+.tile-system-memory-charts.tp-rings div.pie[data-level="critical"] {
+    --tp-ring: var(--tp-danger, #ef4444);
+}
+
+.tile-system-memory-charts.tp-rings div.pie::after {
+    inset: 0.9rem;
+    width: auto;
+    height: auto;
+    background-color: var(--tp-subtle, var(--dashstats-pie-after-bg-color));
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.tile-system-memory-charts.tp-rings div.pie > span[class^="sys"] {
+    color: var(--tp-text, var(--text-color)) !important;
+    font: 600 2rem/1 var(--tp-font-heading, inherit);
+    letter-spacing: -0.02em;
+}
+
+.tile-system-memory-charts.tp-rings div.pie[data-level="warning"] > span[class^="sys"] {
+    color: #f59e0b !important;
+}
+
+.tile-system-memory-charts.tp-rings div.pie[data-level="critical"] > span[class^="sys"] {
+    color: var(--tp-danger, #ef4444) !important;
+}
+
+.tile-system-memory-charts.tp-rings div.pie > span[class^="var"] {
+    display: block;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem !important;
+    font-weight: 500;
+}
+
+/* Labels and legend above the rings */
+.tp-enhance table.dashboard .tile-system-memory-labels > div {
+    padding: 1.2rem 1.4rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 14px;
+    line-height: 1.9;
+}
+
+.tp-enhance table.dashboard .tile-system-memory-labels i.ups {
+    width: 1.6rem;
+    margin-right: 0.6rem;
+    text-align: center;
+}
+
+.tp-enhance table.dashboard .tile-system-memory-labels #dynamic i.fa-circle {
+    font-size: 1rem;
+    vertical-align: 0.1rem;
+}
+
+.tp-enhance table.dashboard .tile-system-memory-labels legend {
+    margin-bottom: 0.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.05rem var(--tp-font-heading, inherit);
+    font-variant: normal;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ---- Dashboard: fans as one row of small cards, wrapping only when needed */
+.tp-fans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: 0.6rem;
+    padding: 0.2rem 0 0.4rem;
+}
+
+/* Name with a small spinning fan on top, speed underneath: narrow enough for five or six in a
+   row on a dashboard tile. */
+.tp-fan {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "icon name" "speed speed";
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    min-width: 0;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 12px;
+    background-color: var(--tp-subtle, var(--mild-background-color));
+}
+
+.tp-fan-icon {
+    grid-area: icon;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.2rem;
+    animation: tp-fan-spin 2.4s linear infinite;
+}
+
+.tp-fan-text {
+    display: contents;
+}
+
+.tp-fan-name {
+    grid-area: name;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tp-fan-speed {
+    grid-area: speed;
+    font: 600 1.4rem var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.tp-fan.tp-fan-idle .tp-fan-icon {
+    color: var(--tp-muted, var(--alt-text-color));
+    animation: none;
+}
+
+.tp-fan.tp-fan-idle .tp-fan-speed {
+    color: var(--tp-muted, var(--alt-text-color));
+}
+
+@keyframes tp-fan-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-fan-icon {
+        animation: none;
+    }
+}
+
+/* ---- Settings and Tools: search above the panels */
+.tp-panel-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 52rem;
+    margin: 0 0 2.4rem;
+}
+
+.tp-panel-search:before {
+    position: absolute;
+    left: 1.6rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: normal 1.4rem/1 FontAwesome;
+    pointer-events: none;
+    content: "\f002";
+}
+
+#displaybox .tp-panel-search input.tp-panel-search-input {
+    width: 100%;
+    min-height: 4.4rem;
+    margin: 0;
+    padding: 1rem 9rem 1rem 4.4rem;
+    color: var(--text-color);
+    border: 1px solid var(--tp-input-border, var(--input-border-color));
+    border-radius: 999px;
+    font-size: 1.4rem;
+    background-color: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+#displaybox .tp-panel-search input.tp-panel-search-input:focus {
+    border-color: var(--tp-primary, var(--brand-orange));
+    box-shadow: 0 0 0 3px var(--tp-primary-soft, transparent);
+}
+
+.tp-panel-search-count {
+    position: absolute;
+    right: 1.8rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+.tp-panel-search-empty {
+    margin: 0 0 2rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+}
+
+/* Settings and Tools: the search sits on the right of the page heading, in the same row. */
+.tp-heading:has(.tp-panel-search) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.tp-heading .tp-panel-search {
+    flex: 0 1 38rem;
+    max-width: 38rem;
+    margin: 0;
+}
+
+/* ---- Users tab */
+#displaybox div.title.tp-hidden-title {
+    display: none;
+}
+
+#tp-users-summary {
+    margin-bottom: 2.4rem;
+}
+
+.tp-users-tools {
+    display: flex;
+    flex: 0 1 52rem;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tp-users-tools .tp-panel-search {
+    flex: 1 1 auto;
+    max-width: none;
+    margin: 0;
+}
+
+.tp-heading button.tp-users-add {
+    flex: none;
+    min-height: 4.4rem;
+    margin: 0;
+    padding: 0 2rem;
+    border: 0;
+    border-radius: 999px;
+    color: var(--tp-primary-text, #ffffff);
+    font: 600 1.35rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 10px 22px -14px var(--tp-primary, transparent);
+}
+
+#displaybox div.title.tp-users-title .left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tp-users-count {
+    margin-left: 0.4rem;
+    padding: 0.15rem 0.9rem;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.15rem;
+    font-weight: 600;
+    background-color: var(--tp-subtle, transparent);
+}
+
+#displaybox .Panels.tp-users {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.4rem;
+}
+
+/* Unraid's UserList.css makes each user a narrow centred column (max 15rem). */
+#displaybox .Panels.tp-users > .user-list.tp-user {
+    display: block;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    word-break: normal;
+}
+
+#displaybox .Panels.tp-users > .user-list.tp-user > a.tp-user-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.4rem;
+    min-height: 0;
+    height: 100%;
+    padding: 1.6rem 1.6rem 1.6rem 1.8rem;
+    text-align: left;
+}
+
+.tp-user-avatar {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 5.2rem;
+    height: 5.2rem;
+    overflow: hidden;
+    border-radius: 50%;
+    color: #ffffff;
+    font: 700 1.7rem/1 var(--tp-font-heading, inherit);
+    letter-spacing: 0.02em;
+    background-color: var(--tp-subtle, transparent);
+    box-shadow: 0 0 0 3px var(--tp-elevated, transparent), 0 0 0 4px var(--tp-border, transparent);
+}
+
+#displaybox .tp-user-avatar img {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+.tp-user-text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.tp-user-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.tp-user-name {
+    overflow: hidden;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.55rem/1.2 var(--tp-font-heading, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-user-role {
+    padding: 0.2rem 0.9rem;
+    border-radius: 999px;
+    color: var(--tp-success-text, #15803d);
+    font: 600 1.05rem/1.5 var(--tp-font-heading, inherit);
+    background-color: var(--tp-success-bg, #dcfce7);
+}
+
+.tp-user-role.tp-admin {
+    color: var(--tp-primary, var(--brand-orange));
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-user-desc {
+    overflow: hidden;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 400 1.25rem/1.4 var(--tp-font-body, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-user-desc.tp-user-desc-empty {
+    opacity: 0.6;
+}
+
+.tp-user-go {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    transition: color 0.3s, border-color 0.3s, background-color 0.3s;
+}
+
+a.tp-user-card:hover .tp-user-go,
+a.tp-user-card:focus-visible .tp-user-go {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+}
+
+/* "Add user" as the last card of the share users. */
+#displaybox .Panels.tp-users > button.tp-user-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 8.6rem;
+    margin: 0;
+    border: 1.5px dashed var(--tp-input-border, var(--border-color));
+    border-radius: var(--tp-r-md, 14px);
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.35rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    transition: border-color 0.3s, color 0.3s, background-color 0.3s;
+}
+
+#displaybox .Panels.tp-users > button.tp-user-add:hover {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-user-add-icon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 999px;
+    font-size: 2rem;
+    line-height: 1;
+    background-color: var(--tp-subtle, transparent);
+}
+
+/* Unraid's own Add User / Done buttons: replaced by the buttons above. */
+form.tp-users-form {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .tp-users-tools {
+        flex-basis: auto;
+        flex-wrap: wrap;
+    }
+
+    #displaybox .Panels.tp-users {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---- Settings and Tools: favourites */
+.Panels .Panel {
+    position: relative;
+}
+
+.Panel:has(.tp-fav-toggle) i.favo {
+    display: none !important;
+}
+
+.Panel button.tp-fav-toggle {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    min-width: 0;
+    height: 3rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.4rem;
+    background: transparent;
+    box-shadow: none;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.25s, color 0.25s, background-color 0.25s, transform 0.25s;
+}
+
+.Panel:hover button.tp-fav-toggle,
+.Panel:focus-within button.tp-fav-toggle,
+.Panel button.tp-fav-toggle.tp-on {
+    opacity: 1;
+}
+
+.Panel button.tp-fav-toggle:hover,
+.Panel button.tp-fav-toggle:focus-visible {
+    color: #f5b301;
+    background-color: rgba(245, 179, 1, 0.14);
+    transform: scale(1.08);
+}
+
+.Panel button.tp-fav-toggle.tp-on {
+    color: #f5b301;
+}
+
+.Panel button.tp-fav-toggle.tp-on .fa {
+    filter: drop-shadow(0 2px 6px rgba(245, 179, 1, 0.45));
+}
+
+#displaybox div.title.tp-fav-title i.fa-star {
+    color: #f5b301;
+}
+
+.tp-fav-hint {
+    margin: 1.2rem 0 0;
+    padding: 1.6rem 1.8rem;
+    border: 1px dashed var(--tp-input-border, var(--border-color));
+    border-radius: 14px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.25rem;
+    text-align: left;
+}
+
+.tp-fav-hint:before {
+    margin-right: 0.8rem;
+    color: #f5b301;
+    font: normal 1.3rem/1 FontAwesome;
+    content: "\f005";
+}
+
+#displaybox .tp-fav-panels:empty {
+    display: none;
+}
+
+#displaybox .tp-fav-panels.tp-filtered-out + .tp-fav-hint {
+    display: none;
+}
+
+#displaybox .tp-empty-section {
+    display: none !important;
+}
+
+/* Phones and touch screens have no hover, so the star is always there. */
+@media (hover: none) {
+    .Panel button.tp-fav-toggle {
+        opacity: 1;
+    }
+}
+
+/* ---- Drop-down lists: the themed list shown instead of the browser's own */
+select.tp-select-open {
+    border-color: var(--tp-primary, var(--brand-orange)) !important;
+    box-shadow: 0 0 0 3px var(--tp-primary-soft, transparent) !important;
+}
+
+.tp-select-panel {
+    position: fixed;
+    z-index: 100001;
+    box-sizing: border-box;
+    max-width: min(48rem, calc(100vw - 1.6rem));
+    padding: 0.6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 14px;
+    color: var(--tp-text, var(--text-color));
+    font: 400 1.3rem/1.35 var(--tp-font-body, inherit);
+    background-color: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-lg, 0 24px 56px -22px rgba(0, 0, 0, 0.6)), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    scrollbar-width: thin;
+    animation: tp-select-down 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tp-select-panel.tp-upwards {
+    animation-name: tp-select-up;
+}
+
+.tp-select-option {
+    position: relative;
+    padding: 0.85rem 3.4rem 0.85rem 1.2rem;
+    border-radius: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tp-select-option.tp-active {
+    color: var(--tp-text, var(--text-color));
+    background-color: var(--tp-primary-soft, rgba(0, 0, 0, 0.06));
+}
+
+.tp-select-option.tp-selected {
+    color: var(--tp-primary, var(--link-text-color));
+    font-weight: 600;
+}
+
+.tp-select-option.tp-selected:after {
+    position: absolute;
+    top: 50%;
+    right: 1.2rem;
+    font: normal 1.2rem/1 FontAwesome;
+    transform: translateY(-50%);
+    content: "\f00c";
+}
+
+.tp-select-option.tp-disabled {
+    color: var(--tp-muted, var(--alt-text-color));
+    opacity: 0.55;
+    cursor: default;
+}
+
+.tp-select-group {
+    padding: 1rem 1.2rem 0.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.tp-select-group:not(:first-child) {
+    margin-top: 0.4rem;
+    border-top: 1px solid var(--tp-border, var(--border-color));
+}
+
+@keyframes tp-select-down {
+    from { opacity: 0; transform: translateY(-6px); }
+}
+
+@keyframes tp-select-up {
+    from { opacity: 0; transform: translateY(6px); }
+}
+
+/* ---- Dashboard: container dialog */
+#docker_view span.outer.apps {
+    cursor: pointer;
+}
+
+.tp-modal.tp-ct-modal {
+    width: min(52rem, 100%);
+    max-height: calc(100vh - 4rem);
+    padding: 2.4rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.tp-ct-head {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+}
+
+.tp-ct-icon {
+    position: relative;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 6.4rem;
+    height: 6.4rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 18px;
+    background-color: var(--tp-subtle, transparent);
+}
+
+.tp-ct-icon img,
+.tp-ct-icon img.img {
+    width: 4.4rem !important;
+    height: 4.4rem !important;
+    margin: 0 !important;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+.tp-ct-icon i {
+    margin: 0 !important;
+    font-size: 3.6rem !important;
+}
+
+.tp-ct-icon:after {
+    position: absolute;
+    right: -0.4rem;
+    bottom: -0.4rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 3px solid var(--tp-elevated, var(--background-color));
+    border-radius: 999px;
+    background-color: var(--tp-muted, #8b93a5);
+    content: "";
+}
+
+.tp-ct-running .tp-ct-icon:after { background-color: #22c55e; }
+.tp-ct-paused .tp-ct-icon:after { background-color: #f59e0b; }
+
+.tp-ct-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tp-ct-text .tp-modal-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-ct-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.7rem;
+}
+
+.tp-ct-status,
+.tp-ct-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 1rem;
+    border-radius: 999px;
+    font: 600 1.1rem/1.6 var(--tp-font-heading, inherit);
+    color: var(--tp-neutral-text, var(--alt-text-color));
+    background-color: var(--tp-neutral-bg, rgba(0, 0, 0, 0.06));
+}
+
+.tp-ct-status:before {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 999px;
+    background-color: currentColor;
+    content: "";
+}
+
+.tp-ct-running .tp-ct-status {
+    color: var(--tp-success-text, #15803d);
+    background-color: var(--tp-success-bg, #dcfce7);
+}
+
+.tp-ct-paused .tp-ct-status,
+.tp-ct-tag.tp-ct-update {
+    color: var(--tp-warn-text, #b45309);
+    background-color: var(--tp-warn-bg, #fef3c7);
+}
+
+.tp-ct-modal button.tp-ct-close {
+    display: grid;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    place-items: center;
+    width: 3.6rem;
+    min-width: 0;
+    height: 3.6rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.5rem;
+    background: transparent;
+    box-shadow: none;
+    transition: color 0.25s, border-color 0.25s, transform 0.25s;
+}
+
+.tp-ct-modal button.tp-ct-close:hover,
+.tp-ct-modal button.tp-ct-close:focus-visible {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+    transform: rotate(90deg);
+}
+
+.tp-ct-primary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 2.2rem;
+}
+
+.tp-ct-primary > .tp-ct-action {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 10rem;
+}
+
+.tp-ct-primary > .tp-ct-action.tp-ct-main {
+    flex-grow: 1.6;
+}
+
+.tp-ct-section {
+    margin: 2.2rem 0 0.9rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.115em;
+    text-transform: uppercase;
+}
+
+.tp-ct-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.8rem;
+}
+
+.tp-ct-modal .tp-ct-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    box-sizing: border-box;
+    min-height: 4.4rem;
+    margin: 0;
+    padding: 0.9rem 1.4rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 12px;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.3rem/1.2 var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-align: left;
+    text-decoration: none;
+    text-transform: none;
+    background: var(--tp-subtle, transparent);
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.25s, border-color 0.25s, color 0.25s, background-color 0.25s, box-shadow 0.25s;
+}
+
+.tp-ct-modal .tp-ct-action > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-ct-modal .tp-ct-action:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.tp-ct-modal .tp-ct-action .fa {
+    width: 1.6rem;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+.tp-ct-modal .tp-ct-action:hover,
+.tp-ct-modal .tp-ct-action:focus-visible {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-text, var(--text-color));
+    background-color: var(--tp-primary-soft, transparent);
+    transform: translateY(-1px);
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-main,
+.tp-ct-modal .tp-ct-action.tp-ct-main:hover,
+.tp-ct-modal .tp-ct-action.tp-ct-main:focus-visible {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 12px 24px -14px var(--tp-primary, transparent);
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-main .fa {
+    color: inherit;
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-danger-soft:not(.tp-ct-main) .fa,
+.tp-ct-modal .tp-ct-action.tp-ct-danger .fa {
+    color: var(--tp-danger, #dc2626);
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-danger:hover,
+.tp-ct-modal .tp-ct-action.tp-ct-danger:focus-visible,
+.tp-ct-modal .tp-ct-action.tp-ct-danger-soft:not(.tp-ct-main):hover,
+.tp-ct-modal .tp-ct-action.tp-ct-danger-soft:not(.tp-ct-main):focus-visible {
+    border-color: var(--tp-danger, #dc2626);
+    background-color: var(--tp-danger-soft, transparent);
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-accent .fa {
+    color: var(--tp-warn-text, #b45309);
+}
+
+.tp-ct-modal .tp-ct-link:after {
+    margin-left: auto;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: normal 1.1rem/1 FontAwesome;
+    content: "\f08e";
+}
+
+.tp-ct-modal .tp-ct-main.tp-ct-link:after {
+    margin-left: 0;
+    color: inherit;
+}
+
+/* ---- VMs: expand button and the details area under an open VM */
+#kvm_list td.vm-name {
+    white-space: nowrap;
+}
+
+#kvm_list button.tp-vm-expand {
+    display: inline-grid;
+    place-items: center;
+    width: 2.8rem;
+    min-width: 0;
+    height: 2.8rem;
+    min-height: 0;
+    margin: 0 1rem 0 0;
+    padding: 0;
+    vertical-align: middle;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    background: var(--tp-elevated, transparent);
+    box-shadow: none;
+    transition: border-color 0.3s, color 0.3s, background-color 0.3s;
+}
+
+#kvm_list button.tp-vm-expand .fa {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#kvm_list button.tp-vm-expand:hover,
+#kvm_list button.tp-vm-expand:focus-visible {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+}
+
+#kvm_list button.tp-vm-expand.tp-open {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+}
+
+#kvm_list button.tp-vm-expand.tp-open .fa {
+    transform: rotate(90deg);
+}
+
+/* The open VM and its details read as one block, marked by an accent edge. */
+#kvm_list > tr.tp-vm-open > td {
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+#kvm_list > tr.tp-vm-open > td:first-child {
+    box-shadow: inset 3px 0 0 var(--tp-primary, var(--brand-orange));
+}
+
+/* The details are one cell holding inner tables, which would cover a shadow; the edge is
+   painted as the cell's background and the tables start 3px further in. */
+#kvm_list > tr.tp-vm-details > td:first-child {
+    padding-left: 3px !important;
+    background: linear-gradient(var(--tp-primary, var(--brand-orange)), var(--tp-primary, var(--brand-orange))) left top / 3px 100% no-repeat, var(--tp-subtle, transparent);
+}
+
+#kvm_list > tr.tp-vm-details > td {
+    background-color: var(--tp-subtle, transparent);
+}
+
+#kvm_list > tr.tp-vm-details table.snapshot thead td,
+#kvm_list > tr.tp-vm-details table.snapshot tr:first-child td {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.05rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* ---- Main, Array Operation: one grid of cards
+   The forms and tables stay in place but take no room (display: contents), so their rows
+   become the grid's cards. Array spans the full width as the status card. */
+.tp-ops {
+    /* Wrapping rows that always fill the full width: no gaps at the end of a row, whatever
+       the window width and however many cards there are. */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+    margin: 1.6rem 0 2.4rem;
+}
+
+.tp-ops > form,
+.tp-ops table.ArrayOperation-Table,
+.tp-ops table.ArrayOperation-Table > tbody {
+    display: contents;
+}
+
+.tp-ops > p,
+.tp-ops > form > p,
+.tp-ops tr.hidden,
+.tp-ops tr[hidden],
+.tp-ops td.tp-op-stats[hidden],
+.tp-ops .tp-stat[hidden],
+.tp-ops .tp-progress[hidden],
+.tp-ops tr.tp-op-skip,
+.tp-ops td.tp-op-blank {
+    display: none !important;
+}
+
+.tp-ops tr.tp-op {
+    display: flex;
+    flex: 1 1 26rem;
+    flex-direction: column;
+    gap: 1.2rem;
+    min-width: 0;
+    padding: 2rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 16px;
+    background-color: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+    transition: border-color 0.3s, transform 0.3s;
+}
+
+.tp-ops tr.tp-op:hover {
+    border-color: var(--tp-input-border, var(--border-color));
+}
+
+.tp-ops tr.tp-op > td {
+    display: block;
+    width: auto !important;
+    height: auto;
+    padding: 0 !important;
+    border: 0;
+    color: var(--tp-text, var(--text-color));
+    text-align: left;
+    white-space: normal;
+    background: none;
+}
+
+/* Card order: status first, then parity, last check, disks, statistics, mover, power. */
+.tp-ops tr.tp-op-array { order: 0; }
+.tp-ops tr.tp-op-running { order: 1; flex-basis: 100%; }
+.tp-ops tr.tp-op-other { order: 1; }
+.tp-ops tr.tp-op-parity { order: 2; }
+.tp-ops tr.tp-op-history { order: 3; }
+.tp-ops tr.tp-op-disks { order: 4; }
+.tp-ops tr.tp-op-stats { order: 5; }
+.tp-ops tr.tp-op-mover { order: 6; }
+.tp-ops tr.tp-op-power { order: 7; }
+
+.tp-ops td.tp-op-head {
+    display: flex !important;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.tp-op-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.8rem;
+    height: 3.8rem;
+    border-radius: 12px;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.6rem;
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-op-title {
+    font: 600 1.55rem/1.2 var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tp-ops td.tp-op-state {
+    order: 1;
+    font-weight: 600;
+}
+
+.tp-ops td.tp-op-desc {
+    order: 2;
+    color: var(--tp-muted, var(--alt-text-color)) !important;
+    font-size: 1.3rem;
+    line-height: 1.75;
+}
+
+.tp-ops td.tp-op-desc :is(strong, b) {
+    color: var(--tp-text, var(--text-color));
+}
+
+.tp-ops td.tp-op-desc i.fa {
+    width: 1.6rem;
+    margin-right: 0.4rem;
+    color: var(--tp-primary, var(--brand-orange));
+}
+
+.tp-ops td.tp-op-desc label,
+.tp-ops td.tp-op-desc small {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.25rem;
+}
+
+.tp-ops td.tp-op-desc input[type="checkbox"] {
+    margin: 0 0.8rem 0 0;
+    vertical-align: middle;
+}
+
+.tp-ops td.tp-op-desc label input[type="checkbox"] {
+    margin: 0;
+}
+
+.tp-ops td.tp-op-actions {
+    order: 3;
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: auto;
+    padding-top: 0.4rem !important;
+}
+
+.tp-ops td.tp-op-actions .buttons-spaced {
+    display: contents;
+}
+
+.tp-ops td.tp-op-actions :is(input[type="button"], input[type="submit"], button) {
+    flex: 1 1 0;
+    min-width: 10rem;
+    margin: 0 !important;
+    padding: 1rem 1.8rem;
+    font-size: 1.3rem;
+}
+
+.tp-ops :is(input, button).tp-op-primary:not(:disabled) {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 10px 22px -14px var(--tp-primary, transparent);
+}
+
+.tp-ops :is(input, button).tp-op-danger:not(:disabled) {
+    border-color: color-mix(in srgb, var(--tp-danger, #ef4444) 40%, transparent);
+    color: var(--tp-danger, #ef4444);
+    background: var(--tp-danger-soft, transparent);
+}
+
+.tp-ops :is(input, button).tp-op-danger:not(:disabled):hover {
+    border-color: var(--tp-danger, #ef4444);
+    color: #ffffff;
+    background: var(--tp-danger, #ef4444);
+}
+
+/* Array: the status card across the full width; status, text and the button in one row. */
+.tp-ops tr.tp-op-array {
+    flex-basis: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem 2.4rem;
+    background:
+        radial-gradient(120% 140% at 0% 0%, var(--tp-primary-soft, transparent), transparent 55%),
+        var(--tp-elevated, var(--background-color));
+}
+
+.tp-ops tr.tp-op-array td.tp-op-state {
+    order: 1;
+    display: inline-flex !important;
+    align-items: center;
+    padding: 0.6rem 1.4rem 0.6rem 1.1rem !important;
+    border-radius: 999px;
+    font: 600 1.5rem var(--tp-font-heading, inherit);
+    background-color: var(--tp-subtle, transparent);
+}
+
+.tp-ops tr.tp-op-array td.tp-op-state i.orb {
+    margin-right: 0.8rem;
+    font-size: 1rem;
+}
+
+.tp-ops tr.tp-op-array td.tp-op-state i.green-orb {
+    color: #22c55e;
+    filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.8));
+}
+
+.tp-ops tr.tp-op-array td.tp-op-desc {
+    flex: 1 1 24rem;
+}
+
+.tp-ops tr.tp-op-array td.tp-op-actions {
+    order: 3;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0 !important;
+}
+
+.tp-ops tr.tp-op-array td.tp-op-actions :is(input, button) {
+    min-width: 14rem;
+}
+
+/* Parity: the state as a pill, green when valid. */
+.tp-ops td.tp-op-state.tp-op-good,
+.tp-ops td.tp-op-state.tp-op-warn {
+    align-self: flex-start;
+    padding: 0.4rem 1.2rem !important;
+    border-radius: 999px;
+    font-size: 1.25rem;
+}
+
+.tp-ops td.tp-op-state.tp-op-good {
+    color: var(--tp-success-text, #15803d);
+    background-color: var(--tp-success-bg, #dcfce7);
+}
+
+.tp-ops td.tp-op-state.tp-op-warn {
+    color: var(--tp-warn-text, #b45309);
+    background-color: var(--tp-warn-bg, #fef3c7);
+}
+
+.tp-ops td.tp-op-state.tp-op-good:before,
+.tp-ops td.tp-op-state.tp-op-warn:before {
+    margin-right: 0.6rem;
+    font: normal 1.2rem/1 FontAwesome;
+    content: "\f058";
+}
+
+.tp-ops td.tp-op-state.tp-op-warn:before {
+    content: "\f071";
+}
+
+/* Running operation: state pill, progress bar and the figures as tiles. */
+.tp-ops tr.tp-op-running td.tp-op-state {
+    align-self: flex-start;
+    padding: 0.4rem 1.2rem !important;
+    border-radius: 999px;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.25rem;
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-ops tr.tp-op-running td.tp-op-state:before {
+    display: inline-block;
+    margin-right: 0.6rem;
+    font: normal 1.2rem/1 FontAwesome;
+    content: "\f110";
+    animation: fa-spin 2s linear infinite;
+}
+
+.tp-op-running .tp-op-icon {
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, var(--brand-orange));
+}
+
+.tp-ops td.tp-op-stats {
+    order: 3;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem 1.4rem;
+}
+
+/* Mover: full width while it runs, the status tiles above its button. */
+.tp-ops tr.tp-op-mover.tp-op-busy {
+    flex-basis: 100%;
+}
+
+.tp-ops tr.tp-op-mover td.tp-op-actions {
+    order: 4;
+}
+
+.tp-ops .tp-stat.tp-stat-wide {
+    grid-column: 1 / -1;
+}
+
+.tp-ops .tp-stat > td {
+    display: block;
+    padding: 0 !important;
+    border: 0;
+    text-align: left;
+    background: none;
+}
+
+.tp-ops .tp-stat > td.tp-stat-label span {
+    font: inherit;
+}
+
+.tp-ops tr.tp-op-running td.tp-op-actions {
+    order: 4;
+    flex: 0 0 auto;
+    max-width: 32rem;
+}
+
+.tp-progress {
+    grid-column: 1;
+    grid-row: 1;
+    height: 1rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--tp-border, var(--border-color));
+}
+
+.tp-progress > span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--tp-gradient, var(--brand-orange));
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tp-progress-label {
+    grid-column: 2;
+    grid-row: 1;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.5rem var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-stats {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.8rem;
+}
+
+.tp-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1.2rem 1.4rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 12px;
+    background-color: var(--tp-subtle, transparent);
+}
+
+.tp-stat-label {
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.05rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.tp-ops td.tp-stat-value {
+    display: block;
+    padding: 0 !important;
+    border: 0;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.45rem/1.3 var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    background: none;
+}
+
+.tp-op-power .tp-op-icon {
+    color: var(--tp-danger, #ef4444);
+    background-color: var(--tp-danger-soft, transparent);
+}
+
+@media (max-width: 767px) {
+    .tp-ops {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tp-ops tr.tp-op-array td.tp-op-actions {
+        flex: 1 1 100%;
+    }
+}
+
+/* ---- VMs: snapshot buttons in the details */
+#kvm_list button.tp-snap-create {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 0;
+    margin: 0 0 0 1.4rem;
+    padding: 0.45rem 1.2rem;
+    border: 0;
+    border-radius: 999px;
+    color: var(--tp-primary-text, #ffffff);
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+    background: var(--tp-gradient, var(--brand-orange));
+    box-shadow: 0 8px 18px -12px var(--tp-primary, transparent);
+}
+
+#kvm_list button.tp-snap-create:hover {
+    transform: translateY(-1px);
+}
+
+#kvm_list .tp-snap-actions {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-left: 1.2rem;
+    vertical-align: middle;
+}
+
+#kvm_list button.tp-snap-button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.6rem;
+    min-width: 0;
+    height: 2.6rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.1rem;
+    background: var(--tp-elevated, transparent);
+    box-shadow: none;
+    transition: border-color 0.25s, color 0.25s, background-color 0.25s;
+}
+
+#kvm_list button.tp-snap-button:hover,
+#kvm_list button.tp-snap-button:focus-visible {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+}
+
+#kvm_list button.tp-snap-button.tp-snap-danger:hover,
+#kvm_list button.tp-snap-button.tp-snap-danger:focus-visible {
+    border-color: var(--tp-danger, #ef4444);
+    color: #ffffff;
+    background-color: var(--tp-danger, #ef4444);
+}
+
+#kvm_list td.tp-snap-empty {
+    padding: 1.2rem 1.6rem 1.2rem 5.6rem !important;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.25rem;
+}
+
+/* ---- Docker editor: live port check, a tick or cross inside the right edge of the field */
+.tp-port-field {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+}
+
+.tp-port-field > input {
+    padding-right: 4rem !important;
+}
+
+.tp-port-mark {
+    position: absolute;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    font: normal 1.2rem/1 FontAwesome;
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, color 0.2s;
+}
+
+.tp-port-ok > .tp-port-mark,
+.tp-port-bad > .tp-port-mark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.tp-port-ok > .tp-port-mark {
+    color: #ffffff;
+    background-color: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+}
+
+.tp-port-ok > .tp-port-mark:before {
+    content: "\f00c";
+}
+
+.tp-port-bad > .tp-port-mark {
+    color: #ffffff;
+    background-color: var(--tp-danger, #ef4444);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tp-danger, #ef4444) 22%, transparent);
+}
+
+.tp-port-bad > .tp-port-mark:before {
+    content: "\f00d";
+}
+
+.tp-port-ok > input {
+    border-color: rgba(34, 197, 94, 0.55) !important;
+}
+
+.tp-port-bad > input {
+    border-color: var(--tp-danger, #ef4444) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-danger, #ef4444) 16%, transparent) !important;
+}
+
+.tp-port-message {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--tp-danger, #ef4444);
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.tp-port-message:before {
+    font: normal 1.2rem/1 FontAwesome;
+    content: "\f071";
+}
+
+.tp-port-message[hidden] {
+    display: none;
+}
+
+/* ---- Docker editor: "Show docker allocations" view */
+#dockerAllocations > dl[hidden] {
+    display: none !important;
+}
+
+.tp-alloc {
+    margin: 1.2rem 0 2rem;
+    overflow: hidden;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 16px;
+    background-color: var(--tp-elevated, var(--background-color));
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+.tp-alloc-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding: 1.4rem 1.6rem;
+    border-bottom: 1px solid var(--tp-border, var(--border-color));
+}
+
+#dockerAllocations .tp-alloc-head input.tp-alloc-search {
+    flex: 0 1 36rem;
+    min-height: 3.8rem;
+    margin: 0;
+    padding: 0.8rem 1.4rem 0.8rem 3.8rem;
+    border-radius: 999px;
+    background: var(--tp-subtle, transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") 1.3rem center / 1.5rem no-repeat;
+}
+
+.tp-alloc-count {
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-alloc-row {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1.1fr) 11rem 13rem minmax(0, 3fr);
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1rem 1.6rem;
+    border-bottom: 1px solid var(--tp-border, var(--border-color));
+}
+
+.tp-alloc-list {
+    max-height: 48rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.tp-alloc-list > .tp-alloc-row:last-child {
+    border-bottom: 0;
+}
+
+.tp-alloc-list > .tp-alloc-row:hover {
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-alloc-row.tp-alloc-columns {
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.05rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    background-color: var(--tp-subtle, transparent);
+}
+
+.tp-alloc-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.3rem var(--tp-font-heading, inherit);
+    overflow-wrap: anywhere;
+}
+
+.tp-alloc-badge {
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    color: var(--tp-primary-text, #ffffff);
+    font-size: 1rem;
+    background: var(--tp-gradient, var(--brand-orange));
+}
+
+.tp-alloc-row.tp-alloc-self {
+    background-color: var(--tp-primary-soft, transparent);
+    box-shadow: inset 3px 0 0 var(--tp-primary, var(--brand-orange));
+}
+
+.tp-alloc-pill {
+    display: inline-block;
+    padding: 0.25rem 1rem;
+    border-radius: 999px;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.tp-alloc-pill.tp-net-bridge {
+    color: var(--tp-primary, #4f8bff);
+    background-color: var(--tp-primary-soft, transparent);
+}
+
+.tp-alloc-pill.tp-net-host {
+    color: #a78bfa;
+    background-color: rgba(167, 139, 250, 0.14);
+}
+
+.tp-alloc-pill.tp-net-custom {
+    color: #2dd4bf;
+    background-color: rgba(45, 212, 191, 0.14);
+}
+
+.tp-alloc-ip {
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-alloc-ports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tp-alloc-port {
+    padding: 0.2rem 0.8rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 7px;
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+    background-color: var(--tp-subtle, transparent);
+}
+
+.tp-alloc-port.tp-alloc-range {
+    border-style: dashed;
+}
+
+.tp-alloc-port.tp-alloc-clash {
+    border-color: var(--tp-danger, #ef4444);
+    color: var(--tp-danger, #ef4444);
+    background-color: var(--tp-danger-soft, transparent);
+}
+
+.tp-alloc-none,
+.tp-alloc-empty {
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+}
+
+.tp-alloc-empty {
+    margin: 0;
+    padding: 2rem 1.6rem;
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    .tp-alloc-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.6rem 1rem;
+    }
+
+    .tp-alloc-row.tp-alloc-columns {
+        display: none;
+    }
+
+    .tp-alloc-ip {
+        grid-column: 1;
+    }
+
+    .tp-alloc-ports {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Phones: each container becomes a small card
+   row 1: icon and name; row 2: status, CPU, memory, web UI; row 3: autostart and actions.
+   Version and ports are left out here; "All columns" still shows Unraid's full table. */
+@media (max-width: 767px) {
+    .TableContainer:has(> #docker_containers.tp-compact) {
+        overflow-x: visible;
+    }
+
+    #docker_containers.tp-compact {
+        min-width: 0 !important;
+    }
+
+    #docker_containers.tp-compact > thead {
+        display: none;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable {
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
+        row-gap: 1rem;
+        column-gap: 1.2rem;
+        padding: 1.4rem 1.4rem 1.2rem;
+    }
+
+    #docker_containers.tp-compact .tp-c-name { grid-row: 1; grid-column: 1 / -1; }
+    #docker_containers.tp-compact .tp-c-status { grid-row: 2; grid-column: 1; }
+    #docker_containers.tp-compact td.tp-c-load > [class^="cpu-"] { grid-row: 2; grid-column: 2; }
+    #docker_containers.tp-compact td.tp-c-load > [class^="mem-"] { grid-row: 2; grid-column: 3; }
+    #docker_containers.tp-compact .tp-c-webui { grid-row: 2; grid-column: 4; }
+    #docker_containers.tp-compact .tp-c-auto { grid-row: 3; grid-column: 1 / 3; }
+    #docker_containers.tp-compact .tp-c-actions { grid-row: 3; grid-column: 3 / -1; }
+
+    #docker_containers.tp-compact .tp-c-version,
+    #docker_containers.tp-compact .tp-c-ports {
+        display: none !important;
+    }
+
+    #docker_containers.tp-compact td.tp-c-load > [class^="mem-"] {
+        overflow: hidden;
+        max-width: 14rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #docker_list > tr.tp-group > td {
+        padding: 0.7rem 1.4rem;
+    }
+
+    .tp-group-head .tp-actions .tp-icon-button[title^="Rename"],
+    .tp-group-head .tp-actions .tp-icon-button[title^="Delete"] {
+        width: 2.8rem;
+    }
+
+    .tp-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tp-tools {
+        flex-wrap: wrap;
+    }
+
+    .tp-toolbar input.tp-search {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .tp-summary-value {
+        font-size: 2rem;
+    }
+
+    .tp-heading h1 {
+        font-size: 2.3rem;
+    }
+
+    .tp-heading:has(.tp-panel-search) {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 1.4rem;
+    }
+
+    .tp-heading .tp-panel-search {
+        flex-basis: auto;
+        max-width: none;
+    }
+
+    .tp-modal-backdrop:has(.tp-ct-modal) {
+        place-items: end center;
+        padding: 0;
+    }
+
+    .tp-modal.tp-ct-modal {
+        width: 100%;
+        max-height: 88vh;
+        border-radius: 22px 22px 0 0;
+        padding: 2rem 1.6rem calc(2rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .tp-ct-primary > .tp-ct-action {
+        min-width: calc(50% - 0.4rem);
+    }
+
+    .tp-ct-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+

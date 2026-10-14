@@ -1,0 +1,373 @@
+/* Aurora Theme: login page.
+   include/login-head.php writes this into Unraid's login page (files below /plugins are not
+   served before login), with the two font placeholders below replaced by the fonts as data URLs.
+   Unraid's own login styles come first in the page; these override them. Sizes are in px:
+   the login page keeps the browser's 16px rem, unlike the rest of the web interface. */
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("@@INTER@@") format("woff2");
+}
+
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("@@GROTESK@@") format("woff2");
+}
+
+:root {
+    --tp-bg: #07090e;
+    --tp-card: rgba(18, 21, 29, 0.78);
+    --tp-field: rgba(255, 255, 255, 0.04);
+    --tp-text: #e7eaf0;
+    --tp-muted: #8b93a5;
+    --tp-border: rgba(255, 255, 255, 0.09);
+    --tp-input-border: rgba(255, 255, 255, 0.14);
+    --tp-primary: #4f8bff;
+    --tp-primary-ii: #22d3ee;
+    --tp-primary-soft: rgba(79, 139, 255, 0.18);
+    --tp-gradient: linear-gradient(135deg, var(--tp-primary), var(--tp-primary-ii));
+    --tp-danger: #f87171;
+    --tp-danger-soft: rgba(248, 113, 113, 0.12);
+    --tp-success: #86efac;
+    --tp-success-soft: rgba(34, 197, 94, 0.13);
+    --tp-aurora-a: rgba(79, 139, 255, 0.35);
+    --tp-aurora-b: rgba(34, 211, 238, 0.22);
+    --tp-aurora-c: rgba(167, 139, 250, 0.22);
+    --tp-user-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.6-7 8-7s8 3 8 7'/%3E%3C/svg%3E");
+    --tp-lock-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E");
+    color-scheme: dark;
+}
+
+:root.Theme--white,
+:root.Theme--azure {
+    --tp-bg: #eef2f8;
+    --tp-card: rgba(255, 255, 255, 0.82);
+    --tp-field: #ffffff;
+    --tp-text: #0f172a;
+    --tp-muted: #64748b;
+    --tp-border: rgba(15, 23, 42, 0.08);
+    --tp-input-border: rgba(15, 23, 42, 0.14);
+    --tp-primary: #2563eb;
+    --tp-primary-ii: #06b6d4;
+    --tp-primary-soft: rgba(37, 99, 235, 0.12);
+    --tp-danger: #dc2626;
+    --tp-danger-soft: rgba(220, 38, 38, 0.08);
+    --tp-success: #15803d;
+    --tp-success-soft: rgba(34, 197, 94, 0.12);
+    --tp-aurora-a: rgba(37, 99, 235, 0.22);
+    --tp-aurora-b: rgba(6, 182, 212, 0.18);
+    --tp-aurora-c: rgba(139, 92, 246, 0.14);
+    --tp-user-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.6-7 8-7s8 3 8 7'/%3E%3C/svg%3E");
+    --tp-lock-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E");
+    color-scheme: light;
+}
+
+/* ---- Page: an aurora glow behind a centred glass card */
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px 16px 50px;
+    box-sizing: border-box;
+    color: var(--tp-text);
+    font: 400 15px/1.5 "Inter", system-ui, sans-serif;
+    background:
+        radial-gradient(60vmax 45vmax at 12% 8%, var(--tp-aurora-a), transparent 60%),
+        radial-gradient(55vmax 40vmax at 88% 18%, var(--tp-aurora-c), transparent 62%),
+        radial-gradient(70vmax 50vmax at 60% 110%, var(--tp-aurora-b), transparent 60%),
+        var(--tp-bg);
+    background-attachment: fixed;
+}
+
+/* Theme credit, quietly at the bottom. */
+body::after {
+    position: fixed;
+    right: 0;
+    bottom: 16px;
+    left: 0;
+    color: var(--tp-muted);
+    font: 500 12px "Inter", system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    text-align: center;
+    opacity: 0.7;
+    content: "Aurora Theme";
+    pointer-events: none;
+}
+
+#login {
+    position: relative;
+    width: min(420px, 100%);
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--tp-border);
+    border-radius: 24px;
+    background: var(--tp-card);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+    backdrop-filter: blur(22px) saturate(1.3);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    animation: tp-login-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* A thin gradient line along the top edge of the card. */
+#login::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: var(--tp-gradient);
+    content: "";
+}
+
+#login.shadow {
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.55);
+}
+
+/* ---- Logo: Unraid's wordmark, small, instead of the red angled banner */
+#login .logo {
+    height: auto;
+    overflow: visible;
+    border-radius: 0;
+}
+
+#login .angle::after {
+    display: none;
+}
+
+#login .wordmark {
+    display: flex;
+    justify-content: center;
+    padding: 32px 20px 0;
+}
+
+#login .wordmark svg {
+    width: 96px;
+    height: auto;
+    opacity: 0.85;
+}
+
+#login .wordmark svg path {
+    fill: var(--tp-text);
+}
+
+/* ---- Server: the case icon in a gradient tile above the name */
+#login .content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px 32px 28px;
+}
+
+#login .case {
+    order: -2;
+    display: grid;
+    float: none;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 44px;
+    line-height: 1;
+    background: var(--tp-gradient);
+    box-shadow: 0 16px 32px -16px var(--tp-primary);
+}
+
+#login .case:empty::before {
+    font: 600 30px/1 "Space Grotesk", "Inter", sans-serif;
+    content: "U";
+}
+
+#login .case img {
+    max-width: 48px;
+    max-height: 48px;
+    filter: brightness(0) invert(1);
+}
+
+#login h1 {
+    order: -1;
+    margin: 0;
+    font: 600 26px/1.2 "Space Grotesk", "Inter", sans-serif;
+    letter-spacing: -0.02em;
+    text-align: center;
+}
+
+#login h2 {
+    order: -1;
+    margin: 4px 0 24px;
+    color: var(--tp-muted);
+    font: 400 14px/1.4 "Inter", sans-serif;
+    text-align: center;
+}
+
+/* ---- Form */
+#login .form {
+    width: 100%;
+}
+
+#login .form form p {
+    margin: 0;
+}
+
+#login [type=text],
+#login [type=password],
+#login [type=email] {
+    display: block;
+    width: 100%;
+    height: 50px;
+    margin: 0 0 12px;
+    padding: 0 16px 0 46px;
+    box-sizing: border-box;
+    border: 1px solid var(--tp-input-border);
+    border-radius: 14px;
+    color: var(--tp-text);
+    font: 400 15px "Inter", sans-serif;
+    background: var(--tp-field) no-repeat 16px center / 18px 18px;
+    transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+}
+
+#login [type=text] {
+    background-image: var(--tp-user-icon);
+}
+
+#login [type=password] {
+    background-image: var(--tp-lock-icon);
+}
+
+#login [type=text]::placeholder,
+#login [type=password]::placeholder {
+    color: var(--tp-muted);
+    opacity: 1;
+}
+
+#login [type=text]:focus,
+#login [type=password]:focus,
+#login [type=email]:focus {
+    border-color: var(--tp-primary);
+    outline: none;
+    box-shadow: 0 0 0 4px var(--tp-primary-soft);
+}
+
+#login .button,
+#login .button--small,
+#login .form button {
+    display: block;
+    width: 100%;
+    height: 50px;
+    margin: 8px 0 0;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 14px;
+    color: #ffffff;
+    font: 600 15px "Space Grotesk", "Inter", sans-serif;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    background: var(--tp-gradient);
+    background-size: auto;
+    box-shadow: 0 14px 28px -16px var(--tp-primary);
+    cursor: pointer;
+    transition: box-shadow 0.3s, filter 0.3s;
+}
+
+#login .button:hover,
+#login .form button:hover {
+    color: #ffffff;
+    background: var(--tp-gradient);
+    filter: brightness(1.08);
+    box-shadow: 0 18px 32px -16px var(--tp-primary);
+}
+
+#login .button:focus-visible,
+#login .form button:focus-visible {
+    outline: 2px solid var(--tp-primary);
+    outline-offset: 3px;
+}
+
+/* Messages: real errors in red, "Successfully logged out" in green (marked by login-head.php). */
+#login .error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    color: var(--tp-danger);
+    font-size: 13.5px;
+    background-color: var(--tp-danger-soft);
+}
+
+#login .error:empty {
+    display: none;
+}
+
+#login .error.tp-ok {
+    color: var(--tp-success);
+    background-color: var(--tp-success-soft);
+}
+
+/* ---- Password recovery: a quiet link under the form */
+#login .content > a {
+    align-self: center;
+    margin-top: 20px;
+    color: var(--tp-muted);
+    font: 500 13px "Inter", sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
+    transition: color 0.25s;
+}
+
+#login .content > a:hover,
+#login .content > a:focus-visible {
+    color: var(--tp-primary);
+}
+
+@keyframes tp-login-rise {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #login {
+        animation: none;
+    }
+}
+
+/* ---- Phones: the card fills the screen width */
+@media (max-width: 500px) {
+    body {
+        padding: 12px 12px 50px;
+        background:
+            radial-gradient(90vmax 60vmax at 0% 0%, var(--tp-aurora-a), transparent 60%),
+            radial-gradient(90vmax 60vmax at 100% 100%, var(--tp-aurora-b), transparent 60%),
+            var(--tp-bg);
+    }
+
+    #login {
+        width: 100%;
+        border-radius: 22px;
+    }
+
+    #login .content {
+        padding: 20px 20px 24px;
+    }
+
+    #login [type=text],
+    #login [type=password] {
+        font-size: 16px;
+    }
+}

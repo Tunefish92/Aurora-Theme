@@ -1,0 +1,3017 @@
+/*
+ * Fonts, bundled with the plugin (no external requests): Inter for text, Space Grotesk for
+ * headings, both under the SIL Open Font License (see fonts/*-LICENSE.txt).
+ * Unraid's own families, clear-sans and bitstream, are declared again here with Inter's files,
+ * so every element that asks for them by name renders in Inter as well. Icon fonts are untouched.
+ */
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: "Inter";
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/space-grotesk-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/space-grotesk-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: clear-sans;
+    font-style: italic;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: bitstream;
+    font-style: italic;
+    font-weight: bold;
+    font-display: swap;
+    src: url("/plugins/Aurora-Theme/fonts/inter-latin-wght-italic.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * Tapeory look for the Unraid webGUI (written against 7.3.2).
+ * Works on top of the built-in Black (dark) and White (light) themes: it overrides the
+ * colour variables those themes set, then restyles fonts, navigation, title bars, tables,
+ * buttons and inputs. Other themes are left untouched.
+ */
+
+/* ==========================================================================
+   Tokens — Tapeory palette
+   ========================================================================== */
+:root.Theme--white {
+    --tp-bg: #f5f6f8;
+    --tp-elevated: #ffffff;
+    --tp-subtle: #eef0f4;
+    --tp-text: #14181f;
+    --tp-muted: #62697a;
+    --tp-border: #e4e7ec;
+    --tp-input-border: #d7dbe3;
+    --tp-primary: #2563eb;
+    --tp-primary-ii: #06b6d4;
+    --tp-primary-soft: rgba(37, 99, 235, 0.1);
+    --tp-tab-active: #ffffff;
+    --tp-primary-text: #ffffff;
+    --tp-header-bg: #12161f;
+    --tp-header-text: #ffffff;
+    --tp-header-muted: #a7b0c0;
+    --tp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --tp-shadow-lg: 0 24px 56px -22px rgba(15, 23, 42, 0.3);
+
+    /* The same palette as "H S% L%" triplets, the form Unraid's newer components expect. */
+    --tp-success-bg: #dcfce7;
+    --tp-success-text: #166534;
+    --tp-danger: #dc2626;
+    --tp-danger-soft: rgba(220, 38, 38, 0.08);
+    --tp-warn-bg: #fef3c7;
+    --tp-warn-text: #b45309;
+    --tp-neutral-bg: #e5e7eb;
+    --tp-neutral-text: #374151;
+
+    --tp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2362697a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+
+    --tp-hsl-surface: 0 0% 100%;
+    --tp-hsl-text: 218 22% 10%;
+    --tp-hsl-subtle: 220 21% 95%;
+    --tp-hsl-muted: 223 11% 43%;
+    --tp-hsl-border: 218 17% 91%;
+    --tp-hsl-input: 220 18% 87%;
+    --tp-hsl-primary: 221 83% 53%;
+    --tp-hsl-primary-text: 0 0% 100%;
+}
+
+:root.Theme--black {
+    --tp-bg: #0a0c11;
+    --tp-elevated: #12151d;
+    --tp-subtle: #161a23;
+    --tp-text: #e7eaf0;
+    --tp-muted: #8b93a5;
+    --tp-border: #232833;
+    --tp-input-border: #2c323f;
+    --tp-primary: #4f8bff;
+    --tp-primary-ii: #22d3ee;
+    --tp-primary-soft: rgba(79, 139, 255, 0.16);
+    --tp-tab-active: #232a39;
+    --tp-primary-text: #06101f;
+    --tp-header-bg: #05070a;
+    --tp-header-text: #f3f4f6;
+    --tp-header-muted: #93a0b8;
+    --tp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --tp-shadow-lg: 0 32px 70px -26px rgba(0, 0, 0, 0.72);
+
+    --tp-success-bg: #12301f;
+    --tp-success-text: #86efac;
+    --tp-danger: #f87171;
+    --tp-danger-soft: rgba(248, 113, 113, 0.12);
+    --tp-warn-bg: #3a2a0c;
+    --tp-warn-text: #fbbf24;
+    --tp-neutral-bg: #232833;
+    --tp-neutral-text: #c3c9d6;
+
+    --tp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+
+    --tp-hsl-surface: 224 23% 9%;
+    --tp-hsl-text: 220 23% 92%;
+    --tp-hsl-subtle: 222 23% 11%;
+    --tp-hsl-muted: 222 13% 60%;
+    --tp-hsl-border: 221 19% 17%;
+    --tp-hsl-input: 221 18% 21%;
+    --tp-hsl-primary: 220 100% 65%;
+    --tp-hsl-primary-text: 216 68% 7%;
+}
+
+:root:is(.Theme--black, .Theme--white) {
+    --tp-font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --tp-font-heading: "Space Grotesk", var(--tp-font-body);
+    --tp-gradient: linear-gradient(135deg, var(--tp-primary), var(--tp-primary-ii));
+    --tp-r-sm: 8px;
+    --tp-r-md: 12px;
+    --tp-r-full: 999px;
+    --tp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* ---- Unraid's own variables (see black.css / white.css), pointed at the tokens above */
+    --font-sans: var(--tp-font-body);
+    --default-font-family: var(--tp-font-body);
+
+    --text-color: var(--tp-text);
+    --alt-text-color: var(--tp-muted);
+    --disabled-text-color: var(--tp-muted);
+    --inverse-text-color: var(--tp-bg);
+    --link-text-color: var(--tp-primary);
+
+    --background-color: var(--tp-bg);
+    --opac-background-color: color-mix(in srgb, var(--tp-bg) 95%, transparent);
+    --mild-background-color: var(--tp-subtle);
+    --usage-bar-background-color: var(--tp-border);
+    --usage-bar-used-background-color: var(--tp-muted);
+    --usage-disk-background-color: var(--tp-border);
+    --inverse-background-color: var(--tp-text);
+    --radio-background-color: var(--tp-border);
+    --dashboard-background-color: var(--tp-elevated);
+    --dashboard-icon-color: var(--tp-subtle);
+
+    --border-color: var(--tp-border);
+    --disabled-border-color: var(--tp-border);
+    --input-border-color: var(--tp-input-border);
+    --disabled-input-border-color: var(--tp-border);
+    --textarea-border-color: var(--tp-input-border);
+    --table-border-color: var(--tp-border);
+    --table-alt-border-color: var(--tp-border);
+    --table-background-color: var(--tp-elevated);
+    --table-header-background-color: var(--tp-subtle);
+    --hover-table-row-background-color: var(--tp-primary-soft);
+
+    --footer-text: var(--tp-muted);
+    --footer-background-color: var(--tp-bg);
+
+    --small-shadow: var(--tp-shadow-sm);
+    --hr-color: var(--tp-border);
+
+    --checkbox-color: var(--tp-input-border);
+    --checkbox-hover-color: var(--tp-muted);
+
+    --brand-orange: var(--tp-primary);
+    --brand-red: var(--tp-primary);
+
+    --header-text-color: var(--tp-header-muted);
+    --header-background-color: var(--tp-header-bg);
+    --header-text-primary: var(--tp-header-text);
+    --header-text-secondary: var(--tp-header-muted);
+
+    --title-header-background-color: transparent;
+
+    --scrollbar-color: var(--tp-input-border);
+    --scrollbar-hover-color: var(--tp-muted);
+
+    --button-text-color: var(--tp-text);
+    --button-border: 1px solid var(--tp-input-border);
+    --button-background: var(--tp-elevated);
+    --button-background-size: auto;
+    --hover-button-text-color: var(--tp-primary);
+    --hover-button-background: var(--tp-elevated);
+
+    --input-bg-color: var(--tp-elevated);
+    --focus-input-bg-color: var(--tp-elevated);
+    --shade-bg-color: var(--tp-subtle);
+
+    --dynamix-tablesorter-thead-th-text-color: var(--tp-muted);
+    --dynamix-tablesorter-thead-th-bg-color: var(--tp-subtle);
+    --dynamix-tablesorter-thead-row-border-color: var(--tp-border);
+    --dynamix-tablesorter-tbody-row-bg-color: var(--tp-elevated);
+    --dynamix-tablesorter-tbody-row-alt-bg-color: var(--tp-elevated);
+    --dynamix-tablesorter-tbody-row-border-color: var(--tp-border);
+    --dynamix-jquery-ui-button-text-color: var(--tp-primary);
+    --dynamix-jquery-ui-button-background-start: var(--tp-primary);
+    --dynamix-jquery-ui-button-background-end: var(--tp-primary-ii);
+    --dynamix-jquery-ui-button-hover-color: var(--tp-primary-text);
+    --dynamix-jquery-ui-border-color: var(--tp-border);
+    --dynamix-jquery-ui-header-background: transparent;
+    --dynamix-jquery-ui-header-color: var(--tp-text);
+    --dynamix-jquery-ui-content-background: var(--tp-elevated);
+    --dynamix-jquery-ui-content-color: var(--tp-text);
+    --dynamix-jquery-ui-active-background: var(--tp-primary-soft);
+    --dynamix-jquery-ui-dropcontainer-background: var(--tp-elevated);
+    --dynamix-jquery-ui-disabled-color: var(--tp-muted);
+    --dynamix-jquery-ui-disabled-border-color: var(--tp-border);
+    --dynamix-jquery-ui-disabled-background: var(--tp-subtle);
+    --dynamix-jquery-ui-text-color: var(--tp-text);
+    --dynamix-select-box-shadow: 0 0 0 3px var(--tp-primary-soft);
+    --dynamix-tooltipster-sidetip-bg-from: var(--tp-elevated);
+    --dynamix-tooltipster-sidetip-bg-to: var(--tp-elevated);
+    --dynamix-tooltipster-sidetip-content-text-color: var(--tp-text);
+    --dynamix-tooltipster-sidetip-arrow-bg-color: var(--tp-elevated);
+    --dynamix-tooltipster-sidetip-arrow-border-color: var(--tp-border);
+    --dynamix-tooltipster-sidetip-box-border-color: var(--tp-border);
+    --dynamix-filetree-bg-color: var(--tp-elevated);
+    --dynamix-sweet-alert-text-color: var(--tp-text);
+    --dynamix-sweet-alert-icon-bg-color: var(--tp-elevated);
+
+    /* ---- Community Applications (Apps tab) variables */
+    --template-background: var(--tp-elevated);
+    --template-hover-background: var(--tp-elevated);
+    --template-favourite: var(--tp-subtle);
+    --a-color: var(--tp-primary);
+    --sidebar-background: var(--tp-bg);
+    --sidebar-text: var(--tp-text);
+    --support-popup-text: var(--tp-text);
+    --support-popup-background: var(--tp-subtle);
+    --unraid-66-color: var(--tp-primary);
+    --ca-shadow-color: transparent;
+    --ca-dark-purple-color: var(--tp-primary);
+    --chart-grid: var(--tp-border);
+
+    /* ======================================================================
+       Base
+       ====================================================================== */
+    font-family: var(--tp-font-body);
+
+    /* Unraid's newer components (notification panel, header menu, modals) set their own
+       colour variables on every .unapi element, so they are overridden there. */
+    /* ":not(#tp-none)" only raises the weight of this rule: Unraid sets these variables again
+       with matching weight in a stylesheet that loads after this one. */
+    &.dark,
+    .unapi:not(#tp-none) {
+        --background: var(--tp-hsl-surface);
+        --foreground: var(--tp-hsl-text);
+        --muted: var(--tp-hsl-subtle);
+        --muted-foreground: var(--tp-hsl-muted);
+        --popover: var(--tp-hsl-surface);
+        --popover-foreground: var(--tp-hsl-text);
+        --card: var(--tp-hsl-surface);
+        --card-foreground: var(--tp-hsl-text);
+        --border: var(--tp-hsl-border);
+        --input: var(--tp-hsl-input);
+        --primary: var(--tp-hsl-primary);
+        --primary-foreground: var(--tp-hsl-primary-text);
+        /* Secondary buttons sit on cards that use the subtle surface, so they take the border tone. */
+        --secondary: var(--tp-hsl-border);
+        --secondary-foreground: var(--tp-hsl-text);
+        --accent: var(--tp-hsl-border);
+        --accent-foreground: var(--tp-hsl-text);
+        --ring: var(--tp-hsl-primary);
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+        --radius: 0.75rem;
+
+        /* Their second colour system (surfaces, borders and text of cards, menus and dialogs) */
+        --ui-bg: var(--tp-elevated);
+        --ui-bg-muted: var(--tp-subtle);
+        --ui-bg-elevated: var(--tp-subtle);
+        --ui-bg-accented: var(--tp-border);
+        --ui-border: var(--tp-border);
+        --ui-border-muted: var(--tp-border);
+        --ui-border-accented: var(--tp-input-border);
+        --ui-text: var(--tp-text);
+        --ui-text-toned: var(--tp-text);
+        --ui-text-muted: var(--tp-muted);
+        --ui-text-dimmed: var(--tp-muted);
+        --ui-text-highlighted: var(--tp-text);
+        --ui-primary: var(--tp-primary);
+        --ui-radius: 0.75rem;
+
+        /* Unraid's orange becomes the theme accent; its red stays a clear red for errors. */
+        --color-orange: var(--tp-primary);
+        --color-orange-dark: var(--tp-primary);
+        --color-unraid-red: #dc2626;
+
+        /* Accent and neutral colour scales: blue and slate instead of orange / green and grey */
+        --color-primary-50: #eff6ff;
+        --color-primary-100: #dbeafe;
+        --color-primary-200: #bfdbfe;
+        --color-primary-300: #93c5fd;
+        --color-primary-400: #60a5fa;
+        --color-primary-500: #3b82f6;
+        --color-primary-600: #2563eb;
+        --color-primary-700: #1d4ed8;
+        --color-primary-800: #1e40af;
+        --color-primary-900: #1e3a8a;
+        --color-primary-950: #172554;
+        --ui-color-primary-50: #eff6ff;
+        --ui-color-primary-100: #dbeafe;
+        --ui-color-primary-200: #bfdbfe;
+        --ui-color-primary-300: #93c5fd;
+        --ui-color-primary-400: #60a5fa;
+        --ui-color-primary-500: #3b82f6;
+        --ui-color-primary-600: #2563eb;
+        --ui-color-primary-700: #1d4ed8;
+        --ui-color-primary-800: #1e40af;
+        --ui-color-primary-900: #1e3a8a;
+        --ui-color-primary-950: #172554;
+        --ui-color-neutral-50: #f6f7f9;
+        --ui-color-neutral-100: #eef0f4;
+        --ui-color-neutral-200: #e4e7ec;
+        --ui-color-neutral-300: #d7dbe3;
+        --ui-color-neutral-400: #a7b0c0;
+        --ui-color-neutral-500: #8b93a5;
+        --ui-color-neutral-600: #62697a;
+        --ui-color-neutral-700: #2c323f;
+        --ui-color-neutral-800: #1b202a;
+        --ui-color-neutral-900: #12151d;
+        --ui-color-neutral-950: #0a0c11;
+    }
+
+    /* Unraid's brand buttons draw a red-to-orange gradient border or fill; here it is the
+       theme gradient. */
+    .unapi .from-unraid-red {
+        --tw-gradient-from: var(--tp-primary);
+    }
+
+    .unapi .to-orange {
+        --tw-gradient-to: var(--tp-primary-ii);
+    }
+
+    /* Unraid's newer components bring their own system-font stack. */
+    .unapi,
+    .unapi :where(button, input, select, textarea) {
+        font-family: var(--tp-font-body);
+    }
+
+    .unapi :is(h1, h2, h3) {
+        font-family: var(--tp-font-heading);
+    }
+
+    ::selection {
+        color: var(--tp-primary-text);
+        background-color: var(--tp-primary);
+    }
+
+    h1, h2, h3, h4 {
+        font-family: var(--tp-font-heading);
+        letter-spacing: -0.01em;
+    }
+
+    /* ======================================================================
+       Header and navigation
+       ====================================================================== */
+    #header {
+        color: var(--tp-header-text);
+    }
+
+    #menu {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-tile {
+        font-family: var(--tp-font-heading);
+        font-size: 1.35rem;
+        letter-spacing: 0;
+    }
+
+    .nav-item a {
+        font-weight: 500;
+        text-transform: none;
+        transition: color 0.35s var(--tp-ease);
+    }
+
+    .nav-user a {
+        color: var(--tp-header-muted);
+    }
+
+    .nav-item:hover a,
+    .nav-item.active a,
+    .nav-user:hover a {
+        color: var(--tp-header-text);
+    }
+
+    .nav-item.active a {
+        font-weight: 600;
+    }
+
+    /* The underline grows in from the left, like Tapeory's top bar. */
+    .nav-item:after,
+    .nav-user.show:after {
+        left: 10px;
+        width: calc(100% - 20px);
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--tp-primary), var(--tp-primary-ii));
+        transform: translateY(8px) scaleX(0);
+        transform-origin: left;
+        transition: transform 0.35s var(--tp-ease);
+    }
+
+    .nav-item:focus:after,
+    .nav-item:hover:after,
+    .nav-item.active:after,
+    .nav-user.show:hover:after {
+        background: linear-gradient(90deg, var(--tp-primary), var(--tp-primary-ii));
+        transform: translateY(8px) scaleX(1);
+    }
+
+    /* ======================================================================
+       Section title bars
+       ====================================================================== */
+    div.title {
+        padding: 8px 2px 10px;
+        border-bottom: 1px solid var(--tp-border);
+        font-family: var(--tp-font-heading);
+        font-size: 1.6rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    div.title i.title,
+    div.title i.fa,
+    div.title i.icon {
+        color: var(--tp-primary);
+    }
+
+    /* ======================================================================
+       Tables
+       ====================================================================== */
+    .TableContainer,
+    .TableContainer--no-min-width {
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    .TableContainer table,
+    .TableContainer--no-min-width table {
+        margin: 0;
+    }
+
+    table.tablesorter,
+    table.unraid {
+        background-color: var(--tp-elevated);
+    }
+
+    table.tablesorter thead tr th,
+    table.unraid thead tr:first-child > td {
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    table.unraid thead tr:first-child > td {
+        color: var(--tp-muted);
+    }
+
+    table.tablesorter tbody tr,
+    table.unraid tbody tr {
+        border-bottom: 1px solid var(--tp-border);
+    }
+
+    table.tablesorter tbody tr:last-child,
+    table.unraid tbody tr:last-child {
+        border-bottom: 0;
+    }
+
+    table.tablesorter tbody tr:not(.tr_last):hover > td {
+        background-color: var(--tp-primary-soft);
+    }
+
+    table.tablesorter tbody tr.tr_last {
+        background-color: var(--tp-subtle);
+    }
+
+    /* Dashboard tiles */
+    table.dashboard tbody {
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    table.dashboard tr:first-child > td {
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+    }
+
+    /* ======================================================================
+       Buttons
+       ====================================================================== */
+    input[type="button"]:where(:not(.unapi *)),
+    input[type="reset"]:where(:not(.unapi *)),
+    input[type="submit"]:where(:not(.unapi *)),
+    button:where(:not(.unapi *, [role="tab"], .ui-button, .swal-button)),
+    a.button:where(:not(.unapi *)) {
+        padding: 8px 16px;
+        border-radius: var(--tp-r-full);
+        font-family: var(--tp-font-heading);
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+        transition: transform 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease),
+            border-color 0.35s var(--tp-ease), color 0.35s var(--tp-ease);
+    }
+
+    input:hover[type="button"]:where(:not(.unapi *, [disabled])),
+    input:hover[type="reset"]:where(:not(.unapi *, [disabled])),
+    input:hover[type="submit"]:where(:not(.unapi *, [disabled])),
+    button:hover:where(:not(.unapi *, [disabled], [role="tab"], .ui-button, .swal-button)),
+    a.button:hover:where(:not(.unapi *, [disabled])) {
+        border-color: var(--tp-primary);
+        box-shadow: var(--tp-shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    input[type="button"][disabled]:where(:not(.unapi *)),
+    input[type="reset"][disabled]:where(:not(.unapi *)),
+    input[type="submit"][disabled]:where(:not(.unapi *)),
+    button[disabled]:where(:not(.unapi *, [role="tab"], .ui-button)),
+    a.button[disabled]:where(:not(.unapi *)) {
+        border: 1px solid var(--tp-border);
+        color: var(--tp-muted);
+        background: var(--tp-subtle);
+        opacity: 0.6;
+    }
+
+    /* Page tabs: a segmented control. The tabs sit in a rounded track; the active one is a
+       raised pill with its icon in the accent colour. */
+    nav.tabs {
+        margin-bottom: 0.4rem;
+    }
+
+    .tabs .tabs-container {
+        display: inline-flex;
+        width: auto;
+        max-width: 100%;
+        gap: 0.4rem;
+        padding: 0.5rem;
+        overflow-x: auto;
+        border: 1px solid var(--tp-border);
+        border-radius: 16px;
+        background-color: var(--tp-subtle);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+        scrollbar-width: thin;
+    }
+
+    .tabs button[role="tab"] {
+        position: relative;
+        gap: 0.8rem;
+        min-height: 4rem;
+        padding: 0.9rem 1.8rem;
+        border: 1px solid transparent;
+        border-radius: 11px;
+        color: var(--tp-muted);
+        font: 500 1.35rem/1 var(--tp-font-heading);
+        letter-spacing: 0;
+        white-space: nowrap;
+        background: transparent;
+        opacity: 1;
+        transition: color 0.3s var(--tp-ease), background-color 0.3s var(--tp-ease), border-color 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease);
+    }
+
+    .tabs button[role="tab"] > span {
+        gap: 0.8rem !important;
+    }
+
+    .tabs button[role="tab"] i,
+    .tabs button[role="tab"] i.title {
+        margin: 0;
+        color: inherit;
+        font-size: 1.4rem;
+        transition: color 0.3s var(--tp-ease);
+    }
+
+    .tabs button[role="tab"] img.icon {
+        margin: 0;
+        opacity: 0.75;
+        filter: grayscale(0.4);
+        transition: opacity 0.3s var(--tp-ease), filter 0.3s var(--tp-ease);
+    }
+
+    .tabs button[role="tab"]:hover {
+        border-color: transparent;
+        color: var(--tp-text);
+        background-color: color-mix(in srgb, var(--tp-elevated) 55%, transparent);
+    }
+
+    .tabs button[role="tab"][aria-selected="true"] {
+        border-color: var(--tp-border);
+        color: var(--tp-text);
+        font-weight: 600;
+        background-color: var(--tp-tab-active, var(--tp-elevated));
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 16px -10px rgba(0, 0, 0, 0.45);
+    }
+
+    .tabs button[role="tab"][aria-selected="true"] i,
+    .tabs button[role="tab"][aria-selected="true"] i.title {
+        color: var(--tp-primary);
+    }
+
+    .tabs button[role="tab"][aria-selected="true"] img.icon,
+    .tabs button[role="tab"]:hover img.icon {
+        opacity: 1;
+        filter: none;
+    }
+
+    /* A short accent line under the active tab's label. */
+    .tabs button[role="tab"][aria-selected="true"]:after {
+        position: absolute;
+        right: 35%;
+        bottom: 0.35rem;
+        left: 35%;
+        height: 2px;
+        border-radius: 999px;
+        background: var(--tp-gradient);
+        content: "";
+    }
+
+    .tabs button[role="tab"]:focus {
+        border-color: transparent;
+        opacity: 1;
+    }
+
+    .tabs button[role="tab"][aria-selected="true"]:focus {
+        border-color: var(--tp-border);
+    }
+
+    .tabs button[role="tab"]:focus-visible {
+        outline: 2px solid var(--tp-primary);
+        outline-offset: 1px;
+    }
+
+    @media (max-width: 767px) {
+        .tabs .tabs-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .tabs button[role="tab"] {
+            padding: 0.8rem 1.3rem;
+        }
+    }
+
+    /* ======================================================================
+       Form fields — boxed with a focus ring instead of an underline
+       ====================================================================== */
+    input[type="text"]:where(:not(.unapi *)),
+    input[type="password"]:where(:not(.unapi *)),
+    input[type="number"]:where(:not(.unapi *)),
+    input[type="url"]:where(:not(.unapi *)),
+    input[type="email"]:where(:not(.unapi *)),
+    input[type="date"]:where(:not(.unapi *)),
+    input[type="search"]:where(:not(.unapi *)),
+    textarea:where(:not(.unapi *)),
+    select:where(:not(.unapi *)) {
+        box-sizing: border-box;
+        border: 1px solid var(--tp-input-border);
+        border-radius: 10px;
+        color: var(--tp-text);
+        font-family: var(--tp-font-body);
+        background-color: var(--tp-elevated);
+        transition: border-color 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease);
+    }
+
+    /* Unraid colours placeholders like links; here they are quiet hints. */
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--tp-muted);
+        opacity: 0.75;
+    }
+
+    /* Single-line fields share the dropdowns' height so form rows line up. */
+    input[type="text"]:where(:not(.unapi *)),
+    input[type="password"]:where(:not(.unapi *)),
+    input[type="number"]:where(:not(.unapi *)),
+    input[type="url"]:where(:not(.unapi *)),
+    input[type="email"]:where(:not(.unapi *)),
+    input[type="date"]:where(:not(.unapi *)),
+    input[type="search"]:where(:not(.unapi *)) {
+        min-height: 3.6rem;
+        padding: 0.7rem 1.2rem;
+        font-size: 1.3rem;
+    }
+
+    textarea:where(:not(.unapi *)) {
+        padding: 0.9rem 1.2rem;
+        font-size: 1.3rem;
+        line-height: 1.5;
+    }
+
+    /* ======================================================================
+       Dropdowns (every <select> and Unraid's multi-select lists)
+       Roomier than Unraid's, with a drawn chevron instead of its two-triangle arrow.
+       ====================================================================== */
+    select:where(:not(.unapi *)) {
+        min-height: 3.6rem;
+        padding: 0.7rem 3.6rem 0.7rem 1.2rem;
+        border-radius: 10px;
+        color: var(--tp-text);
+        font-size: 1.3rem;
+        line-height: 1.4;
+        background-image: var(--tp-chevron);
+        background-position: right 1.2rem center;
+        background-repeat: no-repeat;
+        background-size: 1.2rem 1.2rem;
+        box-shadow: var(--tp-shadow-sm);
+        cursor: pointer;
+    }
+
+    select:hover:where(:not(.unapi *, [disabled])) {
+        border-color: var(--tp-muted);
+    }
+
+    select:where(:not(.unapi *)) option {
+        color: var(--tp-text);
+        background-color: var(--tp-elevated);
+    }
+
+    select:where(:not(.unapi *)) option:checked {
+        color: var(--tp-primary-text);
+        background-color: var(--tp-primary);
+    }
+
+    /* Unraid's checkbox dropdown (included / excluded disks, CPU lists, ...) */
+    .ui-dropdownchecklist-selector {
+        box-sizing: border-box;
+        min-height: 3.6rem;
+        padding: 0.7rem 3.6rem 0.7rem 1.2rem;
+        border: 1px solid var(--tp-input-border);
+        border-radius: 10px;
+        background: var(--tp-elevated) var(--tp-chevron) no-repeat right 1.2rem center / 1.2rem 1.2rem;
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    .ui-dropdownchecklist-selector:hover {
+        border-color: var(--tp-muted);
+    }
+
+    .ui-dropdownchecklist-text {
+        color: var(--tp-text);
+        font-size: 1.3rem;
+    }
+
+    .ui-dropdownchecklist-dropcontainer {
+        margin-top: 0.4rem;
+        padding: 0.5rem;
+        border: 1px solid var(--tp-border) !important;
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated) !important;
+        box-shadow: var(--tp-shadow-lg);
+    }
+
+    .ui-dropdownchecklist-item {
+        border-radius: var(--tp-r-sm);
+    }
+
+    .ui-dropdownchecklist-item:hover {
+        background-color: var(--tp-primary-soft);
+    }
+
+    input:focus[type="text"]:where(:not(.unapi *)),
+    input:focus[type="password"]:where(:not(.unapi *)),
+    input:focus[type="number"]:where(:not(.unapi *)),
+    input:focus[type="url"]:where(:not(.unapi *)),
+    input:focus[type="email"]:where(:not(.unapi *)),
+    input:focus[type="date"]:where(:not(.unapi *)),
+    input:focus[type="search"]:where(:not(.unapi *)),
+    textarea:focus:where(:not(.unapi *)),
+    select:focus:where(:not(.unapi *)) {
+        border-color: var(--tp-primary);
+        box-shadow: 0 0 0 3px var(--tp-primary-soft);
+    }
+
+    /* ======================================================================
+       Footer
+       ====================================================================== */
+    #footer {
+        border-top: 1px solid var(--tp-border);
+        font-size: 1.2rem;
+    }
+
+    /* ======================================================================
+       Pop-up dialogs
+       ====================================================================== */
+    /* Dimmed, blurred page behind every dialog */
+    .sweet-overlay {
+        background-color: rgba(8, 12, 20, 0.6);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .sweet-alert {
+        border: 1px solid var(--tp-border);
+        border-radius: 18px;
+        font-family: var(--tp-font-body);
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg), 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .sweet-alert h2 {
+        font-family: var(--tp-font-heading);
+        letter-spacing: -0.01em;
+    }
+
+    .sweet-alert p {
+        color: var(--tp-muted);
+    }
+
+    /* Primary action in the accent gradient, secondary as an outline pill */
+    .sweet-alert button.confirm {
+        min-width: 12rem;
+        border-color: transparent;
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        box-shadow: 0 10px 22px -12px var(--tp-primary);
+    }
+
+    .sweet-alert button.confirm:hover {
+        border-color: transparent;
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        filter: brightness(1.08);
+    }
+
+    /* ---- Progress dialogs (plugin install / update, docker pulls, ...): a header, the log in
+       an inset terminal panel, and the button row underneath */
+    .sweet-alert.nchan {
+        max-width: 110rem;
+        padding: 0 0 1.6rem;
+        overflow: hidden;
+    }
+
+    .sweet-alert.nchan h2 {
+        margin: 0;
+        padding: 1.8rem 2.4rem;
+        border-bottom: 1px solid var(--tp-border);
+        border-radius: 0;
+        font-size: 2rem;
+        background-color: var(--tp-subtle);
+    }
+
+    /* "In Progress" / "Finished" next to the title as a status pill */
+    .sweet-alert.nchan #pluginProgressTitle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-left: 0.4rem;
+        padding: 0.3rem 1.1rem;
+        border-radius: var(--tp-r-full);
+        color: var(--tp-primary);
+        font-size: 1.2rem;
+        font-weight: 600;
+        vertical-align: middle;
+        background-color: var(--tp-primary-soft);
+    }
+
+    .sweet-alert.nchan p {
+        margin: 0;
+    }
+
+    .sweet-alert.nchan pre#swaltext,
+    .sweet-alert.nchan pre#swalbody {
+        box-sizing: border-box;
+        width: auto;
+        max-width: calc(100% - 4.8rem);
+        margin: 1.8rem 2.4rem 0;
+        padding: 1.6rem 1.8rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        font: 1.2rem/1.6 ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
+        background-color: var(--tp-bg);
+        box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.35);
+        scrollbar-width: thin;
+        scrollbar-color: var(--tp-input-border) transparent;
+    }
+
+    .sweet-alert.nchan hr {
+        display: none;
+    }
+
+    /* Docker pulls write each image into a fieldset of log lines inside the log panel; they read
+       like the plugin log: compact monospaced lines, the image name as a label. */
+    .sweet-alert.nchan pre fieldset {
+        margin: 0 0 1.4rem;
+        padding: 1rem 1.4rem 1.2rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+    }
+
+    .sweet-alert.nchan pre legend {
+        padding: 0.3rem 1rem;
+        border-radius: var(--tp-r-full);
+        color: var(--tp-primary);
+        font: 600 1.15rem var(--tp-font-heading);
+        background-color: var(--tp-primary-soft);
+    }
+
+    .sweet-alert.nchan pre p,
+    .sweet-alert.nchan pre .logLine {
+        margin: 0;
+        color: var(--tp-text);
+        font: 1.2rem/1.6 ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
+        text-align: left;
+        white-space: pre-wrap;
+    }
+
+    /* Busy indicator under the log */
+    .sweet-alert .la-ball-fall > div {
+        background-color: var(--tp-primary) !important;
+        color: var(--tp-primary) !important;
+    }
+
+    .sweet-alert.nchan .sa-button-container {
+        margin-top: 1.6rem;
+    }
+
+    /* ======================================================================
+       Community Applications (Apps tab)
+       ====================================================================== */
+    .ca_holder,
+    .dockerHubHolder {
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        box-shadow: var(--tp-shadow-sm);
+        transition: transform 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease), border-color 0.35s var(--tp-ease);
+    }
+
+    .ca_holder:hover,
+    .dockerHubHolder:hover {
+        border-color: var(--tp-input-border);
+        box-shadow: var(--tp-shadow-lg);
+        transform: translateY(-3px);
+    }
+
+    .ca_homeTemplatesHeader,
+    .ca_applicationName {
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    .caButton {
+        border: 1px solid var(--tp-input-border);
+        border-radius: var(--tp-r-full);
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+    }
+
+    .caButton:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary-text) !important;
+    }
+
+    /* ======================================================================
+       Switches (autostart, basic / advanced view, ...)
+       Unraid sets the size and the knob position inline, so those need !important; the knob
+       slides with a transform instead.
+       ====================================================================== */
+    .switch-button-background {
+        width: 4.4rem !important;
+        height: 2.4rem !important;
+        margin: 0 1rem 0 0;
+        border: 1px solid var(--tp-input-border);
+        border-radius: var(--tp-r-full);
+        background-color: var(--tp-subtle);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.35s var(--tp-ease), border-color 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease);
+    }
+
+    .switch-button-background:hover {
+        border-color: var(--tp-muted);
+    }
+
+    /* On: the track lights up in the accent colour with a soft halo. */
+    .switch-button-background.checked {
+        border-color: var(--tp-primary);
+        background: color-mix(in srgb, var(--tp-primary) 24%, var(--tp-elevated));
+        box-shadow: 0 0 0 3px var(--tp-primary-soft), inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Where the label comes first (Basic / Advanced view), the gap belongs on the other side. */
+    .ToggleViewMode .switch-button-background {
+        margin: 0 0 0 1rem;
+    }
+
+    /* The knob carries a power symbol: grey when off, gradient with a glow when on. */
+    .switch-button-button {
+        top: 0.2rem;
+        left: 0.2rem !important;
+        display: grid;
+        place-items: center;
+        width: 1.8rem !important;
+        height: 1.8rem !important;
+        border: 0;
+        border-radius: 50%;
+        background: var(--tp-muted);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease);
+    }
+
+    .switch-button-button:after {
+        color: var(--tp-subtle);
+        font: normal 1rem/1 FontAwesome;
+        content: "\f011";
+    }
+
+    .switch-button-background.checked .switch-button-button {
+        background: var(--tp-gradient);
+        box-shadow: 0 0 10px -1px var(--tp-primary), 0 1px 3px rgba(0, 0, 0, 0.35);
+        transform: translateX(2rem);
+    }
+
+    .switch-button-background.checked .switch-button-button:after {
+        color: #ffffff;
+    }
+
+    .switch-button-label {
+        color: var(--tp-muted);
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        line-height: 2.6rem;
+    }
+
+    .switch-button-label.on {
+        color: var(--tp-primary);
+    }
+
+    /* ======================================================================
+       Context menus (container, VM and plugin menus)
+       ====================================================================== */
+    .dropdown-menu {
+        min-width: 19rem;
+        margin: 0.6rem 0 3rem;
+        padding: 0.5rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        font-family: var(--tp-font-body);
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg);
+    }
+
+    /* The little arrow pointing at the clicked element */
+    .dropdown-context:before,
+    .dropdown-context:after,
+    .dropdown-context-up:before,
+    .dropdown-context-up:after {
+        display: none;
+    }
+
+    .dropdown-menu a {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1.2rem 0.5rem 0.8rem;
+        border-radius: var(--tp-r-sm);
+        color: var(--tp-text);
+        line-height: 2.2rem;
+        transition: color 0.2s, background-color 0.2s;
+    }
+
+    .dropdown-menu a .fa {
+        flex: none;
+        color: var(--tp-muted);
+        font-size: 1.4rem;
+        transition: color 0.2s;
+    }
+
+    .dropdown-menu li > a:hover,
+    .dropdown-menu li > a:focus,
+    .dropdown-submenu:hover > a {
+        color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+        background-image: none;
+    }
+
+    .dropdown-menu li > a:hover .fa,
+    .dropdown-menu li > a:focus .fa {
+        color: inherit;
+    }
+
+    /* Destructive entries turn red instead of blue. */
+    .dropdown-menu li > a:has(.fa-trash):hover,
+    .dropdown-menu li > a:has(.fa-trash):focus {
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    .dropdown-menu .divider {
+        height: 1px;
+        margin: 0.5rem 0;
+        border: 0;
+        background-color: var(--tp-border);
+    }
+
+    .dropdown-menu .nav-header {
+        padding: 0.4rem 0.8rem;
+        color: var(--tp-muted);
+        font-family: var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-shadow: none;
+        background: none;
+    }
+
+    .dropdown-menu .disabled > a,
+    .dropdown-menu .disabled > a:hover {
+        color: var(--tp-muted);
+        opacity: 0.6;
+        background-color: transparent;
+    }
+
+    .dropdown-submenu > .dropdown-menu {
+        border-radius: var(--tp-r-md);
+    }
+
+    /* ======================================================================
+       Dashboard: every tile becomes its own card
+       Each tile is a <tbody>. It is turned into a table of its own (the outer table becomes a
+       plain block), so its rows stay real table rows; Unraid re-shows rows with an inline
+       "display: table-row", and those must still span the full card.
+       ====================================================================== */
+    table.dashboard {
+        display: block;
+        background: transparent;
+    }
+
+    table.dashboard > tbody {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0 0 1.6rem;
+        padding: 0.4rem 0 0.8rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 18px;
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    /* Long lines (board names, BIOS) wrap at spaces inside the card instead of running past
+       its edge. */
+    table.dashboard > tbody > tr > td {
+        padding-right: 2rem;
+        padding-left: 2rem;
+        white-space: normal;
+    }
+
+    /* Column headings of the lists (disks, shares) stay on one line. */
+    table.dashboard > tbody > tr.header > td {
+        white-space: nowrap;
+    }
+
+    table.dashboard > tbody > tr:first-child > td {
+        padding-top: 1.6rem;
+        padding-bottom: 1.2rem;
+    }
+
+    /* Tile header: icon in a tinted square, title in the heading font, quiet controls */
+    table.dashboard .tile-header-left {
+        align-items: center;
+        gap: 1.4rem;
+    }
+
+    table.dashboard .tile-header-left > i.f32 {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 4.4rem;
+        height: 4.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-primary);
+        font-size: 2.2rem !important;
+        background-color: var(--tp-primary-soft);
+    }
+
+    table.dashboard .tile-header-main {
+        margin: 0 0 0.4rem;
+        color: var(--tp-text);
+        font: 600 1.6rem/1.2 var(--tp-font-heading);
+        letter-spacing: -0.01em;
+        text-transform: none;
+    }
+
+    table.dashboard .tile-header-left .section {
+        color: var(--tp-muted);
+        font-size: 1.2rem;
+        line-height: 1.5;
+    }
+
+    /* Tile controls (settings, info, collapse, tile management): plain round icon buttons
+       instead of Unraid's grey squares */
+    table.dashboard .tile-header-right-controls {
+        gap: 0.2rem;
+    }
+
+    /* Only the controls in the header row; the tile-management "close" cross keeps Unraid's own
+       show / hide logic. */
+    table.dashboard .tile-header-right-controls i.control {
+        place-items: center;
+        width: 2.8rem;
+        height: 2.8rem;
+        padding: 0;
+        border-radius: 50%;
+        color: var(--tp-muted);
+        font-size: 1.4rem !important;
+        background-color: transparent;
+        opacity: 1;
+        transition: color 0.2s, background-color 0.2s, transform 0.35s var(--tp-ease);
+    }
+
+    /* Controls with .tile only appear in tile-management mode; Unraid hides and shows those. */
+    table.dashboard .tile-header-right-controls i.control:not(.tile) {
+        display: inline-grid;
+    }
+
+    table.dashboard .tile-header-right-controls i.control:hover,
+    table.dashboard .tile-header-right-controls a:hover i.control {
+        color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+        opacity: 1;
+    }
+
+    table.dashboard i.control.fa-close {
+        color: var(--tp-muted);
+        background-color: transparent;
+    }
+
+    table.dashboard i.control.fa-close:hover {
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    /* Stop array / reboot / shut down: round buttons */
+    table.dashboard .tile-ctrl {
+        gap: 0.6rem;
+    }
+
+    table.dashboard .tile-ctrl > span {
+        display: inline-grid;
+        place-items: center;
+        width: 3.4rem;
+        height: 3.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 50%;
+        color: var(--tp-muted);
+        font-size: 1.5rem !important;
+        background-color: var(--tp-subtle);
+        transition: color 0.2s, border-color 0.2s, background-color 0.2s, transform 0.35s var(--tp-ease);
+    }
+
+    table.dashboard .tile-ctrl > span:hover {
+        border-color: var(--tp-danger);
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+        transform: translateY(-1px);
+    }
+
+    /* Load bars (CPU, memory, disks): rounded, with the gradient unless Unraid colours them
+       as a warning */
+    /* Unraid pulls each bar up beside its value with a negative margin, inside a column that
+       clips its content. The bar is 2px thinner here, so the margin is 2px smaller as well;
+       otherwise the column ends up shorter than the value and cuts off its lower edge. */
+    table.dashboard .usage-disk.sys {
+        height: 10px;
+        margin-top: -1.2rem;
+        overflow: hidden;
+        border-radius: var(--tp-r-full);
+        background-color: var(--tp-border);
+    }
+
+    table.dashboard .usage-disk.sys > span {
+        height: 10px;
+    }
+
+    /* In the narrow utilization column of the array and pool tiles, the bar starts closer to
+       its value so it is long enough to read. */
+    table.dashboard span.w18 .usage-disk.sys {
+        margin-right: 0.4rem;
+        margin-left: 4.2rem;
+    }
+
+    table.dashboard .usage-disk.sys > span:first-child {
+        border-radius: var(--tp-r-full);
+    }
+
+    table.dashboard .usage-disk.sys > span:first-child:not(.greenbar, .orangebar, .redbar, .graybar) {
+        background: linear-gradient(90deg, var(--tp-primary), var(--tp-primary-ii));
+    }
+
+    table.dashboard .usage-disk.sys.none {
+        background-color: transparent;
+    }
+
+    /* Docker and VM tiles: the apps sit in an even grid of small cards */
+    table.dashboard > tbody > tr > td:has(> span.outer.solid) {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+        gap: 0.6rem;
+        padding-bottom: 0.8rem;
+    }
+
+    table.dashboard span.outer.solid {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        float: none;
+        min-width: 0;
+        margin: 0;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-subtle);
+        transition: border-color 0.2s, transform 0.35s var(--tp-ease);
+    }
+
+    table.dashboard span.outer.solid:hover {
+        border-color: var(--tp-primary);
+        transform: translateY(-1px);
+    }
+
+    table.dashboard span.outer.solid span.inner {
+        width: auto;
+        min-width: 0;
+    }
+
+    /* Long container names are cut with an ellipsis rather than wrapped. */
+    table.dashboard span.outer.solid .inner > span:first-child {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    table.dashboard span.outer.solid img.img {
+        border-radius: 10px;
+    }
+
+    table.dashboard span.outer.solid .inner > span:first-child {
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+    }
+
+    /* Load charts (Processor, Interface): full card width, taller, on an inset panel. The
+       line colours themselves are set by enhance.js, since the charts draw on a canvas. */
+    table.dashboard canvas#cpuchart,
+    table.dashboard canvas#netchart {
+        display: block;
+        box-sizing: border-box;
+        width: 100% !important;
+        height: 15rem !important;
+        margin: 1rem 0 0.6rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-bg);
+    }
+
+    /* Memory tile: Unraid sizes its columns for the whole window, which squeezes them in a
+       card. Here the labels sit in two columns above the charts, and the charts take as many
+       columns as fit. */
+    table.dashboard .tile-system-memory-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.6rem;
+    }
+
+    table.dashboard .tile-system-memory-labels {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        color: var(--tp-muted);
+        line-height: 1.7;
+    }
+
+    table.dashboard .tile-system-memory-labels legend {
+        color: var(--tp-text);
+        font: 600 1.2rem var(--tp-font-heading);
+        text-transform: none;
+    }
+
+    table.dashboard .tile-system-memory-charts {
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        gap: 1.6rem 1rem;
+    }
+
+    /* Docker and VM tiles: no "started" / "stopped" text. A running app shows a glowing green
+       dot on its icon; a stopped one is greyed out with a grey dot. */
+    table.dashboard span.outer.solid .inner > br,
+    table.dashboard span.outer.solid .inner > i,
+    table.dashboard span.outer.solid .inner > .state {
+        display: none;
+    }
+
+    table.dashboard span.outer.solid > span.hand {
+        position: relative;
+        flex: none;
+    }
+
+    table.dashboard span.outer.solid > span.hand:after {
+        position: absolute;
+        right: -0.3rem;
+        bottom: -0.3rem;
+        width: 1.1rem;
+        height: 1.1rem;
+        border: 2px solid var(--tp-subtle);
+        border-radius: 50%;
+        background-color: var(--tp-muted);
+        content: "";
+    }
+
+    table.dashboard span.outer.solid.started > span.hand:after {
+        background-color: #22c55e;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    }
+
+    table.dashboard span.outer.solid.paused > span.hand:after {
+        background-color: #f59e0b;
+    }
+
+    table.dashboard span.outer.solid.stopped img.img {
+        opacity: 0.45;
+        filter: grayscale(1);
+    }
+
+    table.dashboard span.outer.solid.stopped .inner > span:first-child {
+        color: var(--tp-muted);
+        font-weight: 500;
+    }
+
+    table.dashboard span.outer.solid.stopped:hover img.img {
+        opacity: 0.8;
+        filter: none;
+    }
+
+    /* ======================================================================
+       Settings, Tools and Users: icon panels become cards
+       ====================================================================== */
+    .Panels {
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+        gap: 1rem;
+        justify-content: stretch;
+        margin-top: 1.4rem;
+    }
+
+    .Panel {
+        max-width: none;
+    }
+
+    .Panel > a,
+    .user-list > a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 12.4rem;
+        padding: 1.6rem 1rem 1.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        text-align: center;
+        text-decoration: none;
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+        transition: transform 0.35s var(--tp-ease), border-color 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease);
+    }
+
+    .Panel > a:hover,
+    .Panel > a:focus-visible,
+    .user-list > a:hover,
+    .user-list > a:focus-visible {
+        border-color: var(--tp-primary);
+        box-shadow: var(--tp-shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    /* The icon sits in a tinted square that fills with the gradient on hover. */
+    .Panel > a > span:first-child {
+        display: grid;
+        place-items: center;
+        width: 5.2rem;
+        height: 5.2rem;
+        border-radius: 14px;
+        color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+        transition: background 0.35s var(--tp-ease), color 0.35s var(--tp-ease);
+    }
+
+    .Panel > a:hover > span:first-child,
+    .Panel > a:focus-visible > span:first-child {
+        color: #ffffff;
+        background: var(--tp-gradient);
+    }
+
+    .Panel .PanelIcon {
+        color: inherit;
+        font-size: 2.6rem;
+    }
+
+    .Panel .PanelImg {
+        max-width: 3rem;
+        height: 3rem;
+    }
+
+    .Panel .PanelText {
+        font: 500 1.3rem/1.3 var(--tp-font-heading);
+        text-decoration: none !important;
+    }
+
+    .Panel i.favo {
+        top: 0.8rem;
+        right: 0.8rem;
+        margin: 0;
+        color: var(--tp-muted);
+        font-size: 1.3rem;
+    }
+
+    /* Users */
+    .user-list {
+        min-width: 0;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    .user-list > a img.picture {
+        width: 5.6rem;
+        height: 5.6rem;
+        border: 2px solid var(--tp-border);
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .user-list > a br {
+        display: none;
+    }
+
+    .user-list > a {
+        font: 600 1.4rem var(--tp-font-heading);
+    }
+
+    /* ======================================================================
+       Main: device tables (array, pools, boot) and the Unassigned Devices tables
+       ====================================================================== */
+    /* Used / free: the value on top, a slim rounded bar underneath. */
+    .usage-disk:not(.sys, .mm) {
+        position: relative;
+        height: auto;
+        min-width: 8rem;
+        padding-bottom: 0.9rem;
+        overflow: visible;
+        border-radius: 0;
+        background: none;
+    }
+
+    .usage-disk:not(.sys, .mm):before {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 0.5rem;
+        border-radius: 999px;
+        background-color: var(--tp-border);
+        content: "";
+    }
+
+    .usage-disk:not(.sys, .mm) > span:first-child {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        max-width: 100%;
+        height: 0.5rem;
+        border-radius: 999px;
+    }
+
+    .usage-disk:not(.sys, .mm) > span:first-child:not(.greenbar, .orangebar, .redbar, .graybar) {
+        background: var(--tp-gradient);
+    }
+
+    .usage-disk:not(.sys, .mm) > span:last-child {
+        position: relative;
+        top: 0;
+        display: block;
+        color: var(--tp-text);
+        font-size: 1.25rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.5;
+        text-align: right;
+    }
+
+    table.disk_status thead tr:first-child > td {
+        padding-top: 1.2rem;
+        padding-bottom: 1.2rem;
+        background-color: var(--tp-subtle);
+    }
+
+    table.disk_status tbody td {
+        padding-top: 1.1rem;
+        padding-bottom: 1.1rem;
+        vertical-align: middle;
+        font-variant-numeric: tabular-nums;
+    }
+
+    table.disk_status tbody tr:not(.tr_last):hover > td {
+        background-color: var(--tp-primary-soft);
+    }
+
+    /* Device name: status dot with a soft glow, the name in the heading font. */
+    table.disk_status tbody td:first-child {
+        font-family: var(--tp-font-heading);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    :is(table.disk_status, table.usb_mounts, table.samba_mounts, table.usb_absent) i.orb {
+        margin-right: 0.8rem;
+        font-size: 0.95rem;
+        vertical-align: 0.1rem;
+    }
+
+    :is(table.disk_status, table.usb_mounts) i.orb.green-orb {
+        color: #22c55e;
+        filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.7));
+    }
+
+    :is(table.disk_status, table.usb_mounts) i.orb.yellow-orb {
+        color: #f59e0b;
+        filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+    }
+
+    :is(table.disk_status, table.usb_mounts) i.orb.red-orb {
+        color: var(--tp-danger);
+        filter: drop-shadow(0 0 4px color-mix(in srgb, var(--tp-danger) 60%, transparent));
+    }
+
+    :is(table.disk_status, table.usb_mounts, table.usb_absent) i.orb.grey-orb {
+        color: var(--tp-muted);
+    }
+
+    /* Browse icon and the spin up / down controls as small round buttons. */
+    table.disk_status a.view {
+        display: inline-grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        margin-right: 0.8rem;
+        vertical-align: middle;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        background-color: var(--tp-elevated);
+        transition: border-color 0.3s var(--tp-ease), color 0.3s var(--tp-ease);
+    }
+
+    /* Rows without a browse link keep the space, so the names stay aligned. */
+    table.disk_status a.view:not(:has(i)) {
+        visibility: hidden;
+    }
+
+    table.disk_status a.view:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+    }
+
+    table.disk_status a.view i {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    table.disk_status tr.tr_last i.control {
+        display: inline-grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        margin-right: 0.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        font-size: 1.2rem;
+        background-color: var(--tp-elevated);
+        cursor: pointer;
+        transition: border-color 0.3s var(--tp-ease), color 0.3s var(--tp-ease);
+    }
+
+    table.disk_status tr.tr_last i.control:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+    }
+
+    table.disk_status td.desc {
+        color: var(--tp-text);
+    }
+
+    table.disk_status td.desc a.info i.icon,
+    table.disk_status tr.tr_last a.static i.icon {
+        margin-right: 0.8rem;
+        color: var(--tp-primary);
+    }
+
+    /* Pool name rows stand out a little; totals rows close each group. */
+    table.disk_status tr.pool_header > td {
+        background-color: color-mix(in srgb, var(--tp-primary) 5%, transparent);
+    }
+
+    /* Divider between two pools: Unraid puts it in a header row, which must not take the
+       header's padding and colour (it made the totals row above it look twice as tall). */
+    table.disk_status thead tr:first-child > td.divider,
+    table.disk_status td.divider {
+        height: 0.6rem;
+        padding: 0 !important;
+        border: 0;
+        background-color: transparent;
+    }
+
+    table.disk_status tr.tr_last > td {
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+        border-top: 1px solid var(--tp-border);
+        color: var(--tp-text);
+        font-weight: 600;
+        background-color: var(--tp-subtle);
+    }
+
+    /* Temperature and error chips (marked by enhance.js). */
+    td.tp-temp > .tp-chip,
+    td.tp-errors > .tp-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.9rem;
+        border-radius: 999px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    td.tp-temp[data-level="ok"] > .tp-chip {
+        color: var(--tp-success-text);
+        background-color: var(--tp-success-bg);
+    }
+
+    td.tp-temp[data-level="warm"] > .tp-chip {
+        color: var(--tp-warn-text);
+        background-color: var(--tp-warn-bg);
+    }
+
+    td.tp-temp[data-level="hot"] > .tp-chip,
+    td.tp-errors > .tp-chip {
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    td.tp-temp[data-level="idle"] > .tp-chip {
+        color: var(--tp-muted);
+        background-color: var(--tp-subtle);
+    }
+
+    td.tp-temp > .tp-chip:before {
+        font: normal 1.1rem/1 FontAwesome;
+        content: "\f2c9";
+    }
+
+    td.tp-temp[data-level="idle"] > .tp-chip:before {
+        content: "\f186";
+    }
+
+    td.tp-errors > .tp-chip:before {
+        font: normal 1.1rem/1 FontAwesome;
+        content: "\f071";
+    }
+
+    /* Unassigned Devices plugin: the same card look as the other tables. */
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) {
+        margin-top: 1.4rem;
+        overflow: hidden;
+        border: 1px solid var(--tp-border);
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) thead tr > td {
+        padding: 1.2rem 1rem;
+        border-bottom: 1px solid var(--tp-border);
+        color: var(--tp-muted);
+        font: 600 1.05rem var(--tp-font-heading);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: var(--tp-subtle) !important;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody tr {
+        background: transparent !important;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody td {
+        height: auto;
+        padding-top: 1.1rem;
+        padding-bottom: 1.1rem;
+        border-bottom: 1px solid var(--tp-border);
+        vertical-align: middle;
+        background: transparent;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody tr:last-child > td {
+        border-bottom: 0;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody tr:hover > td:not([colspan]) {
+        background-color: var(--tp-primary-soft);
+    }
+
+    /* "No ... available": a calm empty state instead of a bare line of text. */
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody td[colspan] {
+        padding: 2.6rem 1rem !important;
+        color: var(--tp-muted);
+        font-size: 1.3rem;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) tbody td[colspan]:before {
+        display: block;
+        margin-bottom: 0.8rem;
+        color: var(--tp-input-border);
+        font: normal 2.4rem/1 FontAwesome;
+        content: "\f01c";
+    }
+
+    /* Remove (red cross) and settings (gears) icons as round buttons. */
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a.exec:has(> i.fa-remove),
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a.info:has(> i.fa-gears, > i.fa-gear, > i.fa-cog) {
+        display: inline-grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted) !important;
+        background-color: var(--tp-elevated);
+        text-decoration: none;
+        transition: border-color 0.3s var(--tp-ease), color 0.3s var(--tp-ease), background-color 0.3s var(--tp-ease);
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a.exec:has(> i.fa-remove) {
+        border-color: color-mix(in srgb, var(--tp-danger) 35%, transparent);
+        color: var(--tp-danger) !important;
+        background-color: var(--tp-danger-soft);
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a.exec:has(> i.fa-remove):hover {
+        border-color: var(--tp-danger);
+        color: #ffffff !important;
+        background-color: var(--tp-danger);
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a.info:has(> i.fa-gears, > i.fa-gear, > i.fa-cog):hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary) !important;
+    }
+
+    table:is(.usb_mounts, .samba_mounts, .usb_absent) a:is(.exec, .info) > i:is(.fa-remove, .fa-gears, .fa-gear, .fa-cog) {
+        margin: 0;
+        color: inherit;
+        font-size: 1.3rem;
+    }
+
+    /* ======================================================================
+       Plugins list
+       ====================================================================== */
+    table.plugins a.list {
+        display: inline-grid;
+        place-items: center;
+        width: 4.2rem;
+        height: 4.2rem;
+        border-radius: var(--tp-r-md);
+        color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+        text-decoration: none;
+    }
+
+    table.plugins a.list i.list,
+    table.plugins a.list .fa {
+        color: inherit;
+        font-size: 2rem;
+    }
+
+    table.plugins a.list img {
+        max-width: 2.8rem;
+        max-height: 2.8rem;
+    }
+
+    table.plugins .desc_readmore h4 {
+        margin: 0.4rem 0 0.2rem;
+        font: 600 1.4rem var(--tp-font-heading);
+    }
+
+    table.plugins .desc_readmore p {
+        margin: 0;
+        color: var(--tp-muted);
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    /* Long text blocks across the webGUI read better left-aligned than justified. */
+    p:where(:not(.unapi *)) {
+        text-align: left;
+    }
+
+    /* ======================================================================
+       Notices across the top of the page (update notes, "Action Centre", errors)
+       ====================================================================== */
+    .upgrade_notice,
+    .ca_element_notice {
+        border: 1px solid var(--tp-warn-text);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        font-family: var(--tp-font-heading);
+        font-weight: 500;
+        background-color: color-mix(in srgb, var(--tp-warn-bg) 85%, var(--tp-elevated));
+        box-shadow: var(--tp-shadow-lg);
+    }
+
+    .upgrade_notice.done {
+        border-color: var(--tp-success-text);
+        color: var(--tp-text);
+        background-color: color-mix(in srgb, var(--tp-success-bg) 85%, var(--tp-elevated));
+    }
+
+    .upgrade_notice.alert {
+        border-color: var(--tp-danger);
+        color: var(--tp-text);
+        background-color: color-mix(in srgb, var(--tp-danger-soft) 100%, var(--tp-elevated));
+    }
+
+    /* ======================================================================
+       Apps tab search bar
+       ====================================================================== */
+    .searchArea {
+        align-items: center;
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+        background-color: var(--tp-bg);
+    }
+
+    #searchBox {
+        top: 0;
+        width: 32rem;
+        max-width: 100%;
+        margin-bottom: 0;
+        padding: 0.8rem 1.4rem;
+        border: 1px solid var(--tp-input-border);
+        border-radius: var(--tp-r-full);
+        font-size: 1.3rem;
+        background: var(--tp-elevated);
+    }
+
+    #searchBox:focus {
+        border-color: var(--tp-primary);
+        box-shadow: 0 0 0 3px var(--tp-primary-soft);
+    }
+
+    .searchSubmit {
+        color: var(--tp-muted);
+    }
+
+    /* ======================================================================
+       Hover tooltips (a.info) across the webGUI
+       ====================================================================== */
+    a.info span {
+        padding: 0.7rem 1.1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 10px;
+        color: var(--tp-text);
+        font-size: 1.2rem;
+        font-variant: normal;
+        line-height: 1.6;
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg);
+    }
+
+    /* ======================================================================
+       Disk Location plugin, dashboard tile: every tray slot becomes a small card. The plugin's
+       grid (rows, columns, order) is kept, since it mirrors the physical case.
+       ====================================================================== */
+    #tblDiskLocation .dl-group-wrap {
+        display: block;
+        float: none !important;
+        padding: 0 !important;
+    }
+
+    #tblDiskLocation .dl-group-wrap + .dl-group-wrap {
+        margin-top: 1.6rem;
+    }
+
+    /* Group name above its slots */
+    #tblDiskLocation .dl-group-wrap > div:first-child {
+        margin: 0 0 0.8rem;
+        color: var(--tp-muted);
+        font: 600 1.05rem var(--tp-font-heading);
+        letter-spacing: 0.1em;
+        text-align: left !important;
+        text-transform: uppercase;
+    }
+
+    #tblDiskLocation .dl-group-wrap > div:first-child:before {
+        content: "Group ";
+    }
+
+    #tblDiskLocation .grid-container {
+        gap: 0.6rem;
+        justify-content: start !important;
+    }
+
+    #tblDiskLocation .grid-container > div,
+    #tblDiskLocation .flex-container-layout_h {
+        margin: 0;
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        width: 7.6rem !important;
+        height: 4rem !important;
+        margin: 0;
+        padding: 0 1.1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 10px;
+        background: var(--tp-subtle) !important;
+        animation: none !important;
+        transition: transform 0.35s var(--tp-ease), border-color 0.35s var(--tp-ease), box-shadow 0.35s var(--tp-ease);
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:hover {
+        border-color: var(--tp-primary);
+        box-shadow: var(--tp-shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    #tblDiskLocation .flex-container-middle_h {
+        display: none;
+    }
+
+    #tblDiskLocation .flex-container-start,
+    #tblDiskLocation .flex-container-end {
+        display: flex;
+        align-items: center;
+        min-height: 0;
+    }
+
+    #tblDiskLocation i.orb-disklocation {
+        font-size: 1rem;
+    }
+
+    #tblDiskLocation .flex-container-end b {
+        color: var(--tp-text);
+        font: 600 1.4rem var(--tp-font-heading);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Empty bays fade back; bays with a drive take the colour of its state. */
+    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) {
+        opacity: 0.55;
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) .flex-container-end b {
+        color: var(--tp-muted);
+        font-weight: 500;
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:has(.green-orb-disklocation) {
+        border-color: var(--tp-success-text);
+        background: color-mix(in srgb, var(--tp-success-bg) 70%, var(--tp-subtle)) !important;
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:has(.yellow-orb-disklocation) {
+        border-color: var(--tp-warn-text);
+        background: color-mix(in srgb, var(--tp-warn-bg) 80%, var(--tp-subtle)) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-warn-text) 18%, transparent);
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:has(.red-orb-disklocation) {
+        border-color: var(--tp-danger);
+        background: color-mix(in srgb, var(--tp-danger-soft) 100%, var(--tp-subtle)) !important;
+        box-shadow: 0 0 0 3px var(--tp-danger-soft);
+    }
+
+    #tblDiskLocation .flex-container-layout_h > div:has(.blue-orb-disklocation) {
+        border-color: var(--tp-primary);
+        background: color-mix(in srgb, var(--tp-primary-soft) 100%, var(--tp-subtle)) !important;
+    }
+
+    /* ======================================================================
+       Footer: a slim frosted bar with the array state, sensor chips, the manual link and the
+       theme credit
+       ====================================================================== */
+    #footer {
+        gap: 1.2rem;
+        min-height: 4.4rem;
+        max-height: none;
+        padding: 0.6rem 2rem;
+        border-top: 1px solid var(--tp-border);
+        color: var(--tp-muted);
+        font-family: var(--tp-font-body);
+        font-size: 1.15rem;
+        background-color: color-mix(in srgb, var(--tp-bg) 82%, transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Array state as a status pill */
+    #statusbar > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.35rem 1.1rem;
+        border-radius: var(--tp-r-full);
+        color: var(--tp-neutral-text);
+        font: 600 1.15rem var(--tp-font-heading);
+        background-color: var(--tp-neutral-bg);
+    }
+
+    #statusbar > span.green {
+        color: var(--tp-success-text);
+        background-color: var(--tp-success-bg);
+    }
+
+    #statusbar > span.orange {
+        color: var(--tp-warn-text);
+        background-color: var(--tp-warn-bg);
+    }
+
+    #statusbar > span.red {
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    #user-notice:not(:empty) {
+        color: var(--tp-danger);
+        font-weight: 600;
+    }
+
+    #footer #copyright {
+        gap: 0.8rem;
+        font-family: var(--tp-font-body);
+        font-size: 1.15rem;
+        scrollbar-width: none;
+    }
+
+    /* Temperatures and fans (from the System Temp plugin) as small chips */
+    #footer #temp {
+        display: inline-flex;
+        gap: 0.5rem;
+        margin-right: 0.4rem !important;
+    }
+
+    #footer #temp > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0.9rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-full);
+        color: var(--tp-text);
+        font-variant-numeric: tabular-nums;
+        background-color: var(--tp-subtle);
+    }
+
+    #footer #temp i {
+        margin: 0 !important;
+        color: var(--tp-muted);
+    }
+
+    /* The plugin marks fans with a flag icon; a fan-like asterisk reads better. */
+    #footer #temp i.fa-flag-o:before {
+        content: "\f069";
+    }
+
+    #footer #copyright > span:not(#temp) {
+        color: var(--tp-muted);
+    }
+
+    #footer a.footer-link,
+    #footer a.tp-credit {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-full);
+        color: var(--tp-text);
+        text-decoration: none;
+        transition: border-color 0.35s var(--tp-ease), color 0.35s var(--tp-ease);
+    }
+
+    #footer a.footer-link:hover,
+    #footer a.tp-credit:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+    }
+
+    /* "Aurora Theme by Tunefish" */
+    #footer a.tp-credit strong {
+        font-family: var(--tp-font-heading);
+        background: var(--tp-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    #footer a.tp-credit svg {
+        width: 1.3rem;
+        height: 1.3rem;
+    }
+
+    /* ======================================================================
+       Short dialogs (confirmations, warnings, external links)
+       ====================================================================== */
+    .sweet-alert:not(.nchan) {
+        max-width: 48rem;
+        padding: 2.8rem 2.8rem 2.2rem;
+    }
+
+    .sweet-alert:not(.nchan) h2 {
+        margin: 0.4rem 0 1rem;
+        font-size: 2.2rem;
+        line-height: 1.25;
+    }
+
+    .sweet-alert:not(.nchan) p {
+        font-size: 1.35rem;
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    /* The status icon: smaller, with a tinted disc behind it */
+    .sweet-alert .sa-icon {
+        margin: -0.8rem auto 0.4rem;
+        border-width: 3px;
+        transform: scale(0.7);
+    }
+
+    .sweet-alert .sa-icon.sa-warning {
+        border-color: var(--tp-warn-text);
+        background-color: var(--tp-warn-bg);
+    }
+
+    .sweet-alert .sa-icon.sa-warning .sa-body,
+    .sweet-alert .sa-icon.sa-warning .sa-dot {
+        background-color: var(--tp-warn-text);
+    }
+
+    .sweet-alert .sa-icon.sa-error {
+        border-color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    .sweet-alert .sa-icon.sa-error .sa-line {
+        background-color: var(--tp-danger);
+    }
+
+    .sweet-alert .sa-icon.sa-info {
+        border-color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+    }
+
+    .sweet-alert .sa-icon.sa-info:before,
+    .sweet-alert .sa-icon.sa-info:after {
+        background-color: var(--tp-primary);
+    }
+
+    .sweet-alert .sa-icon.sa-success {
+        border-color: var(--tp-success-text);
+    }
+
+    .sweet-alert .sa-icon.sa-success .sa-line {
+        background-color: var(--tp-success-text);
+    }
+
+    .sweet-alert .sa-button-container {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .sweet-alert .sa-button-container button {
+        min-width: 12rem;
+        margin: 0;
+    }
+
+    /* External-link dialog: the address in a box, the "always allow" choice as a proper label
+       (rearranged by enhance.js) */
+    .sweet-alert p > span:has(.tp-link-url) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.4rem;
+    }
+
+    .tp-link-url {
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 0.8rem 1.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+        background-color: var(--tp-subtle);
+    }
+
+    label.tp-link-allow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: var(--tp-muted);
+        font-size: 1.25rem;
+        cursor: pointer;
+    }
+
+    /* Checkboxes and radio buttons take the accent colour. */
+    input[type="checkbox"]:where(:not(.unapi *)),
+    input[type="radio"]:where(:not(.unapi *)) {
+        width: 1.6rem;
+        height: 1.6rem;
+        accent-color: var(--tp-primary);
+        cursor: pointer;
+    }
+
+    /* ======================================================================
+       Inline actions: "Remove" / "Download" text links become small pill buttons
+       ====================================================================== */
+    /* VM Manager settings, VirtIO driver ISO. Unraid shows and hides them with an inline
+       display style, so the layout is only set while they are shown. */
+    #remove_button,
+    #download_button {
+        align-items: center;
+        gap: 0.6rem;
+        margin: 0.8rem 0.6rem 0 0;
+        padding: 0.6rem 1.3rem 0.6rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        font-size: 1.15rem;
+        line-height: 1;
+        vertical-align: middle;
+        transition: background-color 0.25s var(--tp-ease), color 0.25s var(--tp-ease), border-color 0.25s var(--tp-ease), transform 0.25s var(--tp-ease);
+    }
+
+    #remove_button[style*="inline"],
+    #download_button[style*="inline"] {
+        display: inline-flex !important;
+    }
+
+    /* "fa-fw" gives them the width of the icon alone. */
+    #remove_button.fa-fw,
+    #download_button.fa-fw {
+        flex: none;
+        align-self: flex-start;
+        width: fit-content;
+        max-width: max-content;
+    }
+
+    #remove_button span,
+    #download_button span {
+        font: 600 1.2rem/1 var(--tp-font-heading);
+        letter-spacing: 0;
+    }
+
+    #remove_button {
+        border-color: color-mix(in srgb, var(--tp-danger) 35%, transparent);
+        color: var(--tp-danger);
+        background-color: var(--tp-danger-soft);
+    }
+
+    #remove_button:hover {
+        border-color: var(--tp-danger);
+        color: #ffffff;
+        background-color: var(--tp-danger);
+        transform: translateY(-1px);
+    }
+
+    #download_button {
+        border-color: color-mix(in srgb, var(--tp-primary) 35%, transparent);
+        color: var(--tp-primary);
+        background-color: var(--tp-primary-soft);
+    }
+
+    #download_button:hover:not(.fa-spin) {
+        border-color: transparent;
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        transform: translateY(-1px);
+    }
+
+    #download_button.fa-spin {
+        padding: 0.6rem;
+        color: var(--tp-muted);
+        background-color: var(--tp-subtle);
+    }
+
+    /* Docker container editor: Edit / Remove next to each path, port and variable. */
+    button[onclick^="editConfigPopup"],
+    button[onclick^="removeConfig"] {
+        min-height: 0;
+        margin: 0 0 0 0.6rem;
+        padding: 0.5rem 1.3rem;
+        border-radius: 999px;
+        font-size: 1.15rem;
+        box-shadow: none;
+    }
+
+    button[onclick^="removeConfig"] {
+        border-color: color-mix(in srgb, var(--tp-danger) 35%, transparent);
+        color: var(--tp-danger);
+        background: var(--tp-danger-soft);
+    }
+
+    button[onclick^="removeConfig"]:hover {
+        border-color: var(--tp-danger);
+        color: #ffffff;
+        background: var(--tp-danger);
+    }
+
+    button[onclick^="removeConfig"]:before {
+        margin-right: 0.6rem;
+        font: normal 1.1rem/1 FontAwesome;
+        content: "\f1f8";
+    }
+
+    /* ======================================================================
+       System log: filter chips and highlighted lines
+       ====================================================================== */
+    /* One colour per kind of line; Unraid renames "error" to "-error error-" while a filter is off. */
+    .syslog-controls .label,
+    pre.up {
+        --tp-log-error: var(--tp-danger);
+        --tp-log-warn: #f59e0b;
+        --tp-log-system: #38bdf8;
+        --tp-log-array: #34d399;
+        --tp-log-login: #a78bfa;
+    }
+
+    .syslog-controls .label:has(input[type="checkbox"]) {
+        --tp-chip: var(--tp-muted);
+        display: inline-flex;
+        margin: 0;
+        padding: 0;
+        border-radius: 999px;
+        background: transparent;
+    }
+
+    .syslog-controls .label:has(input[type="checkbox"]):is(.error, .-error) { --tp-chip: var(--tp-log-error); }
+    .syslog-controls .label:has(input[type="checkbox"]):is(.warn, .-warn) { --tp-chip: var(--tp-log-warn); }
+    .syslog-controls .label:has(input[type="checkbox"]):is(.system, .-system) { --tp-chip: var(--tp-log-system); }
+    .syslog-controls .label:has(input[type="checkbox"]):is(.array, .-array) { --tp-chip: var(--tp-log-array); }
+    .syslog-controls .label:has(input[type="checkbox"]):is(.login, .-login) { --tp-chip: var(--tp-log-login); }
+    .syslog-controls .label.lite:has(input[type="checkbox"]):is(span, div) { --tp-chip: var(--tp-primary); }
+
+    .syslog-controls .label:has(input[type="checkbox"]) > label {
+        gap: 0.8rem !important;
+        padding: 0.6rem 1.3rem 0.6rem 1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        font: 600 1.2rem/1.2 var(--tp-font-heading);
+        background-color: transparent;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.25s var(--tp-ease), border-color 0.25s var(--tp-ease), color 0.25s var(--tp-ease), transform 0.25s var(--tp-ease);
+    }
+
+    .syslog-controls .label:has(input:checked) > label {
+        border-color: color-mix(in srgb, var(--tp-chip) 45%, transparent);
+        color: color-mix(in srgb, var(--tp-chip) 82%, var(--tp-text));
+        background-color: color-mix(in srgb, var(--tp-chip) 13%, transparent);
+    }
+
+    .syslog-controls .label:has(input[type="checkbox"]) > label:hover {
+        border-color: var(--tp-chip);
+        transform: translateY(-1px);
+    }
+
+    /* The checkbox becomes the chip's dot: a ring when off, filled with a halo when on. */
+    .syslog-controls .label input[type="checkbox"] {
+        flex: none;
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        border: 2px solid currentColor;
+        color: inherit;
+        border-radius: 50%;
+        background: transparent;
+        appearance: none;
+        cursor: pointer;
+        transition: background-color 0.25s var(--tp-ease), box-shadow 0.25s var(--tp-ease);
+    }
+
+    .syslog-controls .label input[type="checkbox"]:checked {
+        background-color: currentColor;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-chip) 28%, transparent);
+    }
+
+    .syslog-controls .label input[type="checkbox"]:focus-visible {
+        outline: 2px solid var(--tp-chip);
+        outline-offset: 3px;
+    }
+
+    /* Highlighted lines in the log: tinted, with a coloured edge instead of pastel blocks. */
+    pre.up span:is(.error, .warn, .system, .array, .login) {
+        margin: 1px 0;
+        padding: 0.1rem 0.8rem;
+        border-radius: 4px;
+        box-shadow: inset 3px 0 0 var(--tp-line);
+        /* Mixed with the text colour: lighter on the dark palette, darker on the light one. */
+        color: color-mix(in srgb, var(--tp-line) 72%, var(--tp-text));
+        background-color: color-mix(in srgb, var(--tp-line) 11%, transparent);
+    }
+
+    pre.up span.error { --tp-line: var(--tp-log-error); }
+    pre.up span.warn { --tp-line: var(--tp-log-warn); }
+    pre.up span.system { --tp-line: var(--tp-log-system); }
+    pre.up span.array { --tp-line: var(--tp-log-array); }
+    pre.up span.login { --tp-line: var(--tp-log-login); }
+
+    /* ======================================================================
+       jQuery UI dialogs (Docker "Add / Edit Configuration", device and share
+       dialogs, PHP info, ...): same look as the theme's other dialogs
+       ====================================================================== */
+    /* Above the header (102), sidebar (2000) and footer (10000), which jQuery UI's 100 is not. */
+    .ui-widget-overlay {
+        z-index: 10010 !important;
+        background: rgba(8, 12, 20, 0.6) !important;
+        opacity: 1 !important;
+        backdrop-filter: blur(3px);
+        animation: tp-dialog-fade 0.2s ease-out;
+    }
+
+    .ui-dialog.ui-widget-content {
+        z-index: 10011 !important;
+        padding: 0;
+        border: 1px solid var(--tp-border) !important;
+        border-radius: 18px;
+        overflow: hidden;
+        font-family: var(--tp-font-body);
+        box-shadow: var(--tp-shadow-lg);
+    }
+
+    .ui-dialog:not(.ui-dialog-content-full) {
+        max-width: min(100rem, calc(100vw - 3.2rem));
+        max-height: calc(100vh - 3.2rem);
+        animation: tp-dialog-rise 0.3s var(--tp-ease);
+    }
+
+    .ui-dialog .ui-dialog-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem 2.4rem 1.6rem;
+        border-bottom: 1px solid var(--tp-border) !important;
+        border-radius: 0;
+        cursor: default;
+    }
+
+    /* Unraid centres the title with an inline style; here it reads like the other dialogs. */
+    .ui-dialog .ui-dialog-title {
+        float: none;
+        flex: 1 1 auto;
+        width: auto !important;
+        margin: 0;
+        color: var(--tp-text);
+        font: 600 1.9rem/1.3 var(--tp-font-heading) !important;
+        letter-spacing: -0.01em;
+        text-align: left !important;
+    }
+
+    .ui-dialog .ui-dialog-titlebar-close {
+        position: static;
+        flex: none;
+        width: 3.4rem;
+        height: 3.4rem;
+        margin: 0;
+        padding: 0;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        background: transparent;
+        transition: color 0.25s var(--tp-ease), border-color 0.25s var(--tp-ease), transform 0.25s var(--tp-ease);
+    }
+
+    .ui-dialog .ui-dialog-titlebar-close:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+        transform: rotate(90deg);
+    }
+
+    .ui-dialog .ui-dialog-content {
+        padding: 2.2rem 2.4rem !important;
+        color: var(--tp-text);
+        background: transparent;
+    }
+
+    .ui-dialog .ui-dialog-content dl {
+        margin: 0;
+    }
+
+    .ui-dialog .ui-dialog-content dt {
+        color: var(--tp-text);
+        font-weight: 600;
+    }
+
+    .ui-dialog .ui-dialog-buttonpane {
+        display: flex;
+        justify-content: flex-end;
+        margin: 0;
+        padding: 1.4rem 2.4rem;
+        border-top: 1px solid var(--tp-border) !important;
+        background: var(--tp-subtle);
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 1rem;
+        float: none;
+    }
+
+    /* First button is the action (Add, Apply, ...): gradient pill; the rest are quiet pills. */
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button {
+        min-width: 10rem;
+        margin: 0;
+        padding: 1rem 2rem;
+        border: 1px solid var(--tp-input-border);
+        border-radius: 999px;
+        color: var(--tp-text);
+        font: 600 1.3rem/1 var(--tp-font-heading);
+        letter-spacing: 0;
+        text-transform: none;
+        background: var(--tp-elevated);
+        background-size: auto;
+        box-shadow: none;
+        transition: transform 0.3s var(--tp-ease), border-color 0.3s var(--tp-ease), color 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease);
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+        background: var(--tp-elevated);
+        transform: translateY(-1px);
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button:first-child {
+        border-color: transparent;
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        box-shadow: 0 10px 22px -12px var(--tp-primary);
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button:first-child:hover {
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        box-shadow: 0 14px 26px -12px var(--tp-primary);
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button:only-child {
+        min-width: 12rem;
+    }
+
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button[disabled],
+    .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button[disabled]:hover {
+        border-color: var(--tp-border);
+        color: var(--tp-muted);
+        background: var(--tp-subtle);
+        box-shadow: none;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .ui-dialog .ui-button-text {
+        padding: 0 !important;
+        line-height: 1;
+    }
+
+    @keyframes tp-dialog-fade {
+        from { opacity: 0; }
+    }
+
+    /* Only the dialog's opacity animates: Unraid positions it with transform. */
+    @keyframes tp-dialog-rise {
+        from { opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ui-widget-overlay,
+        .ui-dialog:not(.ui-dialog-content-full) {
+            animation: none;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .ui-dialog:not(.ui-dialog-content-full) {
+            max-width: calc(100vw - 1.6rem);
+        }
+
+        .ui-dialog .ui-dialog-titlebar,
+        .ui-dialog .ui-dialog-content,
+        .ui-dialog .ui-dialog-buttonpane {
+            padding-right: 1.6rem !important;
+            padding-left: 1.6rem !important;
+        }
+
+        .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button {
+            flex: 1 1 0;
+        }
+    }
+
+    /* Buttons do not move on hover. A hover lift moves the clickable area as well: a click
+       pressed near the lower edge then ends beside the button and the browser drops it, so
+       the button seemed to need a second click. Glow and colour show the hover instead. */
+    :is(input[type="button"], input[type="submit"], input[type="reset"], button, a.button):where(:not(.unapi *)):is(:hover, :active) {
+        transform: none !important;
+    }
+
+    /* ======================================================================
+       Management Access > Unraid API Settings (Unraid's ConnectSettings component)
+       ====================================================================== */
+    unraid-connect-settings {
+        display: block;
+        max-width: 110rem;
+    }
+
+    /* The settings form and the OIDC log card, stacked with even spacing. */
+    unraid-connect-settings [class~="pl-3"][class~="mt-6"] {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 1.6rem !important;
+        padding-left: 0 !important;
+    }
+
+    /* OIDC Debug Logs: a card like the others. */
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] {
+        margin-top: 0 !important;
+        overflow: hidden;
+        border: 1px solid var(--tp-border) !important;
+        border-radius: 16px !important;
+        background-color: var(--tp-elevated) !important;
+        box-shadow: var(--tp-shadow-sm) !important;
+    }
+
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] > :first-child {
+        padding: 1.8rem 2rem !important;
+    }
+
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] h2,
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] h3,
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] :is(.font-semibold, .font-bold) {
+        font-family: var(--tp-font-heading);
+        font-size: 1.6rem;
+        letter-spacing: -0.01em;
+    }
+
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] p {
+        color: var(--tp-muted);
+    }
+
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] [class~="p-4"][class~="pt-0"] {
+        padding: 0 2rem 2rem !important;
+    }
+
+    unraid-connect-settings [class~="border-muted"][class~="border-2"] [class~="rounded-lg"][class~="border"] {
+        border-color: var(--tp-border) !important;
+        border-radius: 12px !important;
+        background-color: var(--tp-bg) !important;
+    }
+
+    /* Apply: a footer row with the button on the right at its natural width, instead of a
+       bar stretched over a 48rem column. */
+    unraid-connect-settings [class~="grid-cols-settings"] {
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1.6rem;
+        margin-top: 0.4rem !important;
+        padding-top: 2rem;
+        border-top: 1px solid var(--tp-border);
+    }
+
+    unraid-connect-settings [class~="grid-cols-settings"] > [class~="text-end"] {
+        flex: 1 1 auto;
+        color: var(--tp-muted);
+    }
+
+    unraid-connect-settings [class~="grid-cols-settings"] > [class~="col-start-2"] {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    unraid-connect-settings [class~="grid-cols-settings"] > [class~="col-start-2"] > button {
+        width: auto !important;
+        min-width: 16rem;
+        padding: 1.1rem 2.8rem !important;
+        border-radius: 999px !important;
+        font: 600 1.35rem var(--tp-font-heading) !important;
+    }
+
+    @media (max-width: 767px) {
+        unraid-connect-settings [class~="grid-cols-settings"] > [class~="col-start-2"],
+        unraid-connect-settings [class~="grid-cols-settings"] > [class~="col-start-2"] > button {
+            width: 100% !important;
+        }
+    }
+
+    /* ======================================================================
+       Data tables outside Unraid's TableContainer frame (Tools pages, plugin pages such as
+       System Profiler): the same card look as the framed tables.
+       ====================================================================== */
+    #displaybox table:is(.share_status, .tablesorter, .unraid, .indexer):where(:not(.TableContainer *, .TableContainer--no-min-width *, .dashboard, .disk_status, .ArrayOperation-Table, .snapshot, .domdisk, #kvm_table *, .tp-ops *)) {
+        width: 100%;
+        margin: 1.2rem 0 2rem;
+        overflow: hidden;
+        border: 1px solid var(--tp-border);
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    #displaybox table:is(.share_status, .tablesorter, .unraid, .indexer):where(:not(.TableContainer *, .TableContainer--no-min-width *, .dashboard, .disk_status, .ArrayOperation-Table, .snapshot, .domdisk, #kvm_table *, .tp-ops *)) {
+        & > thead > tr > :is(td, th) {
+            padding: 1.2rem 1.6rem;
+            border-bottom: 1px solid var(--tp-border);
+            color: var(--tp-muted);
+            font: 600 1.05rem var(--tp-font-heading);
+            letter-spacing: 0.07em;
+            text-align: left;
+            text-transform: uppercase;
+            background: var(--tp-subtle);
+        }
+
+        & > tbody > tr > td {
+            height: auto;
+            padding: 0.95rem 1.6rem;
+            border-bottom: 1px solid var(--tp-border);
+            color: var(--tp-text);
+            vertical-align: top;
+            background: transparent;
+        }
+
+        /* Labels in the first column, values in plain text. */
+        & > tbody > tr > td:first-child:not(:only-child) {
+            color: var(--tp-muted);
+        }
+
+        & > tbody > tr:last-child > td {
+            border-bottom: 0;
+        }
+
+        & > tbody > tr:hover > td {
+            background-color: var(--tp-primary-soft);
+        }
+
+        /* Continuation rows (empty label, more values of the row above) sit closer. */
+        & > tbody > tr:has(> td:first-child:empty) > td {
+            padding-top: 0.3rem;
+            border-top: 0;
+        }
+
+        & > tbody > tr:has(+ tr > td:first-child:empty) > td {
+            padding-bottom: 0.3rem;
+            border-bottom: 0;
+        }
+
+        /* Section rows such as "Port eth0 Information". */
+        & > tbody > tr:has(> td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"])) > td {
+            padding-top: 1.2rem;
+            color: var(--tp-primary);
+            font: 600 1.3rem var(--tp-font-heading);
+            background-color: color-mix(in srgb, var(--tp-primary) 6%, transparent);
+        }
+    }
+}

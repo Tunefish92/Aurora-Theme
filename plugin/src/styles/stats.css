@@ -1,0 +1,186 @@
+/* Stats page. Chart colours: series 1 follows the theme's primary colour, series 2 is an amber
+   that stays distinguishable from it for colour-blind readers on both the light and dark surface. */
+#tft-stats {
+    --tfs-series-1: var(--tp-primary, #2563eb);
+    --tfs-series-2: #d97706;
+    --tfs-border: var(--tp-border, var(--table-border-color));
+    --tfs-muted: var(--tp-muted, var(--alt-text-color));
+    --tfs-surface: var(--tp-elevated, var(--table-background-color));
+}
+
+.tfs-note {
+    margin: 0 0 2rem;
+    color: var(--tfs-muted);
+    font-size: 1.2rem;
+    text-align: left;
+}
+
+.tfs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4rem;
+}
+
+.tfs-card {
+    min-width: 0;
+    padding: 1.7rem 2rem 1.2rem;
+    border: 1px solid var(--tfs-border);
+    border-radius: 18px;
+    background-color: var(--tfs-surface);
+    box-shadow: var(--tp-shadow-sm, none);
+}
+
+.tfs-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.7rem;
+}
+
+.tfs-card-title {
+    margin: 0;
+    font: 600 1.4rem var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tfs-card-title small,
+.tfs-legend {
+    color: var(--tfs-muted);
+    font: 400 1.1rem var(--tp-font-body, inherit);
+    letter-spacing: 0;
+}
+
+.tfs-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+}
+
+.tfs-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tfs-swatch {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background-color: var(--tfs-series);
+}
+
+.tfs-chart {
+    position: relative;
+    margin: 0.8rem 0 0.6rem;
+}
+
+.tfs-chart svg {
+    display: block;
+    width: 100%;
+    height: 190px;
+    overflow: visible;
+}
+
+.tfs-gridline { stroke: var(--tfs-border); stroke-width: 1; }
+.tfs-axis { fill: var(--tfs-muted); font: 10px var(--tp-font-body, sans-serif); }
+.tfs-line { fill: none; stroke: var(--tfs-series); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tfs-area { fill: var(--tfs-series); opacity: 0.1; }
+.tfs-hair { stroke: var(--tfs-muted); stroke-width: 1; opacity: 0.5; }
+.tfs-dot { fill: var(--tfs-series); stroke: var(--tfs-surface); stroke-width: 2; }
+.tfs-hover[hidden] { display: none; }
+
+.tfs-empty {
+    position: absolute;
+    inset: 0 0 2rem;
+    display: grid;
+    place-items: center;
+    color: var(--tfs-muted);
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.tfs-tip {
+    position: absolute;
+    top: 4px;
+    z-index: 2;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--tfs-border);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    pointer-events: none;
+    background-color: var(--tfs-surface);
+    box-shadow: var(--tp-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.3));
+}
+
+.tfs-tip-time {
+    margin-bottom: 0.3rem;
+    color: var(--tfs-muted);
+}
+
+.tfs-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tfs-tip-row strong {
+    margin-left: auto;
+    padding-left: 1.2rem;
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.tfs-section {
+    margin: 2.7rem 0 1rem;
+    font: 600 1.4rem var(--tp-font-heading, inherit);
+    letter-spacing: -0.01em;
+}
+
+.tfs-disk {
+    display: grid;
+    grid-template-columns: 9rem minmax(4rem, 1fr) auto;
+    align-items: center;
+    gap: 1.4rem;
+    min-height: 3.7rem;
+    border-bottom: 1px solid var(--tfs-border);
+}
+
+.tfs-disk:last-child {
+    border-bottom: 0;
+}
+
+.tfs-disk-name {
+    overflow: hidden;
+    font: 600 1.2rem var(--tp-font-heading, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tfs-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--tfs-border);
+}
+
+.tfs-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--tp-primary, #2563eb), var(--tp-primary-ii, #06b6d4));
+}
+
+.tfs-disk-value {
+    color: var(--tfs-muted);
+    font: 1rem var(--tp-font-body, inherit);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .tfs-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
