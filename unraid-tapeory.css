@@ -3394,6 +3394,23 @@
         line-height: 3.6rem;
     }
 
+    /* Community Applications cards: the description box was 4 1/3 lines tall and ran past the
+       card's fixed height, so its last line was cut with no space below. Three whole lines,
+       ending in "...", leave the card's bottom padding free. */
+    .ca_holder .cardDescription,
+    .ca_holder .cardDesc {
+        max-height: none !important;
+    }
+
+    .ca_holder .cardDesc {
+        display: -webkit-box !important;
+        overflow: hidden;
+        line-height: 1.45rem !important;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
     /* Community Applications: its search button as a round button next to the field. */
     .searchAreaHolder #searchFilter .searchSubmit {
         display: grid !important;
@@ -3412,6 +3429,647 @@
     .searchAreaHolder #searchFilter .searchSubmit:hover {
         border-color: var(--tp-primary);
         color: var(--tp-primary);
+    }
+
+    /* Community Applications: search field and button in one row at every width (the button
+       used to wrap under the field). */
+    .searchAreaHolder #searchFilter {
+        display: flex !important;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .searchAreaHolder #searchFilter .searchSubmit {
+        position: static !important;
+        flex: none;
+        margin-left: 0 !important;
+    }
+
+    /* Community Applications: on wide screens the search bar sits centred in the page title's row,
+       as a frosted pill; it still sticks to the top when scrolling. Its holder takes no room,
+       so the title moves up beside it. */
+    @media (min-width: 1200px) {
+        .searchAreaHolder {
+            top: -2.3rem !important;
+            height: 0;
+        }
+
+        .searchAreaHolder .searchArea {
+            position: relative;
+            top: 3.1rem;
+            justify-content: center;
+            gap: 0.8rem;
+            width: fit-content;
+            margin: 0 auto;
+            padding: 0.5rem 1.2rem 0.5rem 0.5rem;
+            border: 1px solid var(--tp-border);
+            border-radius: var(--tp-r-full);
+            background: color-mix(in srgb, var(--tp-bg) 80%, transparent);
+            box-shadow: var(--tp-shadow-sm);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .searchAreaHolder .searchArea > :is(#maxPerPage, .category) {
+            margin: 0 !important;
+        }
+    }
+
+    /* Community Applications: the monthly spotlight badge as a pill in the card's top right
+       corner (it sat over the description); left of the "Installed" / "Limetech" ribbon. */
+    .ca_holder.spotlightHome {
+        position: relative;
+    }
+
+    .ca_holder .homespotlightIconArea {
+        position: absolute !important;
+        top: 1.6rem;
+        right: 1.6rem;
+        left: auto !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.3rem 1.1rem 0.3rem 0.3rem;
+        border: 1px solid color-mix(in srgb, #f97316 40%, transparent);
+        border-radius: var(--tp-r-full);
+        color: var(--tp-text);
+        font: 600 1.15rem/1 var(--tp-font-heading);
+        white-space: nowrap;
+        background: color-mix(in srgb, #f97316 10%, var(--tp-elevated));
+    }
+
+    div:has(> .tp-ca-badge, > [class*=CardBackground]:not(.favCardBackground)) > .ca_holder .homespotlightIconArea {
+        top: 4.8rem;
+    }
+
+    .ca_holder .homespotlightIconArea > div:first-child {
+        display: grid;
+        place-items: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 50%;
+        color: #ffffff;
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+
+    .ca_holder .homespotlightIconArea > div:first-child::before {
+        font: normal 1.1rem/1 FontAwesome;
+        content: "\f005";
+    }
+
+    .ca_holder .homespotlightIconArea img.spotlightIcon {
+        display: none;
+    }
+
+    .ca_holder .homespotlightIconArea .spotlightDate {
+        margin: 0;
+        color: var(--tp-muted);
+        font: inherit;
+        font-weight: 500;
+    }
+
+    .ca_holder .homespotlightIconArea .spotlightDate::before {
+        margin-right: 0.5rem;
+        color: var(--tp-text);
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        content: "SPOTLIGHT";
+    }
+
+    /* Community Applications: the "Installed", "Official", "Limetech", "Beta" corner ribbons as
+       pills in the card's top right corner, each in its own colour with an icon. CA places the
+       ribbon beside the card in the card's wrapper, so the pill is positioned in the wrapper
+       (the card has a 1rem right margin there). */
+    div:has(> .ca_holder) {
+        position: relative;
+    }
+
+    :is(.installedCardBackground, .officialCardBackground, .LTOfficialCardBackground, .betaCardBackground,
+        .warningCardBackground, .greenCardBackground, .spotlightCardBackground) {
+        --tp-badge: var(--tp-primary);
+        --tp-badge-icon: "\f132";
+        position: absolute !important;
+        top: 1.6rem;
+        right: 2.6rem;
+        left: auto !important;
+        z-index: 1;
+        display: inline-flex !important;
+        align-items: center;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0.3rem 1.1rem 0.3rem 0.3rem;
+        border: 1px solid color-mix(in srgb, var(--tp-badge) 40%, transparent);
+        border-radius: var(--tp-r-full);
+        background: color-mix(in srgb, var(--tp-badge) 12%, var(--tp-elevated)) !important;
+        clip-path: none !important;
+        pointer-events: none;
+        transition: transform 0.35s var(--tp-ease);
+    }
+
+    div:has(> .ca_holder:hover) > [class*=CardBackground]:not(.favCardBackground) {
+        transform: translateY(-3px);
+    }
+
+    :is(.installedCardBackground, .greenCardBackground) {
+        --tp-badge: #22c55e;
+        --tp-badge-icon: "\f00c";
+    }
+
+    .LTOfficialCardBackground {
+        --tp-badge: #f15a2c;
+    }
+
+    .betaCardBackground {
+        --tp-badge: #f59e0b;
+        --tp-badge-icon: "\f0c3";
+    }
+
+    .warningCardBackground {
+        --tp-badge: #ef4444;
+        --tp-badge-icon: "\f071";
+    }
+
+    .spotlightCardBackground {
+        --tp-badge: #f97316;
+        --tp-badge-icon: "\f005";
+    }
+
+    [class*=CardBackground]:not(.favCardBackground) > .installedCardText {
+        position: static !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 0.6rem;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible;
+        color: var(--tp-text) !important;
+        font: 600 1.05rem/1 var(--tp-font-heading) !important;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        transform: none !important;
+    }
+
+    [class*=CardBackground]:not(.favCardBackground) > .installedCardText::before {
+        display: grid;
+        place-items: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 50%;
+        color: #ffffff;
+        font: normal 1.1rem/1 FontAwesome;
+        letter-spacing: 0;
+        background: var(--tp-badge);
+        content: var(--tp-badge-icon);
+    }
+
+    /* Community Applications: the page numbers sat half under the theme's taller footer. They
+       float above it now, as a pill with round page buttons. */
+    .navigationSection {
+        background: transparent !important;
+        pointer-events: none;
+    }
+
+    /* Fixed to the bottom on wider screens; on phones it flows with the page. */
+    @media (min-width: 769px) {
+        .navigationSection {
+            bottom: 4.4rem !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .navigationSection .navigationArea {
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.8rem;
+            border-radius: var(--tp-r-md);
+        }
+
+        .navigationArea span.pageNavigation {
+            min-width: 0;
+        }
+
+        .navigationArea div.pageNavigation {
+            flex-wrap: wrap;
+            width: auto;
+        }
+    }
+
+    /* Community Applications: Change Log, Credits and Statistics open as a modal card over a
+       dimmed page instead of text straight on a full screen panel. */
+    #alternateView {
+        inset: 0 !important;
+        z-index: 10001 !important;
+        box-sizing: border-box;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 7vh 1.6rem !important;
+        overflow: hidden !important;
+        background: rgba(8, 12, 20, 0.6) !important;
+        opacity: 1 !important;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    #alternateView .alternateViewContent {
+        box-sizing: border-box;
+        width: min(72rem, 100%);
+        max-height: 100%;
+        margin: 0 auto;
+        padding: 3.2rem 4rem 3.6rem;
+        overflow-y: auto;
+        border: 1px solid var(--tp-border);
+        border-radius: 20px;
+        color: var(--tp-text);
+        font-size: 1.35rem;
+        font-weight: 400 !important;
+        line-height: 1.6;
+        background: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg);
+        scrollbar-width: thin;
+        animation: tp-ca-modal 0.35s var(--tp-ease);
+    }
+
+    @keyframes tp-ca-modal {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+        }
+    }
+
+    #alternateView .alternateViewClose {
+        top: calc(7vh + 1.4rem) !important;
+        right: calc((100vw - min(72rem, 100vw - 3.2rem)) / 2 + 1.4rem) !important;
+        left: auto !important;
+        z-index: 2;
+        width: 3.6rem;
+        height: 3.6rem;
+        overflow: hidden;
+        margin: 0;
+        padding: 0 !important;
+        border: 1px solid var(--tp-border);
+        border-radius: 50%;
+        color: var(--tp-muted);
+        font-size: 0 !important;
+        background: var(--tp-subtle) !important;
+        cursor: pointer;
+        transition: color 0.2s, border-color 0.2s;
+    }
+
+    #alternateView .alternateViewClose::before {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font: normal 1.5rem/1 FontAwesome;
+        content: "\f00d";
+    }
+
+    #alternateView .alternateViewClose::after {
+        display: none;
+    }
+
+    #alternateView .alternateViewClose:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+    }
+
+    /* Change Log: a title, the versions as date chips with their lists below. */
+    .alternateViewContent > div[style*="width:500px"] {
+        width: auto !important;
+    }
+
+    .alternateViewContent > div > br {
+        display: none;
+    }
+
+    .alternateViewContent > div > .ca_center:first-child font,
+    .alternateViewContent .ca_creditTitle:not(.caLogoIcon),
+    .alternateViewContent font[size^="5"] {
+        display: block;
+        margin: 0 4rem 1.6rem 0;
+        color: var(--tp-text);
+        font: 600 2.2rem/1.2 var(--tp-font-heading);
+        letter-spacing: -0.01em;
+        text-align: left;
+    }
+
+    .alternateViewContent h3 {
+        display: inline-block;
+        margin: 2rem 0 0.8rem;
+        padding: 0.4rem 1.1rem;
+        border-radius: var(--tp-r-full);
+        color: var(--tp-primary);
+        font: 600 1.25rem/1.2 var(--tp-font-heading);
+        font-variant-numeric: tabular-nums;
+        background: var(--tp-primary-soft);
+    }
+
+    .alternateViewContent ul {
+        margin: 0;
+        padding: 0 0 0.4rem 1.8rem;
+        border-bottom: 1px solid var(--tp-border);
+    }
+
+    .alternateViewContent ul:last-child {
+        border-bottom: 0;
+    }
+
+    .alternateViewContent li {
+        margin: 0.3rem 0;
+        color: var(--tp-text);
+    }
+
+    .alternateViewContent li::marker {
+        color: var(--tp-primary);
+    }
+
+    /* Credits: section labels as small accent captions above the names. */
+    .alternateViewContent .credits {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    .alternateViewContent .credits * {
+        font-style: normal !important;
+    }
+
+    .alternateViewContent .credits .ca_center {
+        text-align: left;
+    }
+
+    .alternateViewContent .ca_creditTitle.caLogoIcon {
+        display: none;
+    }
+
+    .alternateViewContent .ca_creditheader {
+        margin: 2rem 0 0.4rem;
+        color: var(--tp-primary);
+        font: 600 1.1rem/1.2 var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .alternateViewContent .ca_credit {
+        color: var(--tp-text);
+        font-size: 1.35rem;
+    }
+
+    .alternateViewContent .ca_credit:has(.ca_libraries) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .alternateViewContent .ca_libraries {
+        padding: 0.3rem 1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-full);
+        font-size: 1.2rem;
+        background: var(--tp-subtle);
+    }
+
+    .alternateViewContent .ca_italic {
+        margin-top: 2.4rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid var(--tp-border);
+        color: var(--tp-muted);
+        font-size: 1.15rem;
+    }
+
+    /* Statistics: label and value rows with thin lines between them. */
+    .alternateViewContent > div[style*="overflow:scroll"] {
+        width: auto !important;
+        overflow: visible !important;
+    }
+
+    #alternateView .alternateViewContent table {
+        width: 100%;
+        margin: 0 !important;
+        border-collapse: collapse;
+        background: transparent !important;
+    }
+
+    .alternateViewContent table tr:first-child td {
+        padding-bottom: 0.8rem;
+    }
+
+    .alternateViewContent table tr:first-child .ca_center {
+        text-align: left;
+    }
+
+    .alternateViewContent table .fa-users {
+        display: grid;
+        place-items: center;
+        width: 5.2rem;
+        height: 5.2rem;
+        border-radius: 16px;
+        color: #ffffff;
+        font-size: 2.4rem !important;
+        background: var(--tp-gradient);
+    }
+
+    .alternateViewContent td.ca_table,
+    .alternateViewContent td.ca_stat {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--tp-border);
+        font-size: 1.35rem;
+        line-height: 1.4;
+    }
+
+    .alternateViewContent td.ca_table {
+        padding-right: 2.4rem;
+        color: var(--tp-muted);
+    }
+
+    .alternateViewContent td.ca_stat {
+        color: var(--tp-text);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+
+    .alternateViewContent tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .alternateViewContent a.popUpLink {
+        color: var(--tp-primary);
+    }
+
+    .navigationSection .navigationArea {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem 1.4rem;
+        width: fit-content;
+        max-width: calc(100% - 3.2rem);
+        margin: 0 auto 1.2rem;
+        padding: 0.5rem 0.6rem 0.5rem 1.8rem;
+        box-sizing: border-box;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-full);
+        background: color-mix(in srgb, var(--tp-elevated) 88%, transparent);
+        box-shadow: var(--tp-shadow-lg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: auto;
+    }
+
+    .navigationArea > br {
+        display: none;
+    }
+
+    .navigationArea .pageNavigation {
+        margin: 0 !important;
+    }
+
+    /* Fixed widths: CA shows more page numbers the further you go, and a pill that grew with
+       them moved the arrows away from the pointer, so repeated clicks hit a page number. The
+       arrows now sit at both ends of a fixed-width row with the numbers centred between. */
+    .navigationArea span.pageNavigation {
+        min-width: 19rem;
+        color: var(--tp-muted);
+        font-size: 1.2rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .navigationArea div.pageNavigation {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        width: 62rem;
+        max-width: 100%;
+    }
+
+    .navigationArea .pageNumber.pageLeft {
+        margin-right: auto !important;
+    }
+
+    .navigationArea .pageNumber.pageRight {
+        margin-left: auto !important;
+    }
+
+    .navigationArea .pageNumber {
+        display: inline-grid;
+        place-items: center;
+        min-width: 3.4rem;
+        height: 3.4rem;
+        margin: 0 !important;
+        padding: 0 0.4rem;
+        box-sizing: border-box;
+        border-radius: var(--tp-r-full);
+        color: var(--tp-text) !important;
+        font: 600 1.25rem/1 var(--tp-font-heading);
+        font-variant-numeric: tabular-nums;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .navigationArea .pageNumber:not(.pageSelected, .pageNavNoClick):hover {
+        color: var(--tp-primary) !important;
+        background: var(--tp-subtle);
+    }
+
+    .navigationArea .pageNumber.pageSelected {
+        color: #ffffff !important;
+        background: var(--tp-gradient);
+        box-shadow: 0 6px 14px -8px var(--tp-primary);
+    }
+
+    .navigationArea .pageDots {
+        padding: 0 0.4rem;
+        color: var(--tp-muted);
+    }
+
+    /* Community Applications: the menu on the left as a nav list, like the sidebar: rounded
+       rows, a soft highlight on hover, the selected entry in the accent colour, sub categories
+       indented along a line. */
+    .menuItems:not(.menuShowing) {
+        flex: none;
+        width: 18rem;
+    }
+
+    .menuItems ul.caMenu {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin: 0 0 0.4rem;
+        font-size: 1.35rem;
+    }
+
+    .menuItems .caMenuItem {
+        width: auto !important;
+        margin: 0;
+        padding: 0.6rem 1.2rem !important;
+        border-radius: var(--tp-r-sm);
+        color: var(--tp-muted);
+        font-weight: 500;
+        line-height: 1.3;
+        list-style: none;
+        transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+
+    .menuItems .caMenuItem.caMenuEnabled:hover {
+        color: var(--tp-text) !important;
+        background: var(--tp-subtle);
+    }
+
+    .menuItems .caMenuItem.selectedMenu,
+    .menuItems .caMenuItem.selectedMenu:hover {
+        color: var(--tp-primary) !important;
+        font-weight: 600;
+        background: var(--tp-primary-soft);
+        box-shadow: inset 3px 0 0 var(--tp-primary);
+    }
+
+    .menuItems .caMenuItem.caMenuDisabled {
+        opacity: 0.4;
+    }
+
+    /* Rows that only hold a separator or a link get no row style of their own. */
+    .menuItems li.caMenuItem:has(> hr, > a.caMenuItem) {
+        padding: 0 !important;
+        background: none !important;
+        box-shadow: none;
+    }
+
+    .menuItems a.caMenuItem {
+        display: block;
+    }
+
+    .menuItems hr {
+        margin: 0.6rem 1.2rem;
+        border: 0;
+        border-top: 1px solid var(--tp-border);
+    }
+
+    .menuItems li.subCategory {
+        margin: 0.2rem 0 0.4rem 1.8rem;
+        padding-left: 0.6rem;
+        border-left: 1px solid var(--tp-border);
+    }
+
+    .menuItems li.subCategory > ul.caMenuItem {
+        padding: 0.5rem 1rem !important;
+        font-size: 1.25rem;
+    }
+
+    /* "VERSION" and the version number under it. */
+    .menuItems ul.caMenu > li:not([class]):not(:has(hr)) {
+        padding: 0 1.2rem;
+        color: var(--tp-muted);
+        font-size: 1.15rem;
+    }
+
+    .menuItems ul.caMenu > li:not([class]):not(:has(hr, span)) {
+        padding-top: 0.4rem;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
     }
 
     /* Unraid's narrow fields (90px, e.g. in Add VM): with the theme's padding the text was cut

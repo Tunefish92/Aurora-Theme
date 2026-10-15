@@ -1257,6 +1257,18 @@
     arrange();
   }
 
+  // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
+  // the theme; a click on the dimmed backdrop closes it like its own close button.
+  function caOverlay() {
+    const overlay = document.getElementById('alternateView');
+    if (!overlay) return;
+    overlay.addEventListener('click', function (event) {
+      if (event.target !== overlay) return;
+      const close = overlay.querySelector('.alternateViewClose');
+      if (close) close.click();
+    });
+  }
+
   // Settings and Tools: a search field above the panels. Typing filters the panels by their
   // name (and page name); sections without a match are hidden with them.
   function panelSearch(info) {
@@ -2323,7 +2335,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

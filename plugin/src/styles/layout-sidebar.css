@@ -135,7 +135,8 @@
             scrollbar-width: thin;
         }
 
-        #footer {
+        #footer,
+        .navigationSection {
             left: var(--tp-sidebar-width);
             width: calc(100% - var(--tp-sidebar-width));
         }
