@@ -28,6 +28,23 @@
     return node;
   }
 
+  // Opens a container's web interface the way Unraid's own context menu does (window.open).
+  // The element is a link without href: Unraid shows its "external link" warning for real
+  // links to other addresses, but not for its menu, so the WebUI buttons behave like the menu.
+  function webuiOpener(node, url) {
+    node.setAttribute('role', 'link');
+    node.tabIndex = 0;
+    node.dataset.url = url;
+    const open = function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.open(url, '_blank');
+    };
+    node.addEventListener('click', open);
+    node.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') open(event); });
+    return node;
+  }
+
   function debounce(fn) {
     let timer;
     return function () {
@@ -393,10 +410,7 @@
       const webui = contextArguments(trigger)[7] || '';
       const webuiCell = element('td', 'tp-extra tp-c-webui');
       if (running && /^https?:\/\/[^\s\[\]'"<>]+$/.test(webui)) {
-        const link = element('a', 'tp-webui');
-        link.href = webui;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        const link = webuiOpener(element('a', 'tp-webui'), webui);
         link.title = 'Open ' + webui;
         link.setAttribute('aria-label', 'Open the web interface of ' + name);
         link.append(element('i', 'fa fa-external-link'));
@@ -1069,11 +1083,14 @@
         });
         return node;
       }
-      function link(iconName, label, url) {
+      function link(iconName, label, url, webui) {
         const node = element('a', 'tp-ct-action tp-ct-link');
-        node.href = url;
-        node.target = '_blank';
-        node.rel = 'noopener noreferrer';
+        if (webui) webuiOpener(node, url);
+        else {
+          node.href = url;
+          node.target = '_blank';
+          node.rel = 'noopener noreferrer';
+        }
         node.append(element('i', 'fa fa-' + iconName), element('span', '', label));
         node.addEventListener('click', close);
         return node;
@@ -1086,7 +1103,7 @@
 
       const primary = element('div', 'tp-ct-primary');
       if (state === 'running') {
-        if (ct.webui) primary.append(link('globe', 'Open WebUI', ct.webui));
+        if (ct.webui) primary.append(link('globe', 'Open WebUI', ct.webui, true));
         primary.append(button('stop', 'Stop', control('stop'), 'danger-soft'), button('refresh', 'Restart', control('restart')), button('pause', 'Pause', control('pause')));
       } else if (state === 'paused') {
         primary.append(button('play', 'Resume', control('resume'), 'go'), button('refresh', 'Restart', control('restart')), button('stop', 'Stop', control('stop'), 'danger-soft'));
@@ -1106,7 +1123,7 @@
       box.append(element('h3', 'tp-ct-section', 'Manage'), tools);
 
       const links = element('div', 'tp-ct-grid');
-      if (state === 'running' && ct.tswebui) links.append(link('globe', 'Tailscale WebUI', ct.tswebui));
+      if (state === 'running' && ct.tswebui) links.append(link('globe', 'Tailscale WebUI', ct.tswebui, true));
       if (ct.readme) links.append(link('book', 'Read me first', ct.readme));
       if (ct.project) links.append(link('life-ring', 'Project page', ct.project));
       if (ct.support) links.append(link('question-circle', 'Support', ct.support));

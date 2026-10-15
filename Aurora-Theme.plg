@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.1715"
+        version="2026.10.15.1718"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.1715
+###2026.10.15.1718
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -4999,6 +4999,23 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     return node;
   }
 
+  // Opens a container's web interface the way Unraid's own context menu does (window.open).
+  // The element is a link without href: Unraid shows its "external link" warning for real
+  // links to other addresses, but not for its menu, so the WebUI buttons behave like the menu.
+  function webuiOpener(node, url) {
+    node.setAttribute('role', 'link');
+    node.tabIndex = 0;
+    node.dataset.url = url;
+    const open = function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.open(url, '_blank');
+    };
+    node.addEventListener('click', open);
+    node.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') open(event); });
+    return node;
+  }
+
   function debounce(fn) {
     let timer;
     return function () {
@@ -5364,10 +5381,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
       const webui = contextArguments(trigger)[7] || '';
       const webuiCell = element('td', 'tp-extra tp-c-webui');
       if (running && /^https?:\/\/[^\s\[\]'"<>]+$/.test(webui)) {
-        const link = element('a', 'tp-webui');
-        link.href = webui;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        const link = webuiOpener(element('a', 'tp-webui'), webui);
         link.title = 'Open ' + webui;
         link.setAttribute('aria-label', 'Open the web interface of ' + name);
         link.append(element('i', 'fa fa-external-link'));
@@ -6040,11 +6054,14 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
         });
         return node;
       }
-      function link(iconName, label, url) {
+      function link(iconName, label, url, webui) {
         const node = element('a', 'tp-ct-action tp-ct-link');
-        node.href = url;
-        node.target = '_blank';
-        node.rel = 'noopener noreferrer';
+        if (webui) webuiOpener(node, url);
+        else {
+          node.href = url;
+          node.target = '_blank';
+          node.rel = 'noopener noreferrer';
+        }
         node.append(element('i', 'fa fa-' + iconName), element('span', '', label));
         node.addEventListener('click', close);
         return node;
@@ -6057,7 +6074,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
       const primary = element('div', 'tp-ct-primary');
       if (state === 'running') {
-        if (ct.webui) primary.append(link('globe', 'Open WebUI', ct.webui));
+        if (ct.webui) primary.append(link('globe', 'Open WebUI', ct.webui, true));
         primary.append(button('stop', 'Stop', control('stop'), 'danger-soft'), button('refresh', 'Restart', control('restart')), button('pause', 'Pause', control('pause')));
       } else if (state === 'paused') {
         primary.append(button('play', 'Resume', control('resume'), 'go'), button('refresh', 'Restart', control('restart')), button('stop', 'Stop', control('stop'), 'danger-soft'));
@@ -6077,7 +6094,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
       box.append(element('h3', 'tp-ct-section', 'Manage'), tools);
 
       const links = element('div', 'tp-ct-grid');
-      if (state === 'running' && ct.tswebui) links.append(link('globe', 'Tailscale WebUI', ct.tswebui));
+      if (state === 'running' && ct.tswebui) links.append(link('globe', 'Tailscale WebUI', ct.tswebui, true));
       if (ct.readme) links.append(link('book', 'Read me first', ct.readme));
       if (ct.project) links.append(link('life-ring', 'Project page', ct.project));
       if (ct.support) links.append(link('question-circle', 'Support', ct.support));
@@ -8169,6 +8186,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
 }
 
 /* WebUI link: a round gradient button with just the icon */
+a.tp-webui,
+a.tp-ct-link[role="link"] {
+    cursor: pointer;
+}
+
 a.tp-webui {
     display: inline-grid;
     place-items: center;
@@ -14977,7 +14999,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.1715 is installed."
+echo "Aurora-Theme 2026.10.15.1718 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

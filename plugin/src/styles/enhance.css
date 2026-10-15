@@ -591,6 +591,11 @@
 }
 
 /* WebUI link: a round gradient button with just the icon */
+a.tp-webui,
+a.tp-ct-link[role="link"] {
+    cursor: pointer;
+}
+
 a.tp-webui {
     display: inline-grid;
     place-items: center;
