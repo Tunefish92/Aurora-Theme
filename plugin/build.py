@@ -101,7 +101,7 @@ install += [
     f"* * * * * /usr/bin/php {EMHTTP}/scripts/collect.php &> /dev/null\n\n{DELIMITER}",
     # The script itself checks the "Automatic updates" setting, so the job can stay in place.
     f"cat > /boot/config/plugins/{NAME}/autoupdate.cron <<'{DELIMITER}'\n"
-    "# Aurora Theme: hourly check for a newer version at the install location\n"
+    "# Aurora Theme: hourly check for a newer release on GitHub\n"
     f"23 * * * * /usr/bin/php {EMHTTP}/scripts/autoupdate.php &> /dev/null\n\n{DELIMITER}",
     "/usr/local/sbin/update_cron",
     'echo ""',
