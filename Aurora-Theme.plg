@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.1809"
+        version="2026.10.15.1832"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.1809
+###2026.10.15.1832
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -5141,12 +5141,16 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     const tab = active ? active.textContent.trim() : '';
     const path = location.pathname.split('/').filter(Boolean);
     const subPage = tab && path[0] === tab && path.length > 1 ? path[path.length - 1] : '';
+    // A page with a single section is named after that section's title ("PHP Settings", not
+    // "PHPsettings"); otherwise the address is split into words.
+    const titles = subPage ? document.querySelectorAll('#displaybox div.title > span.left') : [];
+    const sectionName = titles.length === 1 ? titles[0].textContent.replace(/\s+/g, ' ').trim() : '';
     return {
       server: titleParts.length > 1 ? titleParts[0] : '',
       tab: tab || (titleParts[1] || ''),
       // "DisplaySettings" reads better as "Display Settings".
       // ... and "VMTemplates" as "VM Templates".
-      subPage: subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
+      subPage: sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
     };
   }
 
@@ -6228,9 +6232,83 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     arrange();
   }
 
+  // Tools pages: their help text is given a clearer structure. Paragraphs written all in
+  // italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
+  // warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
+  // lines (Credits) become rows. On Diagnostics the list of collected files becomes cards.
+  function toolText(info) {
+    if (info.tab !== 'Tools' || !location.pathname.split('/')[2]) return;
+    const content = document.querySelector('#displaybox .content');
+    if (!content || content.classList.contains('tp-tool-text')) return;
+    content.classList.add('tp-tool-text');
+    const textOf = function (node) { return node.textContent.replace(/\s+/g, ' ').trim(); };
+    content.querySelectorAll('p').forEach(function (p) {
+      if (p.closest('.unapi, pre, table, blockquote, dd, dt')) return;
+      const text = textOf(p);
+      if (!text) return;
+      const looseText = [...p.childNodes].filter(function (node) { return node.nodeType === 3; }).map(function (node) { return node.textContent; }).join('').trim();
+      const red = p.querySelector(':scope > font[color=red], :scope > .red-text');
+      if (/^(DO NOT|WARNING|CAUTION|IMPORTANT)\b/.test(text) || (red && textOf(red) === text)) p.classList.add('tp-callout', 'tp-callout-warn');
+      else if (/^NOTE\b/i.test(text) || (!looseText && p.querySelector(':scope > em, :scope > i'))) p.classList.add('tp-callout');
+      else if (text.length < 90 && /[A-Z]{3}/.test(text) && text === text.toUpperCase()) p.classList.add('tp-text-heading');
+      else if (p.firstChild && p.firstChild.nodeType === 1 && p.firstChild.matches('strong, b') && /copyright/i.test(text)) p.classList.add('tp-credit');
+    });
+    diagnosticsList(content);
+  }
+
+  // Diagnostics: "+ /config <br> copy all ..." in a pre block, rebuilt as one card per entry.
+  function diagnosticsList(content) {
+    const holder = content.querySelector('pre.pre > p');
+    if (!holder || !/\/Diagnostics$/.test(location.pathname)) return;
+    const items = [];
+    let item = null;
+    const addText = function (text) {
+      if (item && text.trim()) item.desc.push(document.createTextNode(text.replace(/\s+/g, ' ')));
+    };
+    [...holder.childNodes].forEach(function (node) {
+      if (node.nodeType === 3) {
+        const parts = node.textContent.split('+');
+        addText(parts[0]);
+        parts.slice(1).forEach(function (part) {
+          item = { title: '', desc: [] };
+          items.push(item);
+          addText(part);
+        });
+      } else if (!item || node.nodeType !== 1) {
+        return;
+      } else if (!item.title && node.matches('em')) {
+        item.title = node.textContent.trim();
+      } else if (node.matches('br')) {
+        if (item.desc.length) item.desc.push(document.createElement('br'));
+      } else {
+        item.desc.push(node);
+      }
+    });
+    if (items.length < 2 || items.some(function (entry) { return !entry.title; })) return;
+    const icons = [[/^\/config$/, 'fa-cog'], [/^\/config\/shares/, 'fa-share-alt'], [/^syslog/i, 'fa-file-text-o'], [/^system/i, 'fa-microchip'], [/^smart/i, 'fa-hdd-o'], [/^docker/i, 'fa-cube']];
+    const grid = element('div', 'tp-collect');
+    items.forEach(function (entry) {
+      const match = icons.find(function (pair) { return pair[0].test(entry.title); });
+      const icon = element('i', 'fa ' + (match ? match[1] : 'fa-file-o'));
+      icon.setAttribute('aria-hidden', 'true');
+      const head = element('div', 'tp-collect-title');
+      head.append(icon, element('span', '', entry.title));
+      while (entry.desc.length && entry.desc[entry.desc.length - 1].nodeName === 'BR') entry.desc.pop();
+      const desc = element('p', 'tp-collect-desc');
+      desc.append(...entry.desc);
+      const card = element('div', 'tp-collect-item');
+      card.append(head, desc);
+      grid.append(card);
+    });
+    holder.closest('pre').replaceWith(grid);
+  }
+
   // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
-  // the theme; a click on the dimmed backdrop closes it like its own close button.
+  // the theme; a click on the dimmed backdrop closes it like its own close button. App names in
+  // the search field are not spell-checked (no red underline).
   function caOverlay() {
+    const search = document.getElementById('searchBox');
+    if (search) search.spellcheck = false;
     const overlay = document.getElementById('alternateView');
     if (!overlay) return;
     overlay.addEventListener('click', function (event) {
@@ -7306,7 +7384,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
@@ -15155,6 +15233,233 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         }
     }
 
+    /* Tools pages: readable help text (marked by enhance.js). Wider line spacing, notes and
+       warnings as callouts with an icon, code blocks as boxes, the EULA's all-caps lines as
+       section headings, the Credits lines as rows, Diagnostics' file list as cards. */
+    .tp-tool-text p:where(:not(.unapi *, table *, pre *, dd *, dt *, .tp-collect *)) {
+        max-width: 100rem;
+        margin: 0 0 1.2rem;
+        color: color-mix(in srgb, var(--tp-text) 80%, var(--tp-muted));
+        font-size: 1.35rem;
+        line-height: 1.7;
+    }
+
+    .tp-tool-text :is(p, li) :is(strong, b) {
+        color: var(--tp-text);
+        font-weight: 600;
+    }
+
+    .tp-tool-text p :is(code, kbd) {
+        padding: 0.1rem 0.6rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 6px;
+        color: var(--tp-text);
+        font: 500 0.92em ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        background: var(--tp-subtle);
+    }
+
+    .tp-tool-text p.tp-callout {
+        position: relative;
+        margin: 1.2rem 0;
+        padding: 1.2rem 1.6rem 1.2rem 4.6rem;
+        border: 1px solid color-mix(in srgb, var(--tp-primary) 28%, transparent);
+        border-radius: 12px;
+        color: var(--tp-text);
+        background: color-mix(in srgb, var(--tp-primary) 7%, var(--tp-elevated));
+    }
+
+    .tp-tool-text p.tp-callout::before {
+        position: absolute;
+        top: 1.25rem;
+        left: 1.6rem;
+        color: var(--tp-primary);
+        font: normal 1.6rem/1.7rem FontAwesome;
+        content: "\f05a";
+    }
+
+    .tp-tool-text p.tp-callout :is(em, i) {
+        font-style: normal;
+    }
+
+    .tp-tool-text p.tp-callout-warn {
+        border-color: color-mix(in srgb, var(--tp-warn-text) 35%, transparent);
+        background: color-mix(in srgb, var(--tp-warn-bg) 70%, var(--tp-elevated));
+    }
+
+    .tp-tool-text p.tp-callout-warn::before {
+        color: var(--tp-warn-text);
+        content: "\f071";
+    }
+
+    .tp-tool-text p.tp-callout-warn font[color] {
+        color: inherit;
+    }
+
+    .tp-tool-text p.tp-text-heading {
+        margin: 2.8rem 0 1rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--tp-border);
+        color: var(--tp-text);
+        font: 600 1.45rem/1.3 var(--tp-font-heading);
+        letter-spacing: 0.04em;
+    }
+
+    .tp-tool-text p.tp-credit {
+        margin: 0;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--tp-border);
+    }
+
+    .tp-tool-text p.tp-credit > :is(strong, b):first-child {
+        display: inline-block;
+        min-width: 30rem;
+        margin-right: 1.2rem;
+    }
+
+    .tp-tool-text p.tp-credit + p:not(.tp-credit) {
+        margin-top: 2rem;
+    }
+
+    .tp-tool-text pre:where(:not(.js-fill-available-height, :has(form, table))) {
+        width: fit-content;
+        min-width: min(36rem, 100%);
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 1.2rem 0 2rem;
+        padding: 1.6rem 2rem;
+        overflow-x: auto;
+        border: 1px solid var(--tp-border);
+        border-radius: 12px;
+        color: var(--tp-text);
+        font: 1.25rem/1.65 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        background: var(--tp-subtle);
+    }
+
+    .tp-tool-text pre code {
+        font: inherit;
+    }
+
+    .tp-collect {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(34rem, 1fr));
+        gap: 1.2rem;
+        margin: 1.6rem 0 2.4rem;
+    }
+
+    .tp-collect-item {
+        padding: 1.6rem 1.8rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    .tp-collect-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: var(--tp-text);
+        font: 600 1.45rem/1.2 var(--tp-font-heading);
+    }
+
+    .tp-collect-title > i {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 3.4rem;
+        height: 3.4rem;
+        border-radius: 10px;
+        color: var(--tp-primary);
+        font-size: 1.5rem;
+        background: var(--tp-primary-soft);
+    }
+
+    .tp-collect-desc {
+        margin: 1rem 0 0;
+        color: var(--tp-muted);
+        font-size: 1.3rem;
+        line-height: 1.65;
+    }
+
+    .tp-collect-desc em {
+        color: var(--tp-text);
+        font: 500 0.92em ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-style: normal;
+    }
+
+    /* Search suggestions (Awesomplete, used by Community Applications): a dark rounded panel
+       instead of the white list with red text and yellow marks. Each suggestion is a row with a
+       search icon, the matching part in the accent colour; the row picked with the arrow keys
+       is highlighted like a selected menu entry. */
+    .awesomplete > ul {
+        z-index: 20;
+        max-height: min(40rem, 60vh);
+        margin: 0.8rem 0 0;
+        padding: 0.6rem;
+        overflow-y: auto;
+        border: 1px solid var(--tp-border);
+        border-radius: 16px;
+        color: var(--tp-text);
+        font: 400 1.35rem/1.3 var(--tp-font-body);
+        background: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg);
+        scrollbar-width: thin;
+        transform-origin: 50% 0;
+        transition: opacity 0.18s var(--tp-ease), transform 0.18s var(--tp-ease);
+    }
+
+    .awesomplete > ul::before {
+        display: none;
+    }
+
+    .awesomplete > ul:is([hidden], :empty) {
+        opacity: 0;
+        transform: translateY(-0.6rem);
+        pointer-events: none;
+    }
+
+    .awesomplete > ul > li {
+        position: relative;
+        padding: 0.8rem 1.2rem 0.8rem 3.6rem;
+        border-radius: 10px;
+        color: var(--tp-text);
+        transition: background-color 0.15s, color 0.15s;
+    }
+
+    .awesomplete > ul > li::before {
+        position: absolute;
+        top: 50%;
+        left: 1.3rem;
+        color: var(--tp-muted);
+        font: normal 1.2rem/1 FontAwesome;
+        content: "\f002";
+        transform: translateY(-50%);
+    }
+
+    .awesomplete > ul > li:hover {
+        color: var(--tp-text);
+        background: var(--tp-subtle);
+    }
+
+    .awesomplete > ul > li[aria-selected="true"] {
+        color: var(--tp-text);
+        background: var(--tp-primary-soft);
+        box-shadow: inset 3px 0 0 var(--tp-primary);
+    }
+
+    .awesomplete > ul > li[aria-selected="true"]::before {
+        color: var(--tp-primary);
+    }
+
+    .awesomplete mark,
+    .awesomplete li:hover mark,
+    .awesomplete li[aria-selected="true"] mark {
+        padding: 0;
+        color: var(--tp-primary);
+        font-weight: 600;
+        background: none;
+    }
+
     /* Community Applications: the monthly spotlight badge as a pill in the card's top right
        corner (it sat over the description); left of the "Installed" / "Limetech" ribbon. */
     .ca_holder.spotlightHome {
@@ -15893,7 +16198,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.1809 is installed."
+echo "Aurora-Theme 2026.10.15.1832 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

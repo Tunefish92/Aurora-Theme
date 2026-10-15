@@ -170,12 +170,16 @@
     const tab = active ? active.textContent.trim() : '';
     const path = location.pathname.split('/').filter(Boolean);
     const subPage = tab && path[0] === tab && path.length > 1 ? path[path.length - 1] : '';
+    // A page with a single section is named after that section's title ("PHP Settings", not
+    // "PHPsettings"); otherwise the address is split into words.
+    const titles = subPage ? document.querySelectorAll('#displaybox div.title > span.left') : [];
+    const sectionName = titles.length === 1 ? titles[0].textContent.replace(/\s+/g, ' ').trim() : '';
     return {
       server: titleParts.length > 1 ? titleParts[0] : '',
       tab: tab || (titleParts[1] || ''),
       // "DisplaySettings" reads better as "Display Settings".
       // ... and "VMTemplates" as "VM Templates".
-      subPage: subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
+      subPage: sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
     };
   }
 
@@ -1257,9 +1261,83 @@
     arrange();
   }
 
+  // Tools pages: their help text is given a clearer structure. Paragraphs written all in
+  // italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
+  // warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
+  // lines (Credits) become rows. On Diagnostics the list of collected files becomes cards.
+  function toolText(info) {
+    if (info.tab !== 'Tools' || !location.pathname.split('/')[2]) return;
+    const content = document.querySelector('#displaybox .content');
+    if (!content || content.classList.contains('tp-tool-text')) return;
+    content.classList.add('tp-tool-text');
+    const textOf = function (node) { return node.textContent.replace(/\s+/g, ' ').trim(); };
+    content.querySelectorAll('p').forEach(function (p) {
+      if (p.closest('.unapi, pre, table, blockquote, dd, dt')) return;
+      const text = textOf(p);
+      if (!text) return;
+      const looseText = [...p.childNodes].filter(function (node) { return node.nodeType === 3; }).map(function (node) { return node.textContent; }).join('').trim();
+      const red = p.querySelector(':scope > font[color=red], :scope > .red-text');
+      if (/^(DO NOT|WARNING|CAUTION|IMPORTANT)\b/.test(text) || (red && textOf(red) === text)) p.classList.add('tp-callout', 'tp-callout-warn');
+      else if (/^NOTE\b/i.test(text) || (!looseText && p.querySelector(':scope > em, :scope > i'))) p.classList.add('tp-callout');
+      else if (text.length < 90 && /[A-Z]{3}/.test(text) && text === text.toUpperCase()) p.classList.add('tp-text-heading');
+      else if (p.firstChild && p.firstChild.nodeType === 1 && p.firstChild.matches('strong, b') && /copyright/i.test(text)) p.classList.add('tp-credit');
+    });
+    diagnosticsList(content);
+  }
+
+  // Diagnostics: "+ /config <br> copy all ..." in a pre block, rebuilt as one card per entry.
+  function diagnosticsList(content) {
+    const holder = content.querySelector('pre.pre > p');
+    if (!holder || !/\/Diagnostics$/.test(location.pathname)) return;
+    const items = [];
+    let item = null;
+    const addText = function (text) {
+      if (item && text.trim()) item.desc.push(document.createTextNode(text.replace(/\s+/g, ' ')));
+    };
+    [...holder.childNodes].forEach(function (node) {
+      if (node.nodeType === 3) {
+        const parts = node.textContent.split('+');
+        addText(parts[0]);
+        parts.slice(1).forEach(function (part) {
+          item = { title: '', desc: [] };
+          items.push(item);
+          addText(part);
+        });
+      } else if (!item || node.nodeType !== 1) {
+        return;
+      } else if (!item.title && node.matches('em')) {
+        item.title = node.textContent.trim();
+      } else if (node.matches('br')) {
+        if (item.desc.length) item.desc.push(document.createElement('br'));
+      } else {
+        item.desc.push(node);
+      }
+    });
+    if (items.length < 2 || items.some(function (entry) { return !entry.title; })) return;
+    const icons = [[/^\/config$/, 'fa-cog'], [/^\/config\/shares/, 'fa-share-alt'], [/^syslog/i, 'fa-file-text-o'], [/^system/i, 'fa-microchip'], [/^smart/i, 'fa-hdd-o'], [/^docker/i, 'fa-cube']];
+    const grid = element('div', 'tp-collect');
+    items.forEach(function (entry) {
+      const match = icons.find(function (pair) { return pair[0].test(entry.title); });
+      const icon = element('i', 'fa ' + (match ? match[1] : 'fa-file-o'));
+      icon.setAttribute('aria-hidden', 'true');
+      const head = element('div', 'tp-collect-title');
+      head.append(icon, element('span', '', entry.title));
+      while (entry.desc.length && entry.desc[entry.desc.length - 1].nodeName === 'BR') entry.desc.pop();
+      const desc = element('p', 'tp-collect-desc');
+      desc.append(...entry.desc);
+      const card = element('div', 'tp-collect-item');
+      card.append(head, desc);
+      grid.append(card);
+    });
+    holder.closest('pre').replaceWith(grid);
+  }
+
   // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
-  // the theme; a click on the dimmed backdrop closes it like its own close button.
+  // the theme; a click on the dimmed backdrop closes it like its own close button. App names in
+  // the search field are not spell-checked (no red underline).
   function caOverlay() {
+    const search = document.getElementById('searchBox');
+    if (search) search.spellcheck = false;
     const overlay = document.getElementById('alternateView');
     if (!overlay) return;
     overlay.addEventListener('click', function (event) {
@@ -2335,7 +2413,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
