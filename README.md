@@ -2,19 +2,23 @@
 
 A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional sidebar layout, a card-based Dashboard, a redesigned Main page, a compact Docker list with groups, and a built-in Stats page. Dark and light, with a one-click switch, and it works on phones.
 
-![Dashboard with the Aurora Theme, dark palette and sidebar layout](docs/screenshots/dashboard-dark.png)
+![Dashboard with the Aurora Theme, dark palette and top bar](docs/screenshots/dashboard-dark.png)
 
-| Light palette | Settings with favourites and search |
+| Light palette | Sidebar layout |
 | --- | --- |
-| ![Dashboard with the light palette](docs/screenshots/dashboard-light.png) | ![Settings page with a favourites section and a search field](docs/screenshots/settings-favourites.png) |
+| ![Dashboard with the light palette](docs/screenshots/dashboard-light.png) | ![Dashboard with the menu in a sidebar](docs/screenshots/sidebar.png) |
 
-| Array Operation | Login page |
+| Settings with favourites and search | Array Operation |
 | --- | --- |
-| ![Array Operation as cards: array status, parity check, last check, disks, mover and power](docs/screenshots/array-operation.png) | ![Login page with a glass card on an aurora background](docs/screenshots/login.png) |
+| ![Settings page with a favourites section and a search field](docs/screenshots/settings-favourites.png) | ![Array Operation as cards: array status, parity check, last check, disks, mover and power](docs/screenshots/array-operation.png) |
 
 | Docker | Apps |
 | --- | --- |
 | ![Docker list with totals, filters, search and a WebUI button per container](docs/screenshots/docker.png) | ![Apps tab with a nav menu, a centred search and app cards with spotlight badges](docs/screenshots/apps.png) |
+
+| Tools | Login page |
+| --- | --- |
+| ![Diagnostics tool page with the collected files as cards](docs/screenshots/tools.png) | ![Login page with a glass card on an aurora background](docs/screenshots/login.png) |
 
 ## Install
 
@@ -37,7 +41,7 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 ## What it changes
 
 - **Look**: Inter and Space Grotesk fonts (bundled, no external requests), a blue–cyan accent, rounded cards, pill buttons, themed drop-down lists, switches, tab bars, dialogs, tooltips and notifications. Every table, including those of plugins, gets the same card style.
-- **Layout**: an optional sidebar with the main menu, server card and quick actions; a slim top bar with breadcrumb, array status and a dark / light switch; page headings on every tab.
+- **Layout**: a top bar with the server controls in one row and pill tabs with icons, the quick actions as round buttons; or an optional sidebar with the main menu, server card and quick actions (phones and tablets keep the top bar). A dark / light switch and page headings on every tab.
 - **Login page**: a glass card on an aurora background, in the dark or light palette.
 - **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, the processor's cores as a compact grid with power and temperature chips, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
 - **Main**: device tables with status dots, temperature and error chips and slim usage bars; Array Operation as cards (array, parity check with live progress, last check, disks, mover, power).

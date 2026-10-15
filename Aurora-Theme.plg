@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.2126"
+        version="2026.10.15.2129"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.2126
+###2026.10.15.2129
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -16864,7 +16864,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             z-index: 100;
             display: flex;
             align-items: center;
-            gap: 1.6rem;
+            gap: 1.2rem;
             box-sizing: border-box;
             padding: 0.8rem 2.4rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -16904,7 +16904,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             align-items: center;
             gap: 0.8rem;
             height: 3.6rem;
-            padding: 0 1.4rem;
+            padding: 0 1.1rem;
             border-radius: 999px;
             color: var(--tp-header-muted);
             font: 500 1.35rem/1 var(--tp-font-heading);
@@ -16958,7 +16958,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         /* Quick actions: round icon buttons. */
         .nav-tile.right {
             flex: none;
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
 
         .nav-tile.right :is(.nav-item, .nav-user) {
@@ -16972,8 +16972,8 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         .nav-tile.right :is(.nav-item, .nav-user) a {
             display: grid;
             place-items: center;
-            width: 3.4rem;
-            height: 3.4rem;
+            width: 3.3rem;
+            height: 3.3rem;
             padding: 0;
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 10px;
@@ -17135,7 +17135,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.2126 is installed."
+echo "Aurora-Theme 2026.10.15.2129 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>
