@@ -174,7 +174,8 @@
       server: titleParts.length > 1 ? titleParts[0] : '',
       tab: tab || (titleParts[1] || ''),
       // "DisplaySettings" reads better as "Display Settings".
-      subPage: subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[._]/g, ' '),
+      // ... and "VMTemplates" as "VM Templates".
+      subPage: subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
     };
   }
 

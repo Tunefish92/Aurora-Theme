@@ -3190,6 +3190,75 @@
         display: none;
     }
 
+    /* VMs > Add VM: the template choice. Groups ("Windows", "Linux") as section headings and
+       each template as a card with its icon and name centred (the sidebar theme left-aligns
+       every paragraph, which pushed the names off centre). */
+    .vmheader {
+        margin: 2.4rem 0 1.2rem;
+        padding: 0 0 0.8rem;
+        border-bottom: 1px solid var(--tp-border);
+        color: var(--tp-text) !important;
+        font: 600 1.5rem var(--tp-font-heading);
+        letter-spacing: -0.01em;
+        text-align: left;
+    }
+
+    .vmtemplate {
+        position: relative;
+        width: 12.4rem;
+        height: auto;
+        margin: 0 1rem 1rem 0;
+    }
+
+    .vmtemplate > a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 11.6rem;
+        padding: 1.6rem 0.8rem 1.2rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        text-decoration: none;
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-sm);
+        transition: border-color 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease), transform 0.3s var(--tp-ease);
+    }
+
+    .vmtemplate > a:hover,
+    .vmtemplate > a:focus-visible {
+        border-color: var(--tp-primary);
+        box-shadow: var(--tp-shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .vmtemplate img {
+        width: 4.4rem;
+        height: 4.4rem;
+        object-fit: contain;
+    }
+
+    .vmtemplate p {
+        margin: 0 !important;
+        color: var(--tp-text);
+        font: 500 1.25rem/1.3 var(--tp-font-heading);
+        text-align: center !important;
+    }
+
+    @media (max-width: 767px) {
+        .vmtemplate {
+            width: calc(50% - 0.6rem);
+            margin-right: 0.8rem;
+        }
+
+        .vmtemplate:nth-of-type(2n) {
+            margin-right: 0;
+        }
+    }
+
     /* Community Applications: its search button as a round button next to the field. */
     .searchAreaHolder #searchFilter .searchSubmit {
         display: grid !important;
