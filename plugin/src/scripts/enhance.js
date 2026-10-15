@@ -1277,8 +1277,10 @@
       if (!text) return;
       const looseText = [...p.childNodes].filter(function (node) { return node.nodeType === 3; }).map(function (node) { return node.textContent; }).join('').trim();
       const red = p.querySelector(':scope > font[color=red], :scope > .red-text');
-      if (/^(DO NOT|WARNING|CAUTION|IMPORTANT)\b/.test(text) || (red && textOf(red) === text)) p.classList.add('tp-callout', 'tp-callout-warn');
-      else if (/^NOTE\b/i.test(text) || (!looseText && p.querySelector(':scope > em, :scope > i'))) p.classList.add('tp-callout');
+      const only = p.children.length === 1 && !looseText ? p.firstElementChild : null;
+      if (p.matches('.warning, .notice, .red-text, .orange-text') || /^(DO NOT|WARNING|CAUTION|IMPORTANT)\b/.test(text) || (red && textOf(red) === text)) p.classList.add('tp-callout', 'tp-callout-warn');
+      else if (p.matches('.blue-text') || /^NOTE\b/i.test(text) || (!looseText && p.querySelector(':scope > em, :scope > i:not(.fa)'))) p.classList.add('tp-callout');
+      else if (only && only.matches('strong, b') && text.length < 80) p.classList.add('tp-text-subheading');
       else if (text.length < 90 && /[A-Z]{3}/.test(text) && text === text.toUpperCase()) p.classList.add('tp-text-heading');
       else if (p.firstChild && p.firstChild.nodeType === 1 && p.firstChild.matches('strong, b') && /copyright/i.test(text)) p.classList.add('tp-credit');
     });

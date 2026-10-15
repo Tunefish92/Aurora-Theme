@@ -3475,6 +3475,152 @@
         }
     }
 
+    /* Help boxes (shown with the Help button) and notices, across the whole web interface:
+       Unraid draws them as a light blue box and as an orange "!" image on a tall line. Both
+       become callout cards: help in the accent colour with a question mark, notices in amber
+       with a warning sign. */
+    blockquote:where(:not(.unapi *)) {
+        position: relative;
+        padding: 1.4rem 1.8rem 1.4rem 4.8rem;
+        border: 1px solid color-mix(in srgb, var(--tp-primary) 25%, transparent);
+        border-radius: 12px;
+        color: color-mix(in srgb, var(--tp-text) 82%, var(--tp-muted));
+        font-size: 1.3rem;
+        line-height: 1.65;
+        background: color-mix(in srgb, var(--tp-primary) 6%, var(--tp-elevated));
+    }
+
+    blockquote:where(:not(.unapi *))::before {
+        position: absolute;
+        top: 1.45rem;
+        left: 1.7rem;
+        color: var(--tp-primary);
+        font: normal 1.6rem/1.65rem FontAwesome;
+        content: "\f059";
+    }
+
+    blockquote:where(:not(.unapi *)) :is(p, li) {
+        color: inherit !important;
+        font-size: inherit !important;
+        line-height: inherit !important;
+    }
+
+    blockquote:where(:not(.unapi *)) p {
+        margin: 0 0 0.8rem !important;
+    }
+
+    blockquote:where(:not(.unapi *)) p:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    blockquote:where(:not(.unapi *)) :is(strong, b) {
+        color: var(--tp-text);
+        font-weight: 600;
+    }
+
+    blockquote:where(:not(.unapi *)) a {
+        color: var(--tp-primary);
+        font-weight: 600;
+    }
+
+    blockquote:where(:not(.unapi *)) a:is(:hover, :focus) {
+        color: var(--tp-primary-ii);
+    }
+
+    blockquote:where(:not(.unapi *)) :is(code, kbd) {
+        padding: 0.1rem 0.6rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 6px;
+        color: var(--tp-text);
+        font: 500 0.92em ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        background: var(--tp-subtle);
+    }
+
+    .notice:where(div, p):where(:not(.unapi *)) {
+        position: relative;
+        height: auto !important;
+        min-height: 0;
+        margin: 1.2rem 0;
+        padding: 1.2rem 1.8rem 1.2rem 4.8rem !important;
+        border: 1px solid color-mix(in srgb, var(--tp-warn-text) 35%, transparent);
+        border-radius: 12px;
+        color: var(--tp-text);
+        font-size: 1.35rem;
+        line-height: 1.65 !important;
+        text-align: left;
+        background: color-mix(in srgb, var(--tp-warn-bg) 70%, var(--tp-elevated)) !important;
+    }
+
+    .notice:where(div, p):where(:not(.unapi *))::before {
+        position: absolute;
+        top: 1.2rem;
+        left: 1.7rem;
+        color: var(--tp-warn-text);
+        font: normal 1.6rem/2.2rem FontAwesome;
+        content: "\f071";
+    }
+
+    .notice.shift:where(div, p) {
+        margin-top: 4rem;
+    }
+
+    .tp-tool-text blockquote {
+        max-width: 100rem;
+        margin-left: 0;
+    }
+
+    /* Command output (Processes, Vars) in a monospaced box so the columns line up; the system
+       log keeps its own look. */
+    .tp-tool-text:not(:has(.syslog-controls)) pre.js-fill-available-height {
+        box-sizing: border-box;
+        padding: 1.4rem 1.8rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 12px;
+        color: var(--tp-text);
+        font: 1.2rem/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        background: var(--tp-subtle);
+    }
+
+    /* System Devices: the device lists as a card with readable rows. */
+    .tp-tool-text pre:has(> table.pre, > form table.pre) {
+        box-sizing: border-box;
+        margin: 0.8rem 0 1.6rem;
+        padding: 1.2rem 1.6rem;
+        overflow-x: auto;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        color: var(--tp-text);
+        font: 400 1.3rem/1.5 var(--tp-font-body);
+        white-space: normal;
+        background: var(--tp-elevated);
+    }
+
+    .tp-tool-text table.pre {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .tp-tool-text table.pre td {
+        padding: 0.45rem 1.2rem 0.45rem 0.4rem;
+        border-bottom: 1px solid color-mix(in srgb, var(--tp-border) 60%, transparent);
+        white-space: pre-wrap;
+        vertical-align: top;
+    }
+
+    .tp-tool-text table.pre tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .tp-tool-text table.pre tr:hover td {
+        background: var(--tp-subtle);
+    }
+
+    .tp-tool-text table.pre td:first-child {
+        color: var(--tp-muted);
+        font: 500 1.2rem/1.5 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        white-space: nowrap;
+    }
+
     /* Tools pages: readable help text (marked by enhance.js). Wider line spacing, notes and
        warnings as callouts with an icon, code blocks as boxes, the EULA's all-caps lines as
        section headings, the Credits lines as rows, Diagnostics' file list as cards. */
@@ -3544,6 +3690,63 @@
         color: var(--tp-text);
         font: 600 1.45rem/1.3 var(--tp-font-heading);
         letter-spacing: 0.04em;
+    }
+
+    /* A bold-only line used as a sub-heading ("CPU Thread Pairings", "Setup Wizard"). */
+    .tp-tool-text p.tp-text-subheading {
+        margin: 2.8rem 0 1rem;
+        color: var(--tp-text);
+        font: 600 1.7rem/1.3 var(--tp-font-heading);
+        letter-spacing: -0.01em;
+    }
+
+    .tp-tool-text p.tp-text-subheading:first-child {
+        margin-top: 0.8rem;
+    }
+
+    .tp-tool-text p.tp-text-subheading > :is(strong, b) {
+        font-weight: inherit;
+    }
+
+    /* Notices that bring their own icon get the callout's icon instead. */
+    .tp-tool-text p.tp-callout > i.fa:first-child {
+        display: none;
+    }
+
+    .tp-tool-text p.tp-callout:is(.notice, .warning, .blue-text, .red-text, .orange-text) {
+        height: auto !important;
+        line-height: 1.7 !important;
+        font-size: 1.35rem;
+    }
+
+    .tp-tool-text p.tp-callout.blue-text {
+        color: var(--tp-text);
+    }
+
+    /* Lists (Page Map, Credits): readable lines, nested levels along a thin line. */
+    .tp-tool-text ul:where(:not(.unapi *, table *)) {
+        margin: 0.6rem 0 1.2rem;
+        padding-left: 2rem;
+        color: color-mix(in srgb, var(--tp-text) 80%, var(--tp-muted));
+        font-size: 1.35rem;
+        line-height: 1.8;
+    }
+
+    .tp-tool-text ul ul:where(:not(.unapi *, table *)) {
+        margin: 0.2rem 0 0.4rem 0.4rem;
+        padding-left: 1.6rem;
+        border-left: 1px solid var(--tp-border);
+    }
+
+    .tp-tool-text li > p {
+        margin: 0 !important;
+    }
+
+    /* Status lines that Unraid colours inline (grey, blue). */
+    .tp-tool-text :is(#lastUploaded, #pleaseWait, .lastUploaded) {
+        margin: 0.8rem 0 1.2rem;
+        color: var(--tp-muted) !important;
+        font-size: 1.3rem;
     }
 
     .tp-tool-text p.tp-credit {
