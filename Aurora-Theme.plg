@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.2048"
+        version="2026.10.15.2055"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.2048
+###2026.10.15.2055
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -6141,6 +6141,85 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     }, true);
   }
 
+  // Dashboard, Processor tile: instead of a "Physical CPU n Power: ... Temperature: ..." line
+  // and a full-width row for every core, the cores are a grid of small tiles (number, load, bar)
+  // and power and temperature are chips. Unraid's own elements stay in place and keep being
+  // updated by Unraid; package lines without readings (N/A, -1) are hidden.
+  function dashboardCores() {
+    const total = document.getElementById('cpu-total-power');
+    const tile = total && total.closest('tbody');
+    if (!tile || tile.classList.contains('tp-cpu-tile')) return;
+    tile.classList.add('tp-cpu-tile');
+
+    const missing = function (text) { return !text.trim() || /N\/A|^\s*-/.test(text); };
+    // A chip that shows the value part ("12.3 W") of a source element and hides when there is none.
+    const chip = function (icon, title, source, valueOf) {
+      const node = element('span', 'tp-cpu-chip');
+      const glyph = element('i', 'fa ' + icon);
+      glyph.setAttribute('aria-hidden', 'true');
+      const value = element('span', 'tp-cpu-chip-value');
+      node.title = title;
+      node.append(glyph, value);
+      const sync = function () {
+        const text = valueOf(source.textContent);
+        node.hidden = missing(text);
+        if (value.textContent !== text) value.textContent = text;
+      };
+      new MutationObserver(sync).observe(source, { childList: true, characterData: true, subtree: true });
+      sync();
+      return node;
+    };
+    const afterColon = function (text) { return text.includes(':') ? text.slice(text.lastIndexOf(':') + 1).trim() : text.trim(); };
+
+    // Summary chips: total power and, with one processor, its temperature.
+    const stats = element('div', 'tp-cpu-stats');
+    stats.append(chip('fa-bolt', 'Total power', total, afterColon));
+    const temp0 = document.getElementById('cpu-temp0');
+    const headTemp = temp0 && temp0.closest('.head_info');
+    if (headTemp) stats.append(chip('fa-thermometer-half', 'Temperature', temp0, function (text) { return text.trim(); }));
+    const headInfo = total.closest('.head_info');
+    if (headInfo) {
+      headInfo.parentNode.insertBefore(stats, headInfo);
+      headInfo.classList.add('tp-cpu-source');
+      if (headTemp) headTemp.classList.add('tp-cpu-source');
+    }
+
+    // Per processor package: a short "CPU n" line with power and temperature chips.
+    tile.querySelectorAll('span.cpu_open [id^="cpu-power"]').forEach(function (power) {
+      const index = power.id.replace('cpu-power', '');
+      const line = power.closest('span.cpu_open');
+      const row = line.closest('tr');
+      const temp = document.getElementById('cpu-temp' + index);
+      const chips = [chip('fa-bolt', 'Power', power, function (text) { return text.trim(); })];
+      if (temp && line.contains(temp)) chips.push(chip('fa-thermometer-half', 'Temperature', temp, function (text) { return text.trim(); }));
+      [...line.childNodes].forEach(function (node) { node.remove(); });
+      const hidden = element('span', 'tp-cpu-source');
+      hidden.append(power);
+      if (temp && chips.length > 1) hidden.append(temp);
+      line.append(element('span', 'tp-cpu-pkg-name', 'CPU ' + index), ...chips, hidden);
+      if (row) row.classList.add('tp-cpu-pkg');
+      const update = function () {
+        if (row) row.classList.toggle('tp-cpu-pkg-empty', chips.every(function (node) { return node.hidden; }));
+      };
+      chips.forEach(function (node) { new MutationObserver(update).observe(node, { attributes: true, attributeFilter: ['hidden'] }); });
+      update();
+    });
+    tile.querySelectorAll('td.thin').forEach(function (cell) { cell.closest('tr').classList.add('tp-cpu-gap'); });
+
+    // Core rows: "CPU 3" / "CPU 0 - HT 12" becomes "3" / "0 · 12", the full text stays as a tooltip.
+    tile.querySelectorAll('tr.cpu_open').forEach(function (row) {
+      row.classList.add('tp-core');
+      const label = row.querySelector('span.w26');
+      if (!label) return;
+      const full = label.textContent.replace(/\s+/g, ' ').trim();
+      const match = full.match(/^CPU\s+(\d+)\s*(\([^)]*\))?\s*(?:-\s*HT\s+(\d+))?/);
+      if (!match) return;
+      row.title = full;
+      label.textContent = match[1] + (match[3] ? ' · ' + match[3] : '') + (match[2] ? ' ' + match[2].replace(/[()]/g, '') : '');
+      if (match[3]) row.classList.add('tp-core-pair');
+    });
+  }
+
   // Dashboard, System tile: Unraid draws its four rings in grey from a colour list in the page
   // script. The list gets the theme's colours (RAM: system, free, VMs, Docker, ...), and the
   // boot, log and Docker rings are drawn by the theme in a colour that follows the usage level.
@@ -7386,7 +7465,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
@@ -10405,6 +10484,171 @@ select.tp-select-open {
     }
 }
 
+
+/* Dashboard, Processor tile (marked by enhance.js): chips for power and temperature, the cores
+   as a grid of small tiles. */
+.tp-cpu-tile .tp-cpu-source {
+    display: none !important;
+}
+
+.tp-cpu-stats {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.tp-cpu-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1.1rem 0.4rem 0.9rem;
+    border: 1px solid var(--tp-border);
+    border-radius: 999px;
+    color: var(--tp-text);
+    font: 600 1.2rem/1.2 var(--tp-font-heading);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--tp-subtle);
+}
+
+.tp-cpu-chip[hidden] {
+    display: none;
+}
+
+.tp-cpu-chip > i {
+    color: var(--tp-primary);
+    font-size: 1.15rem;
+}
+
+.tp-cpu-chip > i.fa-thermometer-half {
+    color: #f59e0b;
+}
+
+/* Package lines: "CPU 0" with its chips; hidden when nothing is known. */
+.tp-cpu-tile tr.tp-cpu-gap,
+.tp-cpu-tile tr.tp-cpu-pkg.tp-cpu-pkg-empty {
+    display: none !important;
+}
+
+.tp-cpu-tile tr.tp-cpu-pkg span.cpu_open {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    width: auto;
+    margin-top: 0.4rem;
+}
+
+.tp-cpu-pkg-name {
+    color: var(--tp-muted);
+    font: 600 1.1rem/1 var(--tp-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* The core rows flow into a grid: the tile's rows become blocks, the core rows share a line. */
+table.dashboard > tbody.tp-cpu-tile {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    column-gap: 0.6rem;
+}
+
+/* The grid is inset like the tile's other rows (their cells have 2rem side padding); those rows
+   reach back out to the edges so their own padding stays as it was. */
+table.dashboard > tbody.tp-cpu-tile {
+    box-sizing: border-box;
+    padding-right: 2rem !important;
+    padding-left: 2rem !important;
+}
+
+tbody.tp-cpu-tile > tr {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 0 -2rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core {
+    margin: 0;
+}
+
+tbody.tp-cpu-tile > tr > td {
+    display: block;
+}
+
+tbody.tp-cpu-tile > tr.tp-core {
+    grid-column: auto;
+    padding: 0.3rem 0;
+}
+
+tbody.tp-cpu-tile > tr.tp-core > td {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "label value" "bar bar";
+    align-items: center;
+    gap: 0.5rem 0.6rem;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0.8rem 1rem !important;
+    border: 1px solid var(--tp-border);
+    border-radius: 10px;
+    background: var(--tp-subtle);
+}
+
+tbody.tp-cpu-tile > tr.tp-core span.w26 {
+    grid-area: label;
+    width: auto !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    margin: 0;
+    color: var(--tp-muted);
+    font: 600 1.15rem/1.2 var(--tp-font-heading);
+    white-space: nowrap;
+}
+
+tbody.tp-cpu-tile > tr.tp-core span.w72 {
+    display: contents;
+}
+
+tbody.tp-cpu-tile > tr.tp-core .load {
+    grid-area: value;
+    width: auto !important;
+    margin: 0 !important;
+    font: 600 1.25rem/1.2 var(--tp-font-heading);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+tbody.tp-cpu-tile > tr.tp-core .usage-disk {
+    grid-area: bar;
+    width: 100% !important;
+    height: 0.5rem !important;
+    margin: 0 !important;
+}
+
+/* Core with hyper-threading: one tile, both loads at the top right, two thin bars below. */
+tbody.tp-cpu-tile > tr.tp-core-pair > td {
+    grid-template-columns: max-content 1fr auto;
+    column-gap: 0.5rem;
+    grid-template-areas: "label v1 v2" "b1 b1 b1" "b2 b2 b2";
+    row-gap: 0.4rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36 {
+    display: contents;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(2) .load { grid-area: v1; text-align: right; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(2) .usage-disk { grid-area: b1; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(3) .load { grid-area: v2; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(3) .usage-disk { grid-area: b2; }
+
+tbody.tp-cpu-tile > tr.tp-core-pair .load {
+    font-size: 1.15rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair .usage-disk {
+    height: 0.35rem !important;
+}
 AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA_THEME_EOF'
 /*
@@ -16403,7 +16647,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.2048 is installed."
+echo "Aurora-Theme 2026.10.15.2055 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

@@ -2717,3 +2717,168 @@ select.tp-select-open {
     }
 }
 
+
+/* Dashboard, Processor tile (marked by enhance.js): chips for power and temperature, the cores
+   as a grid of small tiles. */
+.tp-cpu-tile .tp-cpu-source {
+    display: none !important;
+}
+
+.tp-cpu-stats {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.tp-cpu-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1.1rem 0.4rem 0.9rem;
+    border: 1px solid var(--tp-border);
+    border-radius: 999px;
+    color: var(--tp-text);
+    font: 600 1.2rem/1.2 var(--tp-font-heading);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--tp-subtle);
+}
+
+.tp-cpu-chip[hidden] {
+    display: none;
+}
+
+.tp-cpu-chip > i {
+    color: var(--tp-primary);
+    font-size: 1.15rem;
+}
+
+.tp-cpu-chip > i.fa-thermometer-half {
+    color: #f59e0b;
+}
+
+/* Package lines: "CPU 0" with its chips; hidden when nothing is known. */
+.tp-cpu-tile tr.tp-cpu-gap,
+.tp-cpu-tile tr.tp-cpu-pkg.tp-cpu-pkg-empty {
+    display: none !important;
+}
+
+.tp-cpu-tile tr.tp-cpu-pkg span.cpu_open {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    width: auto;
+    margin-top: 0.4rem;
+}
+
+.tp-cpu-pkg-name {
+    color: var(--tp-muted);
+    font: 600 1.1rem/1 var(--tp-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* The core rows flow into a grid: the tile's rows become blocks, the core rows share a line. */
+table.dashboard > tbody.tp-cpu-tile {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    column-gap: 0.6rem;
+}
+
+/* The grid is inset like the tile's other rows (their cells have 2rem side padding); those rows
+   reach back out to the edges so their own padding stays as it was. */
+table.dashboard > tbody.tp-cpu-tile {
+    box-sizing: border-box;
+    padding-right: 2rem !important;
+    padding-left: 2rem !important;
+}
+
+tbody.tp-cpu-tile > tr {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 0 -2rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core {
+    margin: 0;
+}
+
+tbody.tp-cpu-tile > tr > td {
+    display: block;
+}
+
+tbody.tp-cpu-tile > tr.tp-core {
+    grid-column: auto;
+    padding: 0.3rem 0;
+}
+
+tbody.tp-cpu-tile > tr.tp-core > td {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "label value" "bar bar";
+    align-items: center;
+    gap: 0.5rem 0.6rem;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0.8rem 1rem !important;
+    border: 1px solid var(--tp-border);
+    border-radius: 10px;
+    background: var(--tp-subtle);
+}
+
+tbody.tp-cpu-tile > tr.tp-core span.w26 {
+    grid-area: label;
+    width: auto !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    margin: 0;
+    color: var(--tp-muted);
+    font: 600 1.15rem/1.2 var(--tp-font-heading);
+    white-space: nowrap;
+}
+
+tbody.tp-cpu-tile > tr.tp-core span.w72 {
+    display: contents;
+}
+
+tbody.tp-cpu-tile > tr.tp-core .load {
+    grid-area: value;
+    width: auto !important;
+    margin: 0 !important;
+    font: 600 1.25rem/1.2 var(--tp-font-heading);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+tbody.tp-cpu-tile > tr.tp-core .usage-disk {
+    grid-area: bar;
+    width: 100% !important;
+    height: 0.5rem !important;
+    margin: 0 !important;
+}
+
+/* Core with hyper-threading: one tile, both loads at the top right, two thin bars below. */
+tbody.tp-cpu-tile > tr.tp-core-pair > td {
+    grid-template-columns: max-content 1fr auto;
+    column-gap: 0.5rem;
+    grid-template-areas: "label v1 v2" "b1 b1 b1" "b2 b2 b2";
+    row-gap: 0.4rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36 {
+    display: contents;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(2) .load { grid-area: v1; text-align: right; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(2) .usage-disk { grid-area: b1; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(3) .load { grid-area: v2; }
+tbody.tp-cpu-tile > tr.tp-core-pair span.w36:nth-of-type(3) .usage-disk { grid-area: b2; }
+
+tbody.tp-cpu-tile > tr.tp-core-pair .load {
+    font-size: 1.15rem;
+}
+
+tbody.tp-cpu-tile > tr.tp-core-pair .usage-disk {
+    height: 0.35rem !important;
+}

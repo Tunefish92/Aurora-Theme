@@ -1170,6 +1170,85 @@
     }, true);
   }
 
+  // Dashboard, Processor tile: instead of a "Physical CPU n Power: ... Temperature: ..." line
+  // and a full-width row for every core, the cores are a grid of small tiles (number, load, bar)
+  // and power and temperature are chips. Unraid's own elements stay in place and keep being
+  // updated by Unraid; package lines without readings (N/A, -1) are hidden.
+  function dashboardCores() {
+    const total = document.getElementById('cpu-total-power');
+    const tile = total && total.closest('tbody');
+    if (!tile || tile.classList.contains('tp-cpu-tile')) return;
+    tile.classList.add('tp-cpu-tile');
+
+    const missing = function (text) { return !text.trim() || /N\/A|^\s*-/.test(text); };
+    // A chip that shows the value part ("12.3 W") of a source element and hides when there is none.
+    const chip = function (icon, title, source, valueOf) {
+      const node = element('span', 'tp-cpu-chip');
+      const glyph = element('i', 'fa ' + icon);
+      glyph.setAttribute('aria-hidden', 'true');
+      const value = element('span', 'tp-cpu-chip-value');
+      node.title = title;
+      node.append(glyph, value);
+      const sync = function () {
+        const text = valueOf(source.textContent);
+        node.hidden = missing(text);
+        if (value.textContent !== text) value.textContent = text;
+      };
+      new MutationObserver(sync).observe(source, { childList: true, characterData: true, subtree: true });
+      sync();
+      return node;
+    };
+    const afterColon = function (text) { return text.includes(':') ? text.slice(text.lastIndexOf(':') + 1).trim() : text.trim(); };
+
+    // Summary chips: total power and, with one processor, its temperature.
+    const stats = element('div', 'tp-cpu-stats');
+    stats.append(chip('fa-bolt', 'Total power', total, afterColon));
+    const temp0 = document.getElementById('cpu-temp0');
+    const headTemp = temp0 && temp0.closest('.head_info');
+    if (headTemp) stats.append(chip('fa-thermometer-half', 'Temperature', temp0, function (text) { return text.trim(); }));
+    const headInfo = total.closest('.head_info');
+    if (headInfo) {
+      headInfo.parentNode.insertBefore(stats, headInfo);
+      headInfo.classList.add('tp-cpu-source');
+      if (headTemp) headTemp.classList.add('tp-cpu-source');
+    }
+
+    // Per processor package: a short "CPU n" line with power and temperature chips.
+    tile.querySelectorAll('span.cpu_open [id^="cpu-power"]').forEach(function (power) {
+      const index = power.id.replace('cpu-power', '');
+      const line = power.closest('span.cpu_open');
+      const row = line.closest('tr');
+      const temp = document.getElementById('cpu-temp' + index);
+      const chips = [chip('fa-bolt', 'Power', power, function (text) { return text.trim(); })];
+      if (temp && line.contains(temp)) chips.push(chip('fa-thermometer-half', 'Temperature', temp, function (text) { return text.trim(); }));
+      [...line.childNodes].forEach(function (node) { node.remove(); });
+      const hidden = element('span', 'tp-cpu-source');
+      hidden.append(power);
+      if (temp && chips.length > 1) hidden.append(temp);
+      line.append(element('span', 'tp-cpu-pkg-name', 'CPU ' + index), ...chips, hidden);
+      if (row) row.classList.add('tp-cpu-pkg');
+      const update = function () {
+        if (row) row.classList.toggle('tp-cpu-pkg-empty', chips.every(function (node) { return node.hidden; }));
+      };
+      chips.forEach(function (node) { new MutationObserver(update).observe(node, { attributes: true, attributeFilter: ['hidden'] }); });
+      update();
+    });
+    tile.querySelectorAll('td.thin').forEach(function (cell) { cell.closest('tr').classList.add('tp-cpu-gap'); });
+
+    // Core rows: "CPU 3" / "CPU 0 - HT 12" becomes "3" / "0 · 12", the full text stays as a tooltip.
+    tile.querySelectorAll('tr.cpu_open').forEach(function (row) {
+      row.classList.add('tp-core');
+      const label = row.querySelector('span.w26');
+      if (!label) return;
+      const full = label.textContent.replace(/\s+/g, ' ').trim();
+      const match = full.match(/^CPU\s+(\d+)\s*(\([^)]*\))?\s*(?:-\s*HT\s+(\d+))?/);
+      if (!match) return;
+      row.title = full;
+      label.textContent = match[1] + (match[3] ? ' · ' + match[3] : '') + (match[2] ? ' ' + match[2].replace(/[()]/g, '') : '');
+      if (match[3]) row.classList.add('tp-core-pair');
+    });
+  }
+
   // Dashboard, System tile: Unraid draws its four rings in grey from a colour list in the page
   // script. The list gets the theme's colours (RAM: system, free, VMs, Docker, ...), and the
   // boot, log and Docker rings are drawn by the theme in a colour that follows the usage level.
@@ -2415,7 +2494,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
