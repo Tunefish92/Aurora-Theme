@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.2055"
+        version="2026.10.15.2116"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.2055
+###2026.10.15.2116
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -6311,6 +6311,27 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     arrange();
   }
 
+  // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
+  // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
+  // "No help on this page".
+  function helpButton() {
+    const items = [...document.querySelectorAll('.nav-item.HelpButton')];
+    if (!items.length) return;
+    const mark = function () {
+      const none = !document.querySelector('.inline_help');
+      items.forEach(function (item) {
+        const link = item.querySelector('a');
+        item.classList.toggle('tp-help-none', none);
+        if (!link) return;
+        if (!link.dataset.tpTitle) link.dataset.tpTitle = link.title || 'Help';
+        link.title = none ? 'No help on this page' : link.dataset.tpTitle;
+        link.setAttribute('aria-disabled', none ? 'true' : 'false');
+      });
+    };
+    mark();
+    new MutationObserver(debounce(mark)).observe(document.getElementById('displaybox') || document.body, { childList: true, subtree: true });
+  }
+
   // Tools pages: their help text is given a clearer structure. Paragraphs written all in
   // italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
   // warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
@@ -7465,7 +7486,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
@@ -11061,6 +11082,27 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             transform: translateY(-2px);
         }
 
+        /* Help switched on: the button stays lit while the page's help boxes are shown. */
+        .nav-tile.right .nav-item.HelpButton.active a {
+            border-color: color-mix(in srgb, var(--tp-primary, #4f8bff) 45%, transparent);
+            color: var(--tp-primary, #4f8bff);
+            background-color: var(--tp-primary-soft, rgba(79, 139, 255, 0.18));
+        }
+
+        /* A page without help boxes: the help button is dimmed and does nothing. */
+        .nav-tile.right .nav-item.HelpButton.tp-help-none a {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .nav-tile.right .nav-item.HelpButton.tp-help-none:hover a {
+            border-color: rgba(255, 255, 255, 0.06);
+            color: var(--tp-header-muted, #a7b0c0);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: none;
+            transform: none;
+        }
+
         /* Coloured state icons (the lock) turn white with the rest on hover. */
         .nav-tile.right .nav-item:hover a b,
         .nav-tile.right .nav-item a:focus-visible b {
@@ -13260,8 +13302,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         background: transparent;
     }
 
+    /* border-box: with the border added to 100% width the right-hand cards stuck out 2px and the
+       page got a horizontal scrollbar under the last card. */
     table.dashboard > tbody {
         display: table;
+        box-sizing: border-box;
         width: 100%;
         table-layout: fixed;
         border-collapse: separate;
@@ -15479,6 +15524,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         }
     }
 
+    /* Unraid's account menu (top right) and its other drop-down menus: the hovered entry used
+       Unraid's red-orange gradient; it takes the theme's accent gradient. */
+    .unapi .dropdown-item-hover:is(:hover, :focus, :focus-visible) {
+        color: #ffffff;
+        background: var(--tp-gradient);
+    }
+
     /* Help boxes (shown with the Help button) and notices, across the whole web interface:
        Unraid draws them as a light blue box and as an orange "!" image on a tall line. Both
        become callout cards: help in the accent colour with a question mark, notices in amber
@@ -16647,7 +16699,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.2055 is installed."
+echo "Aurora-Theme 2026.10.15.2116 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

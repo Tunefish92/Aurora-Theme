@@ -1340,6 +1340,27 @@
     arrange();
   }
 
+  // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
+  // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
+  // "No help on this page".
+  function helpButton() {
+    const items = [...document.querySelectorAll('.nav-item.HelpButton')];
+    if (!items.length) return;
+    const mark = function () {
+      const none = !document.querySelector('.inline_help');
+      items.forEach(function (item) {
+        const link = item.querySelector('a');
+        item.classList.toggle('tp-help-none', none);
+        if (!link) return;
+        if (!link.dataset.tpTitle) link.dataset.tpTitle = link.title || 'Help';
+        link.title = none ? 'No help on this page' : link.dataset.tpTitle;
+        link.setAttribute('aria-disabled', none ? 'true' : 'false');
+      });
+    };
+    mark();
+    new MutationObserver(debounce(mark)).observe(document.getElementById('displaybox') || document.body, { childList: true, subtree: true });
+  }
+
   // Tools pages: their help text is given a clearer structure. Paragraphs written all in
   // italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
   // warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
@@ -2494,7 +2515,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

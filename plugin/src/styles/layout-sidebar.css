@@ -408,6 +408,27 @@
             transform: translateY(-2px);
         }
 
+        /* Help switched on: the button stays lit while the page's help boxes are shown. */
+        .nav-tile.right .nav-item.HelpButton.active a {
+            border-color: color-mix(in srgb, var(--tp-primary, #4f8bff) 45%, transparent);
+            color: var(--tp-primary, #4f8bff);
+            background-color: var(--tp-primary-soft, rgba(79, 139, 255, 0.18));
+        }
+
+        /* A page without help boxes: the help button is dimmed and does nothing. */
+        .nav-tile.right .nav-item.HelpButton.tp-help-none a {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .nav-tile.right .nav-item.HelpButton.tp-help-none:hover a {
+            border-color: rgba(255, 255, 255, 0.06);
+            color: var(--tp-header-muted, #a7b0c0);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: none;
+            transform: none;
+        }
+
         /* Coloured state icons (the lock) turn white with the rest on hover. */
         .nav-tile.right .nav-item:hover a b,
         .nav-tile.right .nav-item a:focus-visible b {

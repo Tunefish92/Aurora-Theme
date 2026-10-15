@@ -1256,8 +1256,11 @@
         background: transparent;
     }
 
+    /* border-box: with the border added to 100% width the right-hand cards stuck out 2px and the
+       page got a horizontal scrollbar under the last card. */
     table.dashboard > tbody {
         display: table;
+        box-sizing: border-box;
         width: 100%;
         table-layout: fixed;
         border-collapse: separate;
@@ -3473,6 +3476,13 @@
         .searchAreaHolder .searchArea > :is(#maxPerPage, .category) {
             margin: 0 !important;
         }
+    }
+
+    /* Unraid's account menu (top right) and its other drop-down menus: the hovered entry used
+       Unraid's red-orange gradient; it takes the theme's accent gradient. */
+    .unapi .dropdown-item-hover:is(:hover, :focus, :focus-visible) {
+        color: #ffffff;
+        background: var(--tp-gradient);
     }
 
     /* Help boxes (shown with the Help button) and notices, across the whole web interface:
