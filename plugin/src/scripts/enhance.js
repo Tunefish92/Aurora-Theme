@@ -1340,6 +1340,20 @@
     arrange();
   }
 
+  // Main menu: every tab gets its name as a tooltip, for the narrow top bar where tabs show only
+  // their icon. On phones, where the tabs scroll sideways, the open tab is scrolled into view.
+  function navTitles() {
+    document.querySelectorAll('#menu .nav-tile:not(.right) .nav-item a').forEach(function (link) {
+      if (!link.title) link.title = link.textContent.trim();
+    });
+    const active = document.querySelector('#menu .nav-tile:not(.right) .nav-item.active');
+    const row = active && active.parentElement;
+    if (!row || row.scrollWidth <= row.clientWidth) return;
+    const a = active.getBoundingClientRect();
+    const r = row.getBoundingClientRect();
+    row.scrollLeft += a.left - r.left - (r.width - a.width) / 2;
+  }
+
   // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
   // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
   // "No help on this page".
@@ -2515,7 +2529,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

@@ -40,6 +40,16 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
+<script>
+// "tp-topbar" while the menu is a bar across the top: always in the top layout, and in the
+// sidebar layout on screens narrower than 1024px. Set here in the head, so there is no flash.
+(function (root, sidebar) {
+  var wide = window.matchMedia('(min-width: 1024px)');
+  var set = function () { root.classList.toggle('tp-topbar', !(sidebar && wide.matches)); };
+  set();
+  wide.addEventListener('change', set);
+})(document.documentElement, <?= in_array('tp-sidebar', $auroraClasses) ? 'true' : 'false' ?>);
+</script>
 <?php if (in_array('tp-sidebar', $auroraClasses)): ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/layout-sidebar.css') ?>">
 <?php endif; ?>
