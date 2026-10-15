@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.1718"
+        version="2026.10.15.1729"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.1718
+###2026.10.15.1729
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -14876,6 +14876,19 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         color: var(--tp-primary);
     }
 
+    /* Unraid's narrow fields (90px, e.g. in Add VM): with the theme's padding the text was cut
+       off ("Defaul", "2.0 (EH"). Narrow selects fit their longest entry, narrow inputs get room
+       for their example text. */
+    select.narrow:where(:not(.unapi *)) {
+        width: auto !important;
+        min-width: 11rem;
+        max-width: 100%;
+    }
+
+    input.narrow:where(:not(.unapi *)):not([type="checkbox"], [type="radio"], [type="button"], [type="submit"]) {
+        min-width: 13rem;
+    }
+
     /* Small selects that size to their content ("30 s" in the processor tile): room for the arrow. */
     select.auto:where(:not(.unapi *)) {
         min-width: 7.6rem;
@@ -14914,6 +14927,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
         /* The tables use a fixed layout, where the header row sets the column widths: the device
            column gets enough room for names such as "Device 1" instead of "Dev...". */
+        /* VMs: the same, so name, description, resources and addresses keep readable columns. */
+        #kvm_table {
+            min-width: 110rem;
+        }
+
         table.disk_status thead tr:first-child > td:first-child {
             width: 19rem !important;
         }
@@ -14999,7 +15017,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.1718 is installed."
+echo "Aurora-Theme 2026.10.15.1729 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

@@ -3210,6 +3210,19 @@
         color: var(--tp-primary);
     }
 
+    /* Unraid's narrow fields (90px, e.g. in Add VM): with the theme's padding the text was cut
+       off ("Defaul", "2.0 (EH"). Narrow selects fit their longest entry, narrow inputs get room
+       for their example text. */
+    select.narrow:where(:not(.unapi *)) {
+        width: auto !important;
+        min-width: 11rem;
+        max-width: 100%;
+    }
+
+    input.narrow:where(:not(.unapi *)):not([type="checkbox"], [type="radio"], [type="button"], [type="submit"]) {
+        min-width: 13rem;
+    }
+
     /* Small selects that size to their content ("30 s" in the processor tile): room for the arrow. */
     select.auto:where(:not(.unapi *)) {
         min-width: 7.6rem;
@@ -3248,6 +3261,11 @@
 
         /* The tables use a fixed layout, where the header row sets the column widths: the device
            column gets enough room for names such as "Device 1" instead of "Dev...". */
+        /* VMs: the same, so name, description, resources and addresses keep readable columns. */
+        #kvm_table {
+            min-width: 110rem;
+        }
+
         table.disk_status thead tr:first-child > td:first-child {
             width: 19rem !important;
         }
