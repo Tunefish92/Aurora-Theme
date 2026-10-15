@@ -3259,6 +3259,141 @@
         }
     }
 
+    /* VMs > Add / Edit VM, "Pinned Cores": compact chips instead of wide boxes. The whole chip
+       toggles the core (the label is stretched over it); selected chips take the accent. A core
+       with two threads keeps both chips together in one capsule. */
+    .cpu-grid {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        max-width: 64rem;
+    }
+
+    .cpu-grid .cpu-box {
+        display: inline-flex !important;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0.3rem !important;
+        border: 1px solid var(--tp-border) !important;
+        border-radius: 999px !important;
+        background: var(--tp-subtle) !important;
+    }
+
+    .cpu-grid .cpu-row {
+        position: relative;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 0.7rem;
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0.45rem 0.6rem 0.45rem 1.1rem !important;
+        border-radius: 999px;
+        color: var(--tp-muted);
+        cursor: pointer;
+        transition: color 0.2s var(--tp-ease), background-color 0.2s var(--tp-ease), box-shadow 0.2s var(--tp-ease);
+    }
+
+    .cpu-grid .cpu-row:hover {
+        color: var(--tp-text);
+        background-color: var(--tp-elevated);
+    }
+
+    .cpu-grid .cpu-label {
+        font: 600 1.2rem/1 var(--tp-font-heading);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cpu-grid label.cpu-checkbox {
+        position: static !important;
+        display: grid !important;
+        place-items: center;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .cpu-grid label.cpu-checkbox::after {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        content: "";
+    }
+
+    .cpu-grid label.cpu-checkbox input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .cpu-grid .cpu-row span.checkmark {
+        position: static !important;
+        display: grid !important;
+        place-items: center;
+        width: 1.6rem !important;
+        height: 1.6rem !important;
+        border: 1.5px solid currentColor !important;
+        border-radius: 50% !important;
+        background: transparent !important;
+    }
+
+    .cpu-grid .cpu-row:has(input:checked) {
+        color: var(--tp-primary-text);
+        background: var(--tp-gradient);
+        box-shadow: 0 6px 14px -10px var(--tp-primary);
+    }
+
+    .cpu-grid .cpu-row:has(input:checked) span.checkmark {
+        border-color: transparent !important;
+        background: #ffffff !important;
+    }
+
+    .cpu-grid .cpu-row:has(input:checked) span.checkmark::after {
+        position: static !important;
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        border: 0 !important;
+        color: var(--tp-primary);
+        font: normal 0.9rem/1 FontAwesome;
+        transform: none !important;
+        content: "\f00c";
+    }
+
+    .cpu-grid .cpu-row:has(input:disabled) {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .cpu-grid .cpu-row:has(input:focus-visible) {
+        outline: 2px solid var(--tp-primary);
+        outline-offset: 2px;
+    }
+
+    /* Form rows: one rhythm everywhere. Unraid puts several fields in one <dl> (15px row gap)
+       and starts a new <dl> after each help text (10px padding above and below, so 20px).
+       Half the row gap as padding makes both the same: 16px between all rows. */
+    dl:where(:not(.unapi *)) {
+        row-gap: 1.6rem;
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+    }
+
+    /* Add / Edit VM is built from tables, with 1px or 5px cell padding depending on the
+       section and the labels at the top of tall cells. Same 16px rhythm as the other forms;
+       labels sit on the middle of the first field line. */
+    #displaybox form:has(#domain_name) table > tbody > tr > td {
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+    }
+
+    #displaybox form:has(#domain_name) table > tbody > tr > td:first-child {
+        line-height: 3.6rem;
+    }
+
     /* Community Applications: its search button as a round button next to the field. */
     .searchAreaHolder #searchFilter .searchSubmit {
         display: grid !important;
