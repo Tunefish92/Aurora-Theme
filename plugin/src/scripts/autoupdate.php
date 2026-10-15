@@ -57,7 +57,8 @@ if (strcmp($available, $installed) <= 0) {
     finish('current', "Up to date ($installed).", $installed);
 }
 
-exec('/usr/local/sbin/plugin install ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $output, $status);
+// The exact release that was found, not the "latest" address (see aurora_latest_release()).
+exec('/usr/local/sbin/plugin install ' . escapeshellarg($latest['plg']) . ' 2>&1', $output, $status);
 if (aurora_installed_version() === $available) {
     finish('updated', "Updated from $installed to $available.", $available);
 }

@@ -1,7 +1,7 @@
 <?php
 // "Check for updates" on the settings page: compares the newest GitHub release with the
 // installed version. Nothing is installed here.
-//   POST  returns {"installed", "available", "newer", "page", "message"} or {"error"}
+//   POST  returns {"installed", "available", "newer", "page", "plg", "message"} or {"error"}
 // Unraid checks its csrf_token on every POST before this file runs.
 require __DIR__ . '/UpdateLib.php';
 
@@ -27,6 +27,7 @@ echo json_encode([
     'available' => $latest['version'],
     'newer' => $newer,
     'page' => $latest['page'],
+    'plg' => $latest['plg'],
     'message' => $newer
         ? "Version {$latest['version']} is available on GitHub (installed: $installed)."
         : (strcmp($installed, $latest['version']) > 0

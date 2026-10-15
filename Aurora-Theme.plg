@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.2130"
+        version="2026.10.15.2136"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.2130
+###2026.10.15.2136
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -253,6 +253,7 @@ function auroraCheck(button) {
         show('available', 'fa-arrow-circle-down', 'Update available', data.message);
         update.hidden = false;
         update.innerHTML = '<i class="fa fa-download"></i> Update to ' + data.available;
+        update.dataset.plg = data.plg || '';
       } else {
         show('current', 'fa-check-circle', 'Up to date', data.message);
         update.hidden = true;
@@ -268,7 +269,9 @@ function auroraCheck(button) {
 }
 
 function auroraUpdate(button) {
-  // The same call Unraid's Plugins page makes; progress shows in Unraid's install dialog.
+  // Installs the exact release the check found (its own download address; the "latest" address
+  // can still point to the previous release for a minute after a new one is published). Without
+  // a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
   // Unraid gives up silently when the plugin manager cannot start the task right now (for
   // example while the hourly automatic update runs), so the button says what is happening.
   if (button) {
@@ -277,7 +280,19 @@ function auroraUpdate(button) {
     button.dataset.label = button.innerHTML;
     button.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Starting…';
   }
-  openPlugin(<?= json_encode('plugin install ' . AURORA_RELEASE_PLG) ?>, 'Update Aurora Theme', '', 'refresh');
+  var latest = <?= json_encode(AURORA_RELEASE_PLG) ?>;
+  if (button && button.dataset.plg) {
+    auroraInstall(button, button.dataset.plg);
+    return;
+  }
+  fetch('/plugins/Aurora-Theme/include/check-update.php', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ csrf_token: window.csrf_token || '' }) })
+    .then(function (response) { return response.json(); })
+    .then(function (data) { auroraInstall(button, data.plg || latest); })
+    .catch(function () { auroraInstall(button, latest); });
+}
+
+function auroraInstall(button, plg) {
+  openPlugin('plugin install ' + plg, 'Update Aurora Theme', '', 'refresh');
   if (!button) return;
   var waited = 0;
   var watch = setInterval(function () {
@@ -4524,10 +4539,23 @@ function aurora_installed_version(): string
     return aurora_plg_version('/boot/config/plugins/' . AURORA_PLUGIN . '.plg');
 }
 
+/** A download address of this plugin's .plg in one of its GitHub releases, or ''. */
+function aurora_release_asset(string $url): string
+{
+    $prefix = 'https://github.com/' . AURORA_REPO . '/releases/download/';
+    return strpos($url, $prefix) === 0 && preg_match('#^[A-Za-z0-9._-]+/' . AURORA_PLUGIN . '\.plg$#', substr($url, strlen($prefix))) ? $url : '';
+}
+
 /**
- * The newest release: ['version' => '2026.10.14.2219', 'page' => release URL] or ['error' => text].
+ * The newest release: ['version' => '2026.10.14.2219', 'page' => release URL, 'plg' => URL of
+ * its .plg] or ['error' => text].
  * Asks the GitHub API first (a few bytes); if that fails, for example because of its hourly
  * limit, the release's .plg itself is downloaded and read.
+ *
+ * 'plg' is the address of that exact release's file. The "latest" address keeps pointing to the
+ * previous release for a minute or two after a new one is published, so installing from it
+ * right after a check could bring an older version than the check reported, and the next check
+ * would offer an update again.
  */
 function aurora_latest_release(): array
 {
@@ -4536,14 +4564,18 @@ function aurora_latest_release(): array
     $data = $status === 0 ? json_decode(implode("\n", $output), true) : null;
     $tag = is_array($data) ? ltrim((string) ($data['tag_name'] ?? ''), 'vV') : '';
     if (preg_match('/^\d{4}\.\d{2}\.\d{2}[\w.-]*$/', $tag)) {
-        return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE)];
+        $plg = '';
+        foreach ((array) ($data['assets'] ?? []) as $asset) {
+            if (($asset['name'] ?? '') === AURORA_PLUGIN . '.plg') $plg = aurora_release_asset((string) ($asset['browser_download_url'] ?? ''));
+        }
+        return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE), 'plg' => $plg ?: AURORA_RELEASE_PLG];
     }
     $file = tempnam('/tmp', 'aurora-release-');
     exec('/usr/bin/curl -fsSL --max-time 90 -o ' . escapeshellarg($file) . ' ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $download, $status);
     $version = $status === 0 ? aurora_plg_version($file) : '';
     @unlink($file);
     if ($version !== '') {
-        return ['version' => $version, 'page' => AURORA_RELEASES_PAGE];
+        return ['version' => $version, 'page' => AURORA_RELEASES_PAGE, 'plg' => AURORA_RELEASE_PLG];
     }
     return ['error' => $status === 0
         ? 'The newest release on GitHub has no valid ' . AURORA_PLUGIN . '.plg.'
@@ -4554,7 +4586,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/include/check-update.php <<'AURORA_
 <?php
 // "Check for updates" on the settings page: compares the newest GitHub release with the
 // installed version. Nothing is installed here.
-//   POST  returns {"installed", "available", "newer", "page", "message"} or {"error"}
+//   POST  returns {"installed", "available", "newer", "page", "plg", "message"} or {"error"}
 // Unraid checks its csrf_token on every POST before this file runs.
 require __DIR__ . '/UpdateLib.php';
 
@@ -4580,6 +4612,7 @@ echo json_encode([
     'available' => $latest['version'],
     'newer' => $newer,
     'page' => $latest['page'],
+    'plg' => $latest['plg'],
     'message' => $newer
         ? "Version {$latest['version']} is available on GitHub (installed: $installed)."
         : (strcmp($installed, $latest['version']) > 0
@@ -4938,7 +4971,8 @@ if (strcmp($available, $installed) <= 0) {
     finish('current', "Up to date ($installed).", $installed);
 }
 
-exec('/usr/local/sbin/plugin install ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $output, $status);
+// The exact release that was found, not the "latest" address (see aurora_latest_release()).
+exec('/usr/local/sbin/plugin install ' . escapeshellarg($latest['plg']) . ' 2>&1', $output, $status);
 if (aurora_installed_version() === $available) {
     finish('updated', "Updated from $installed to $available.", $available);
 }
@@ -17136,7 +17170,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.2130 is installed."
+echo "Aurora-Theme 2026.10.15.2136 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

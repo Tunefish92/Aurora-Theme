@@ -20,10 +20,23 @@ function aurora_installed_version(): string
     return aurora_plg_version('/boot/config/plugins/' . AURORA_PLUGIN . '.plg');
 }
 
+/** A download address of this plugin's .plg in one of its GitHub releases, or ''. */
+function aurora_release_asset(string $url): string
+{
+    $prefix = 'https://github.com/' . AURORA_REPO . '/releases/download/';
+    return strpos($url, $prefix) === 0 && preg_match('#^[A-Za-z0-9._-]+/' . AURORA_PLUGIN . '\.plg$#', substr($url, strlen($prefix))) ? $url : '';
+}
+
 /**
- * The newest release: ['version' => '2026.10.14.2219', 'page' => release URL] or ['error' => text].
+ * The newest release: ['version' => '2026.10.14.2219', 'page' => release URL, 'plg' => URL of
+ * its .plg] or ['error' => text].
  * Asks the GitHub API first (a few bytes); if that fails, for example because of its hourly
  * limit, the release's .plg itself is downloaded and read.
+ *
+ * 'plg' is the address of that exact release's file. The "latest" address keeps pointing to the
+ * previous release for a minute or two after a new one is published, so installing from it
+ * right after a check could bring an older version than the check reported, and the next check
+ * would offer an update again.
  */
 function aurora_latest_release(): array
 {
@@ -32,14 +45,18 @@ function aurora_latest_release(): array
     $data = $status === 0 ? json_decode(implode("\n", $output), true) : null;
     $tag = is_array($data) ? ltrim((string) ($data['tag_name'] ?? ''), 'vV') : '';
     if (preg_match('/^\d{4}\.\d{2}\.\d{2}[\w.-]*$/', $tag)) {
-        return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE)];
+        $plg = '';
+        foreach ((array) ($data['assets'] ?? []) as $asset) {
+            if (($asset['name'] ?? '') === AURORA_PLUGIN . '.plg') $plg = aurora_release_asset((string) ($asset['browser_download_url'] ?? ''));
+        }
+        return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE), 'plg' => $plg ?: AURORA_RELEASE_PLG];
     }
     $file = tempnam('/tmp', 'aurora-release-');
     exec('/usr/bin/curl -fsSL --max-time 90 -o ' . escapeshellarg($file) . ' ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $download, $status);
     $version = $status === 0 ? aurora_plg_version($file) : '';
     @unlink($file);
     if ($version !== '') {
-        return ['version' => $version, 'page' => AURORA_RELEASES_PAGE];
+        return ['version' => $version, 'page' => AURORA_RELEASES_PAGE, 'plg' => AURORA_RELEASE_PLG];
     }
     return ['error' => $status === 0
         ? 'The newest release on GitHub has no valid ' . AURORA_PLUGIN . '.plg.'

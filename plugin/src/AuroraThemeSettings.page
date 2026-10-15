@@ -120,6 +120,7 @@ function auroraCheck(button) {
         show('available', 'fa-arrow-circle-down', 'Update available', data.message);
         update.hidden = false;
         update.innerHTML = '<i class="fa fa-download"></i> Update to ' + data.available;
+        update.dataset.plg = data.plg || '';
       } else {
         show('current', 'fa-check-circle', 'Up to date', data.message);
         update.hidden = true;
@@ -135,7 +136,9 @@ function auroraCheck(button) {
 }
 
 function auroraUpdate(button) {
-  // The same call Unraid's Plugins page makes; progress shows in Unraid's install dialog.
+  // Installs the exact release the check found (its own download address; the "latest" address
+  // can still point to the previous release for a minute after a new one is published). Without
+  // a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
   // Unraid gives up silently when the plugin manager cannot start the task right now (for
   // example while the hourly automatic update runs), so the button says what is happening.
   if (button) {
@@ -144,7 +147,19 @@ function auroraUpdate(button) {
     button.dataset.label = button.innerHTML;
     button.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Starting…';
   }
-  openPlugin(<?= json_encode('plugin install ' . AURORA_RELEASE_PLG) ?>, 'Update Aurora Theme', '', 'refresh');
+  var latest = <?= json_encode(AURORA_RELEASE_PLG) ?>;
+  if (button && button.dataset.plg) {
+    auroraInstall(button, button.dataset.plg);
+    return;
+  }
+  fetch('/plugins/Aurora-Theme/include/check-update.php', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ csrf_token: window.csrf_token || '' }) })
+    .then(function (response) { return response.json(); })
+    .then(function (data) { auroraInstall(button, data.plg || latest); })
+    .catch(function () { auroraInstall(button, latest); });
+}
+
+function auroraInstall(button, plg) {
+  openPlugin('plugin install ' + plg, 'Update Aurora Theme', '', 'refresh');
   if (!button) return;
   var waited = 0;
   var watch = setInterval(function () {
