@@ -12,6 +12,10 @@ A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional 
 | --- | --- |
 | ![Array Operation as cards: array status, parity check, last check, disks, mover and power](docs/screenshots/array-operation.png) | ![Login page with a glass card on an aurora background](docs/screenshots/login.png) |
 
+| Docker | Apps |
+| --- | --- |
+| ![Docker list with totals, filters, search and a WebUI button per container](docs/screenshots/docker.png) | ![Apps tab with a nav menu, a centred search and app cards with spotlight badges](docs/screenshots/apps.png) |
+
 ## Install
 
 In Unraid, go to **Plugins → Install Plugin**, paste this address and click **Install**:
@@ -35,11 +39,12 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 - **Look**: Inter and Space Grotesk fonts (bundled, no external requests), a blue–cyan accent, rounded cards, pill buttons, themed drop-down lists, switches, tab bars, dialogs, tooltips and notifications. Every table, including those of plugins, gets the same card style.
 - **Layout**: an optional sidebar with the main menu, server card and quick actions; a slim top bar with breadcrumb, array status and a dark / light switch; page headings on every tab.
 - **Login page**: a glass card on an aurora background, in the dark or light palette.
-- **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
+- **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, the processor's cores as a compact grid with power and temperature chips, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
 - **Main**: device tables with status dots, temperature and error chips and slim usage bars; Array Operation as cards (array, parity check with live progress, last check, disks, mover, power).
 - **Docker**: a compact list with status, CPU, memory and a one-click WebUI button, filters and search, collapsible application groups with start/stop for a whole group, and a card layout on phones. In the container editor every port is checked while typing (range, duplicates, ports used by other containers or by the server), and the "docker allocations" list becomes a searchable overview.
 - **VMs**: an expand button per VM for its disks, interfaces and snapshots, with buttons to create, revert and remove snapshots.
-- **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top.
+- **Apps** (Community Applications): a nav-style menu, the search centred in the title row with themed suggestions, "Installed", "Official" and spotlight badges as pills, page numbers that stay in place, and Change Log, Credits and Statistics as modals.
+- **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top. The tool pages get readable help text: notes and warnings as callouts, command output in monospaced boxes, and the Diagnostics file list as cards. Help boxes and notices look the same everywhere.
 - **Users**: user cards with avatars or coloured initials, roles, search and an "Add user" button.
 - **Stats**: its own Stats tab with CPU, memory, network and disk charts, collected once a minute. It replaces the Dynamix System Statistics plugin, so remove that one first.
 - **Settings page**: switches for colours, layout, enhancements and the Stats tab; updates from the GitHub releases, automatically (on by default, checked hourly) or with "Check for updates" and "Update now"; a form that opens a pre-filled GitHub issue.
