@@ -431,3 +431,14 @@
         animation: none !important;
     }
 }
+
+/* Share / disk settings: from a 1330px window Unraid moves "Read settings from / Write settings
+   to" to the top right of the form, measured on the window. With the sidebar the content area is
+   narrower and the controls lay over the fields, so they stay above the form until there is room. */
+@media (min-width: 1330px) and (max-width: 1699px) {
+    :root.tp-sidebar .clone-settings {
+        position: static;
+        width: auto;
+        margin: 0 0 1.4rem;
+    }
+}

@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.14.2234"
+        version="2026.10.15.1715"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.14.2234
+###2026.10.15.1715
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -175,7 +175,7 @@ _(Automatic updates)_:
 > failed update shows an Unraid notification; every check is noted in the system log.
 
 &nbsp;
-: <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
+: <span class="inline-block"><input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()"></span>
 </form>
 
 <?php
@@ -354,7 +354,7 @@ AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/README.md <<'AURORA_THEME_EOF'
 **Aurora Theme**
 
-Gives the Unraid webGUI a modern look (new colours and fonts, cards, pill buttons) on top of the Black and White themes, with an optional sidebar layout and page enhancements. Settings are under Settings, User Utilities, Aurora Theme.
+A modern look for the Unraid webGUI in a dark and a light palette: new fonts, cards and buttons, an optional sidebar layout, and redesigned Dashboard, Main, Docker, VMs, Users, Settings, Tools and login pages. Updates itself from GitHub. Settings: Settings > User Utilities > Aurora Theme.
 AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/Stats.page <<'AURORA_THEME_EOF'
 Menu="Tasks:90"
@@ -9255,8 +9255,9 @@ select.tp-select-open {
     min-width: 10rem;
 }
 
+/* The main action (Open WebUI, Start, Resume) gets its own row; the others share the next. */
 .tp-ct-primary > .tp-ct-action.tp-ct-main {
-    flex-grow: 1.6;
+    flex-basis: 100%;
 }
 
 .tp-ct-section {
@@ -9815,8 +9816,37 @@ select.tp-select-open {
     background-color: var(--tp-danger-soft, transparent);
 }
 
+/* Unraid's ArrayOperation.css has its own phone and tablet layout for these rows (flex-basis
+   per cell, by position); in the cards that turned into tall blobs and squeezed text. */
+@media (max-width: 769px) {
+    .tp-ops tr.tp-op > td {
+        flex: 0 0 auto !important;
+        flex-basis: auto !important;
+        width: auto !important;
+        max-width: 100%;
+    }
+
+    .tp-ops tr.tp-op > td.tp-op-actions {
+        width: 100% !important;
+    }
+
+    .tp-ops tr.tp-op-array {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tp-ops tr.tp-op-array td.tp-op-state {
+        align-self: flex-start;
+    }
+}
+
 @media (max-width: 767px) {
     .tp-ops {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* System tile: the size labels and the legend stacked, not squeezed side by side. */
+    .tp-enhance table.dashboard .tile-system-memory-labels {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -10693,6 +10723,17 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
     #header unraid-header-os-version span[role="button"],
     #header unraid-header-os-version span[role="button"]:before {
         animation: none !important;
+    }
+}
+
+/* Share / disk settings: from a 1330px window Unraid moves "Read settings from / Write settings
+   to" to the top right of the form, measured on the window. With the sidebar the content area is
+   narrower and the controls lay over the fields, so they stay above the form until there is room. */
+@media (min-width: 1330px) and (max-width: 1699px) {
+    :root.tp-sidebar .clone-settings {
+        position: static;
+        width: auto;
+        margin: 0 0 1.4rem;
     }
 }
 AURORA_THEME_EOF
@@ -12219,7 +12260,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     button:where(:not(.unapi *, [role="tab"], .ui-button, .swal-button)),
     a.button:where(:not(.unapi *)) {
         padding: 8px 16px;
+        /* Colours set here as well, not only through Unraid's variables: some pages bring their
+           own button styles (the Docker install output's log.htm), which would otherwise win. */
+        border: var(--button-border);
         border-radius: var(--tp-r-full);
+        color: var(--button-text-color);
+        background: var(--button-background);
+        background-size: auto;
         font-family: var(--tp-font-heading);
         font-size: 1.2rem;
         font-weight: 600;
@@ -12235,6 +12282,8 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     button:hover:where(:not(.unapi *, [disabled], [role="tab"], .ui-button, .swal-button)),
     a.button:hover:where(:not(.unapi *, [disabled])) {
         border-color: var(--tp-primary);
+        color: var(--hover-button-text-color);
+        background: var(--hover-button-background);
         box-shadow: var(--tp-shadow-sm);
         transform: translateY(-1px);
     }
@@ -14617,6 +14666,292 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             background-color: color-mix(in srgb, var(--tp-primary) 6%, transparent);
         }
     }
+
+    /* ======================================================================
+       Fixes found on a live Unraid 7.3.3 server (desktop and phone)
+       ====================================================================== */
+    /* "Move to end" / "Back to top": Unraid's red circle icons become small round buttons. */
+    a:is(.move_to_end, .back_to_top) {
+        right: 2.4rem !important;
+        bottom: 7.2rem !important;
+        z-index: 9000;
+        width: 4.2rem;
+        height: 4.2rem;
+        place-items: center;
+        border: 1px solid var(--tp-border);
+        border-radius: 50%;
+        color: var(--tp-muted) !important;
+        background-color: var(--tp-elevated);
+        box-shadow: var(--tp-shadow-lg);
+        transition: color 0.25s var(--tp-ease), border-color 0.25s var(--tp-ease);
+    }
+
+    a:is(.move_to_end, .back_to_top)[style*="inline"],
+    a:is(.move_to_end, .back_to_top)[style*="block"] {
+        display: grid !important;
+    }
+
+    a:is(.move_to_end, .back_to_top):hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary) !important;
+    }
+
+    a:is(.move_to_end, .back_to_top) i.fa {
+        margin: 0;
+        font-size: 0;
+    }
+
+    a.move_to_end i.fa::before,
+    a.back_to_top i.fa::before {
+        font-size: 1.6rem;
+        content: "\f063";
+    }
+
+    a.back_to_top i.fa::before {
+        content: "\f062";
+    }
+
+    /* Settings > Boot Parameters (Unraid 7.3): section headings, warning boxes, parameter code. */
+    h3.section-header {
+        margin: 3rem 0 1.4rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--tp-border) !important;
+        color: var(--tp-text) !important;
+        font: 600 1.25rem var(--tp-font-heading);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    h3.section-header::before {
+        display: inline-block;
+        width: 0.8rem;
+        height: 0.8rem;
+        margin-right: 0.9rem;
+        border-radius: 2px;
+        background: var(--tp-gradient);
+        vertical-align: 0.15rem;
+        content: "";
+    }
+
+    .warning-box {
+        padding: 1.4rem 1.8rem !important;
+        border: 1px solid color-mix(in srgb, var(--tp-warn-text) 30%, transparent) !important;
+        border-left: 4px solid var(--tp-warn-text) !important;
+        border-radius: 12px !important;
+        color: var(--tp-text);
+        line-height: 1.65;
+        background-color: color-mix(in srgb, var(--tp-warn-text) 8%, transparent) !important;
+    }
+
+    span.parameter-code {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+        padding: 0.3rem 0.9rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 8px;
+        color: var(--tp-muted);
+        font: 500 1.2rem ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        background-color: var(--tp-subtle) !important;
+        cursor: pointer;
+    }
+
+    /* Docker install / update output on the page (log.htm): the command and pull logs as cards. */
+    #displaybox fieldset:where(:not(.unapi *)) {
+        margin: 1.4rem 0;
+        padding: 1.4rem 1.8rem 1.6rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 14px;
+        background-color: var(--tp-subtle);
+    }
+
+    #displaybox fieldset:where(:not(.unapi *)) > legend {
+        padding: 0.3rem 1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        font: 600 1.05rem var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background-color: var(--tp-elevated);
+    }
+
+    #displaybox fieldset:where(:not(.unapi *)),
+    #displaybox .logLine {
+        color: var(--tp-text);
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 1.2rem;
+        line-height: 1.7;
+    }
+
+    /* Multi-select lists (jQuery dropdownchecklist, e.g. "Write settings to"): the outer wrapper
+       loses Unraid's underline and arrow; the inner selector is the field, at full width. */
+    .ui-dropdownchecklist.ui-dropdownchecklist-selector-wrapper {
+        height: auto !important;
+        overflow: visible !important;
+        border: 0 !important;
+        background: none !important;
+        line-height: normal;
+    }
+
+    .ui-dropdownchecklist-selector-wrapper > .ui-dropdownchecklist-selector {
+        box-sizing: border-box;
+        width: 100% !important;
+        min-height: 3.6rem;
+        line-height: 2rem;
+    }
+
+    /* Unassigned Devices: its title bar puts the switches absolutely at the right edge, where they
+       lay over the titles on narrower screens. Title and controls share one wrapping row. */
+    div.title.ud {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem 2rem;
+        height: auto;
+        min-height: 0;
+    }
+
+    div.title.ud .titleRight {
+        position: static !important;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.8rem 1.8rem;
+    }
+
+    div.title.ud .ud_titleFix {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        float: none;
+        padding-right: 0;
+    }
+
+    div.title.ud .ud_titleFix > div[style*="clear"] {
+        display: none;
+    }
+
+    /* Community Applications: its search button as a round button next to the field. */
+    .searchAreaHolder #searchFilter .searchSubmit {
+        display: grid !important;
+        place-items: center;
+        width: 4rem !important;
+        height: 4rem !important;
+        margin-left: 0.6rem !important;
+        padding: 0 !important;
+        border: 1px solid var(--tp-border);
+        border-radius: 50%;
+        color: var(--tp-muted);
+        background: var(--tp-elevated) !important;
+        cursor: pointer;
+    }
+
+    .searchAreaHolder #searchFilter .searchSubmit:hover {
+        border-color: var(--tp-primary);
+        color: var(--tp-primary);
+    }
+
+    /* Small selects that size to their content ("30 s" in the processor tile): room for the arrow. */
+    select.auto:where(:not(.unapi *)) {
+        min-width: 7.6rem;
+        padding-right: 3rem !important;
+    }
+
+    /* Buttons a script adds into the tab bar ("Check For Updates") wrap instead of being cut off. */
+    .tabs .tabs-container {
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 767px) {
+        /* Dashboard tiles: Unraid lays rows out as fixed-width columns (w18, w26); on a phone
+           the text stays on one line and is shortened instead of wrapping into the next column. */
+        table.dashboard :is(#array_list, [id^="pool_list"], [title="Shares Information"], [title="Users Information"]) :is(span.w18, span.w26, span.w36, span.w44, span.w72) {
+            overflow: hidden;
+            font-size: 1.2rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        table.dashboard :is(#array_list, [id^="pool_list"], [title="Shares Information"], [title="Users Information"]) tr.header :is(span.w18, span.w26, span.w36, span.w44, span.w72) {
+            font-size: 1rem;
+        }
+
+        /* Wide tables scroll sideways inside their card instead of being squeezed or cut off. */
+        .TableContainer,
+        .TableContainer--no-min-width {
+            overflow-x: auto;
+        }
+
+        /* Wide enough that sizes, chips and model names keep to their columns while scrolling. */
+        table.disk_status {
+            min-width: 118rem;
+        }
+
+        /* The tables use a fixed layout, where the header row sets the column widths: the device
+           column gets enough room for names such as "Device 1" instead of "Dev...". */
+        table.disk_status thead tr:first-child > td:first-child {
+            width: 19rem !important;
+        }
+
+        #displaybox table:is(.share_status, .tablesorter, .unraid, .indexer):where(:not(.TableContainer *, .TableContainer--no-min-width *, .dashboard, .disk_status, .ArrayOperation-Table, .snapshot, .domdisk, #kvm_table *, .tp-ops *)),
+        table:is(.usb_mounts, .samba_mounts, .usb_absent) {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        table.disk_status td.desc {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Community Applications: on a phone its search button wrapped under the search field
+           and hung over the page heading. Field and button stay in one row. */
+        .searchAreaHolder #searchFilter {
+            display: flex !important;
+            flex: 1 1 auto;
+            align-items: center;
+            gap: 0.6rem;
+            width: auto !important;
+            min-width: 0;
+            max-width: calc(100vw - 6.4rem);
+        }
+
+        .searchAreaHolder #searchFilter .awesomplete {
+            flex: 1 1 auto;
+            width: auto !important;
+            min-width: 0;
+        }
+
+        .searchAreaHolder #searchFilter .searchSubmit {
+            position: static !important;
+            display: grid !important;
+            flex: none;
+            place-items: center;
+            width: 4rem !important;
+            height: 4rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 1px solid var(--tp-border);
+            border-radius: 50%;
+            background: var(--tp-elevated) !important;
+        }
+
+        body:has(.searchAreaHolder) #displaybox .tp-heading {
+            margin-top: 2.4rem;
+        }
+
+        a:is(.move_to_end, .back_to_top) {
+            right: 1.6rem !important;
+            bottom: 2rem !important;
+            width: 3.8rem;
+            height: 3.8rem;
+        }
+    }
 }
 AURORA_THEME_EOF
 rm -f /boot/config/plugins/Aurora-Theme/update-source
@@ -14642,7 +14977,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.14.2234 is installed."
+echo "Aurora-Theme 2026.10.15.1715 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

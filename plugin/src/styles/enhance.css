@@ -1677,8 +1677,9 @@ select.tp-select-open {
     min-width: 10rem;
 }
 
+/* The main action (Open WebUI, Start, Resume) gets its own row; the others share the next. */
 .tp-ct-primary > .tp-ct-action.tp-ct-main {
-    flex-grow: 1.6;
+    flex-basis: 100%;
 }
 
 .tp-ct-section {
@@ -2237,8 +2238,37 @@ select.tp-select-open {
     background-color: var(--tp-danger-soft, transparent);
 }
 
+/* Unraid's ArrayOperation.css has its own phone and tablet layout for these rows (flex-basis
+   per cell, by position); in the cards that turned into tall blobs and squeezed text. */
+@media (max-width: 769px) {
+    .tp-ops tr.tp-op > td {
+        flex: 0 0 auto !important;
+        flex-basis: auto !important;
+        width: auto !important;
+        max-width: 100%;
+    }
+
+    .tp-ops tr.tp-op > td.tp-op-actions {
+        width: 100% !important;
+    }
+
+    .tp-ops tr.tp-op-array {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tp-ops tr.tp-op-array td.tp-op-state {
+        align-self: flex-start;
+    }
+}
+
 @media (max-width: 767px) {
     .tp-ops {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* System tile: the size labels and the legend stacked, not squeezed side by side. */
+    .tp-enhance table.dashboard .tile-system-memory-labels {
         grid-template-columns: minmax(0, 1fr);
     }
 
