@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.15.2136"
+        version="2026.10.16.1519"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.15.2136
+###2026.10.16.1519
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -378,7 +378,7 @@ for example `/Dashboard?aurora=off`. The plugin then loads nothing in that brows
 a page with `?aurora=on`. <?= !empty($_COOKIE['aurora_off']) ? '**The switch is currently off in this browser.**' : '' ?>
 AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/README.md <<'AURORA_THEME_EOF'
-**Aurora Theme**
+#### Aurora Theme
 
 A modern look for the Unraid webGUI in a dark and a light palette: new fonts, cards and buttons, an optional sidebar layout, and redesigned Dashboard, Main, Docker, VMs, Users, Settings, Tools and login pages. Updates itself from GitHub. Settings: Settings > User Utilities > Aurora Theme.
 AURORA_THEME_EOF
@@ -7383,6 +7383,21 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     const PRIMARY = /^(start|check|move|resume)$/i;
     const blank = function (cell) { return !cell.textContent.trim() && !cell.querySelector('input, select, button, img, i'); };
 
+    // Stopped array: Unraid puts "Maintenance mode" in a row of its own under Start, which made
+    // a second "Array" card. Its checkbox moves into the Start card's description, where it
+    // belongs; it stays in the same form, so Start still sends it.
+    const startButton = grid.querySelector('[name="cmdStart"], #cmdStart');
+    const startMode = grid.querySelector('input[type="checkbox"][name="startMode"]');
+    const modeRow = startMode && startMode.closest('tr');
+    if (startButton && modeRow && !modeRow.contains(startButton) && startButton.form === startMode.form) {
+      const target = startButton.closest('tr').lastElementChild;
+      const label = startMode.closest('label') || startMode;
+      const hint = modeRow.lastElementChild ? modeRow.lastElementChild.textContent.replace(/\s+/g, ' ').trim() : '';
+      if (hint) label.title = hint;
+      target.append(label);
+      modeRow.classList.add('tp-op-skip');
+    }
+
     grid.querySelectorAll('table.ArrayOperation-Table > tbody > tr').forEach(function (row) {
       const cells = [...row.children];
       if (row.classList.contains('tp-op-skip') || row.querySelector('td.line') || cells.every(blank)) {
@@ -8723,8 +8738,11 @@ a.tp-webui .fa {
     --tp-ring-track: #e3e8f0;
 }
 
+/* Unraid aligns the cards to the top, so a label on two lines ("Log filesystem") made its card
+   taller than the others. All cards in a row now share a height and keep their rings level. */
 .tile-system-memory-charts.tp-rings {
     grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    align-items: stretch;
     gap: 1rem;
 }
 
@@ -8750,16 +8768,18 @@ a.tp-webui .fa {
     font: 600 1.1rem var(--tp-font-heading, inherit);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    text-wrap: balance;
 }
 
 .tile-system-memory-charts.tp-rings div.pie {
     --tp-ring: var(--tp-primary, #4f8bff);
     position: relative;
     flex-direction: column;
+    flex: none;
     gap: 0.2rem;
     width: 10.4rem;
     height: 10.4rem;
-    margin: 0;
+    margin: auto 0 0;
     border-radius: 50%;
     transition: background 0.6s;
 }
@@ -9896,7 +9916,8 @@ select.tp-select-open {
         var(--tp-elevated, var(--background-color));
 }
 
-.tp-ops tr.tp-op-array td.tp-op-state {
+/* Not for an empty status cell: the blank rule above hides those, but this one is more specific. */
+.tp-ops tr.tp-op-array td.tp-op-state:not(.tp-op-blank) {
     order: 1;
     display: inline-flex !important;
     align-items: center;
@@ -10116,11 +10137,6 @@ select.tp-select-open {
 
 @media (max-width: 767px) {
     .tp-ops {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    /* System tile: the size labels and the legend stacked, not squeezed side by side. */
-    .tp-enhance table.dashboard .tile-system-memory-labels {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -10814,42 +10830,6 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             color: var(--tp-primary-ii, var(--brand-orange));
         }
 
-        /* Update notice: a round icon button beside the version, with a slow pulse. Its text is
-           hidden; the tooltip still says which version is available. */
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) {
-            justify-content: center;
-            gap: 0;
-            width: 2.8rem;
-            height: 2.8rem;
-            padding: 0;
-            border-radius: 50%;
-            color: #ffffff;
-            font-size: 0;
-            white-space: nowrap;
-            background: var(--tp-gradient, var(--brand-orange));
-            box-shadow: 0 8px 20px -8px var(--tp-primary, var(--brand-orange));
-            animation: tp-update-pulse 2.6s ease-in-out infinite;
-            transition: transform 0.35s;
-        }
-
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):hover {
-            transform: translateY(-1px);
-        }
-
-        /* Unraid's bell is replaced by a download-to-tray arrow, drawn here so it needs no
-           extra file; the arrow dips gently to suggest "ready to install". */
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) > span {
-            display: none;
-        }
-
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):before {
-            width: 1.7rem;
-            height: 1.7rem;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v10.5'/%3E%3Cpath d='M7.5 10l4.5 4.5 4.5-4.5'/%3E%3Cpath d='M4.5 16.5v1.5a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-1.5'/%3E%3C/svg%3E") center / contain no-repeat;
-            animation: tp-update-dip 1.8s ease-in-out infinite;
-            content: "";
-        }
-
         #menu {
             position: fixed;
             top: 0;
@@ -11167,23 +11147,6 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
         .nav-tile.right .nav-item a:focus-visible b {
             color: inherit !important;
         }
-    }
-}
-
-@keyframes tp-update-pulse {
-    0%, 100% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 0 var(--tp-primary-soft, rgba(255, 140, 47, 0.3)); }
-    50% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 6px transparent; }
-}
-
-@keyframes tp-update-dip {
-    0%, 60%, 100% { transform: translateY(-1px); }
-    30% { transform: translateY(1.5px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #header unraid-header-os-version span[role="button"],
-    #header unraid-header-os-version span[role="button"]:before {
-        animation: none !important;
     }
 }
 
@@ -11810,6 +11773,19 @@ button.tft-segment-option[aria-checked="true"] {
 @media (max-width: 640px) {
     .tft-update-card {
         flex-wrap: wrap;
+    }
+
+    /* The four issue kinds no longer fit on one line; two even rows instead of a pill that
+       wraps unevenly. */
+    .tft-segment {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-self: stretch;
+        border-radius: 1.4rem;
+    }
+
+    button.tft-segment-option {
+        border-radius: 1rem;
     }
 }
 
@@ -13170,6 +13146,16 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         transform: translateY(-3px);
     }
 
+    /* Phones: the cards in the Apps home rows are 36rem wide (set by Community Applications),
+       wider than the row, so even the first card was cut off. They now fit the screen with
+       the next card peeking in, which shows the row scrolls sideways. */
+    @media (max-width: 599px) {
+        .ca_homeTemplates .ca_holder {
+            box-sizing: border-box;
+            width: min(36rem, 100vw - 7rem) !important;
+        }
+    }
+
     .ca_homeTemplatesHeader,
     .ca_applicationName {
         font-family: var(--tp-font-heading);
@@ -13429,6 +13415,97 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         line-height: 1.5;
     }
 
+    /* Phones: Unraid's tile header wraps the title under the icon whenever its text is wide (a
+       long processor name), so some tiles had the title beside the icon and others below it.
+       The title now always sits beside the icon and wraps there. The server tile's stop /
+       reboot / power buttons move under its other controls (Unraid's wrap-reverse) instead of
+       squeezing the server name and description into a narrow column. */
+    @media (max-width: 599px) {
+        table.dashboard .tile-header-left {
+            flex: 1 1 auto;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        table.dashboard .tile-header-left .section {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        table.dashboard .tile-header-right {
+            max-width: 12rem;
+        }
+
+        /* Interface tile: the port and view selects get a row of their own under the title. */
+        table.dashboard .tile-header-left .section > span:has(> .network-selects) {
+            flex-wrap: wrap;
+            row-gap: 0.6rem;
+        }
+
+        table.dashboard span.head_gap.network-selects {
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+            row-gap: 0.6rem;
+        }
+
+        /* On the narrowest phones the view select drops under the port select rather than
+           shrinking to its arrow. */
+        table.dashboard select.network-type {
+            flex: 1 1 12rem;
+            min-width: 0;
+        }
+
+        /* Array and pool tiles: Unraid gives the four value columns 18% each (as min- and
+           max-width), which cut off "healthy" and "Utilization". SMART shows only its thumb
+           (the text is its tooltip), and utilization gets the room for its value and bar.
+           Only the list rows: the first row holds the tile header. */
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(1) {
+            min-width: 26%;
+            max-width: 26%;
+        }
+
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(2) {
+            min-width: 21%;
+            max-width: 21%;
+        }
+
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(3) {
+            min-width: 14%;
+            max-width: 14%;
+        }
+
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(4) {
+            min-width: 14%;
+            max-width: 14%;
+        }
+
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(5) {
+            min-width: 25%;
+            max-width: 25%;
+        }
+
+        table.dashboard > tbody:is(#array_list, [id^="pool_list"]) [id^="text-"] {
+            display: none;
+        }
+
+        /* Shares and Users tiles: the description gives up room so the last two columns fit. */
+        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(1) {
+            min-width: 28%;
+            max-width: 28%;
+        }
+
+        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(2) {
+            min-width: 30%;
+            max-width: 30%;
+        }
+
+        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(3) {
+            min-width: 21%;
+            max-width: 21%;
+        }
+    }
+
     /* Tile controls (settings, info, collapse, tile management): plain round icon buttons
        instead of Unraid's grey squares */
     table.dashboard .tile-header-right-controls {
@@ -13605,7 +13682,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     }
 
     table.dashboard .tile-system-memory-labels {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
         color: var(--tp-muted);
         line-height: 1.7;
     }
@@ -14131,8 +14208,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         max-height: 2.8rem;
     }
 
-    table.plugins .desc_readmore h4 {
+    /* Some plugins (Unassigned Devices) start their README with a bold line instead of a
+       heading; it gets the same look as the others' names. */
+    table.plugins .desc_readmore h4,
+    table.plugins .desc_readmore:not(:has(h4)) > p:first-child > strong:only-child {
+        display: block;
         margin: 0.4rem 0 0.2rem;
+        color: var(--tp-text);
         font: 600 1.4rem var(--tp-font-heading);
     }
 
@@ -15173,6 +15255,66 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
     a.back_to_top i.fa::before {
         content: "\f062";
+    }
+
+    /* Both are shown while the page is scrolled part-way, so "back to top" sits above "move to end". */
+    a.back_to_top {
+        bottom: 12.2rem !important;
+    }
+
+    /* Settings > Notifications: each group's name ("Notices", "Alerts") on its own line above
+       its Browser / Email / Agents boxes. Inline, a short name pulled the boxes up beside it
+       and the row no longer lined up with the others. */
+    .notifications-checkbox-group-title {
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+
+    /* Header search (the magnifier in the quick actions): Unraid draws a flat grey field; it
+       gets the theme's input look. Unraid's id rule outranks the general field rules. */
+    #guiSearchBox {
+        border: 1px solid var(--tp-input-border);
+        color: var(--tp-text);
+        background-color: var(--tp-elevated);
+    }
+
+    #guiSearchBox:focus {
+        border-color: var(--tp-primary);
+        outline: none;
+    }
+
+    /* System Information (the Info button): Unraid puts its table in a <pre>, so long values
+       (BIOS, processor, memory, network) ran out of the box instead of wrapping, and the line
+       breaks around its embedded <style> left an empty band at the top. */
+    .sweet-alert.nchan pre#swalbody:has(> table.info) {
+        white-space: normal;
+    }
+
+    .sweet-alert.nchan pre#swalbody > table.info td {
+        overflow-wrap: anywhere;
+        white-space: normal;
+        vertical-align: top;
+    }
+
+    .sweet-alert.nchan pre#swalbody > table.info td:first-child {
+        padding-right: 1rem;
+        white-space: nowrap;
+    }
+
+    /* Notifications panel: "Archive All" is plain 16px text beside the tabs, which read like a
+       heading; it becomes a small quiet button. */
+    [role="tabpanel"]:is([id$="-content-unread"], [id$="-content-archived"]) > [role="button"] {
+        padding: 0.5rem 1.2rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        color: var(--tp-muted);
+        font: 600 1.2rem var(--tp-font-heading);
+        text-decoration: none;
+    }
+
+    [role="tabpanel"]:is([id$="-content-unread"], [id$="-content-archived"]) > [role="button"]:hover {
+        border-color: var(--tp-danger);
+        color: var(--tp-danger);
     }
 
     /* Settings > Boot Parameters (Unraid 7.3): section headings, warning boxes, parameter code. */
@@ -16655,10 +16797,98 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             font-size: 1rem;
         }
 
-        /* Wide tables scroll sideways inside their card instead of being squeezed or cut off. */
+        /* Icon-only buttons in a page heading (previous / next share, user or disk) keep the
+           general button width of 8.6rem plus padding, so the second one ran off the screen. */
+        div.title a.button:has(> i.fa:only-child) {
+            min-width: 0;
+            padding-right: 1.4rem;
+            padding-left: 1.4rem;
+        }
+
+        /* VM editor (Add / Update VM): Unraid marks it non-responsive, so on a phone the whole
+           form was 1200px wide, with right-aligned labels in a 400px column and every field
+           off the screen to the right. Here each label sits above its field. The cells become
+           blocks inside their rows, so rows Unraid shows and hides keep working. */
+        .content--non-responsive:has(#vmform) {
+            min-width: 0;
+        }
+
+        .content--non-responsive:has(#vmform) dl {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.4rem;
+        }
+
+        .content--non-responsive:has(#vmform) dt {
+            text-align: left;
+        }
+
+        #vmform table {
+            width: 100%;
+        }
+
+        #vmform table tr,
+        #vmform table tr > td {
+            height: auto !important;
+            line-height: 1.5 !important;
+        }
+
+        #vmform table tr > td {
+            display: block;
+            box-sizing: border-box;
+            width: auto !important;
+            max-width: 100%;
+            padding: 0 0 0 1.2rem;
+            white-space: normal;
+            text-align: left !important;
+        }
+
+        /* The third cell only holds the inline XML, hidden unless "Inline XML" is on. */
+        #vmform table tr > td:has(> textarea.xml:only-child[style*="none"]) {
+            display: none;
+        }
+
+        /* Fields that share a row (memory and max memory, BIOS and USB boot) wrap instead of
+           running off the screen. */
+        #vmform span.width {
+            width: auto;
+        }
+
+        #vmform table tr > td :is(select, input, span.width, span.label) {
+            margin-top: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        #vmform table tr > td:first-child {
+            padding-top: 1.4rem !important;
+            padding-bottom: 0.6rem !important;
+            font-weight: 600;
+        }
+
+        #vmform table tr > td:empty {
+            display: none;
+        }
+
+        #vmform :is(input:not([type="checkbox"], [type="radio"]), select, textarea, span.width) {
+            max-width: 100%;
+        }
+
+        /* Wide tables scroll sideways inside their card instead of being squeezed or cut off.
+           While there is more to the right, the right edge fades out, so the cut-off column
+           reads as "scroll for more"; at the end the fade is gone. A table that fits has no
+           active scroll timeline and so no fade. */
         .TableContainer,
         .TableContainer--no-min-width {
             overflow-x: auto;
+        }
+
+        @supports (animation-timeline: scroll()) {
+            .TableContainer,
+            .TableContainer--no-min-width,
+            table:is(.usb_mounts, .samba_mounts, .usb_absent) {
+                mask-image: linear-gradient(to left, transparent, #000 var(--tp-scroll-fade));
+                animation: tp-scroll-fade linear both;
+                animation-timeline: scroll(self inline);
+            }
         }
 
         /* Wide enough that sizes, chips and model names keep to their columns while scrolling. */
@@ -16732,6 +16962,46 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             width: 3.8rem;
             height: 3.8rem;
         }
+
+        a.back_to_top {
+            bottom: 6.6rem !important;
+        }
+    }
+
+    /* Update notice in the header (both layouts): a round icon button beside the version, with
+       a slow pulse. Its text is hidden; the tooltip still says which version is available. */
+    #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) {
+        justify-content: center;
+        gap: 0;
+        width: 2.8rem;
+        height: 2.8rem;
+        padding: 0;
+        border-radius: 50%;
+        color: #ffffff;
+        font-size: 0;
+        white-space: nowrap;
+        background: var(--tp-gradient, var(--brand-orange));
+        box-shadow: 0 8px 20px -8px var(--tp-primary, var(--brand-orange));
+        animation: tp-update-pulse 2.6s ease-in-out infinite;
+        transition: transform 0.35s;
+    }
+
+    #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):hover {
+        transform: translateY(-1px);
+    }
+
+    /* Unraid's bell is replaced by a download-to-tray arrow, drawn here so it needs no
+       extra file; the arrow dips gently to suggest "ready to install". */
+    #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) > span {
+        display: none;
+    }
+
+    #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):before {
+        width: 1.7rem;
+        height: 1.7rem;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v10.5'/%3E%3Cpath d='M7.5 10l4.5 4.5 4.5-4.5'/%3E%3Cpath d='M4.5 16.5v1.5a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-1.5'/%3E%3C/svg%3E") center / contain no-repeat;
+        animation: tp-update-dip 1.8s ease-in-out infinite;
+        content: "";
     }
 
     /* ======================================================================
@@ -16761,7 +17031,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             margin: 0;
         }
 
-        #header unraid-header-os-version > div > a svg {
+        #header unraid-header-os-version > div > a :is(svg, img) {
             width: auto;
             height: 2.2rem;
         }
@@ -17119,7 +17389,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
                 padding: 0 1.6rem;
             }
 
-            #header unraid-header-os-version > div > a svg {
+            #header unraid-header-os-version > div > a :is(svg, img) {
                 height: 1.8rem;
             }
 
@@ -17129,6 +17399,16 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
             #UserProfile > div:last-of-type > div:first-child::before {
                 display: none;
+            }
+
+            /* Unraid places the server controls over the header's right end, so a long server
+               name would run into the version and update notice. */
+            #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+                display: block;
+                max-width: 12rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             #menu {
@@ -17144,7 +17424,53 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
                 flex-wrap: wrap;
             }
         }
+
+        /* Small phones: only the notification and menu buttons stay on the right. */
+        @media (max-width: 479px) {
+            #UserProfile > div:last-of-type > div:first-child {
+                display: none;
+            }
+        }
+
+        @media (max-width: 379px) {
+            #header unraid-header-os-version > div {
+                gap: 1rem;
+            }
+
+            #header unraid-header-os-version > div > a :is(svg, img) {
+                height: 1.5rem;
+            }
+        }
     }
+}
+
+@keyframes tp-update-pulse {
+    0%, 100% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 0 var(--tp-primary-soft, rgba(255, 140, 47, 0.3)); }
+    50% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 6px transparent; }
+}
+
+@keyframes tp-update-dip {
+    0%, 60%, 100% { transform: translateY(-1px); }
+    30% { transform: translateY(1.5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #header unraid-header-os-version span[role="button"],
+    #header unraid-header-os-version span[role="button"]:before {
+        animation: none !important;
+    }
+}
+
+/* The fade at the right edge of a sideways-scrolling table (phones), driven by its scroll position. */
+@property --tp-scroll-fade {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@keyframes tp-scroll-fade {
+    0%, 92% { --tp-scroll-fade: 4rem; }
+    100% { --tp-scroll-fade: 0px; }
 }
 AURORA_THEME_EOF
 rm -f /boot/config/plugins/Aurora-Theme/update-source
@@ -17170,7 +17496,7 @@ cat > /boot/config/plugins/Aurora-Theme/autoupdate.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/local/sbin/update_cron
 echo ""
-echo "Aurora-Theme 2026.10.15.2136 is installed."
+echo "Aurora-Theme 2026.10.16.1519 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

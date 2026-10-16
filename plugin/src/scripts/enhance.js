@@ -2367,6 +2367,21 @@
     const PRIMARY = /^(start|check|move|resume)$/i;
     const blank = function (cell) { return !cell.textContent.trim() && !cell.querySelector('input, select, button, img, i'); };
 
+    // Stopped array: Unraid puts "Maintenance mode" in a row of its own under Start, which made
+    // a second "Array" card. Its checkbox moves into the Start card's description, where it
+    // belongs; it stays in the same form, so Start still sends it.
+    const startButton = grid.querySelector('[name="cmdStart"], #cmdStart');
+    const startMode = grid.querySelector('input[type="checkbox"][name="startMode"]');
+    const modeRow = startMode && startMode.closest('tr');
+    if (startButton && modeRow && !modeRow.contains(startButton) && startButton.form === startMode.form) {
+      const target = startButton.closest('tr').lastElementChild;
+      const label = startMode.closest('label') || startMode;
+      const hint = modeRow.lastElementChild ? modeRow.lastElementChild.textContent.replace(/\s+/g, ' ').trim() : '';
+      if (hint) label.title = hint;
+      target.append(label);
+      modeRow.classList.add('tp-op-skip');
+    }
+
     grid.querySelectorAll('table.ArrayOperation-Table > tbody > tr').forEach(function (row) {
       const cells = [...row.children];
       if (row.classList.contains('tp-op-skip') || row.querySelector('td.line') || cells.every(blank)) {

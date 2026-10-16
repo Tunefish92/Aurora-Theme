@@ -81,42 +81,6 @@
             color: var(--tp-primary-ii, var(--brand-orange));
         }
 
-        /* Update notice: a round icon button beside the version, with a slow pulse. Its text is
-           hidden; the tooltip still says which version is available. */
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) {
-            justify-content: center;
-            gap: 0;
-            width: 2.8rem;
-            height: 2.8rem;
-            padding: 0;
-            border-radius: 50%;
-            color: #ffffff;
-            font-size: 0;
-            white-space: nowrap;
-            background: var(--tp-gradient, var(--brand-orange));
-            box-shadow: 0 8px 20px -8px var(--tp-primary, var(--brand-orange));
-            animation: tp-update-pulse 2.6s ease-in-out infinite;
-            transition: transform 0.35s;
-        }
-
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):hover {
-            transform: translateY(-1px);
-        }
-
-        /* Unraid's bell is replaced by a download-to-tray arrow, drawn here so it needs no
-           extra file; the arrow dips gently to suggest "ready to install". */
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]) > span {
-            display: none;
-        }
-
-        #header unraid-header-os-version span[role="button"]:not([aria-haspopup]):before {
-            width: 1.7rem;
-            height: 1.7rem;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v10.5'/%3E%3Cpath d='M7.5 10l4.5 4.5 4.5-4.5'/%3E%3Cpath d='M4.5 16.5v1.5a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-1.5'/%3E%3C/svg%3E") center / contain no-repeat;
-            animation: tp-update-dip 1.8s ease-in-out infinite;
-            content: "";
-        }
-
         #menu {
             position: fixed;
             top: 0;
@@ -434,23 +398,6 @@
         .nav-tile.right .nav-item a:focus-visible b {
             color: inherit !important;
         }
-    }
-}
-
-@keyframes tp-update-pulse {
-    0%, 100% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 0 var(--tp-primary-soft, rgba(255, 140, 47, 0.3)); }
-    50% { box-shadow: 0 8px 20px -8px var(--tp-primary, #ff8c2f), 0 0 0 6px transparent; }
-}
-
-@keyframes tp-update-dip {
-    0%, 60%, 100% { transform: translateY(-1px); }
-    30% { transform: translateY(1.5px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #header unraid-header-os-version span[role="button"],
-    #header unraid-header-os-version span[role="button"]:before {
-        animation: none !important;
     }
 }
 

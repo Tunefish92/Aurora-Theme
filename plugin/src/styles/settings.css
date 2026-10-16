@@ -235,6 +235,19 @@ button.tft-segment-option[aria-checked="true"] {
     .tft-update-card {
         flex-wrap: wrap;
     }
+
+    /* The four issue kinds no longer fit on one line; two even rows instead of a pill that
+       wraps unevenly. */
+    .tft-segment {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-self: stretch;
+        border-radius: 1.4rem;
+    }
+
+    button.tft-segment-option {
+        border-radius: 1rem;
+    }
 }
 
 /* ---- Changing the update location */

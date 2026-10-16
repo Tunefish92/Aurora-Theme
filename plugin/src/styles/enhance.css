@@ -876,8 +876,11 @@ a.tp-webui .fa {
     --tp-ring-track: #e3e8f0;
 }
 
+/* Unraid aligns the cards to the top, so a label on two lines ("Log filesystem") made its card
+   taller than the others. All cards in a row now share a height and keep their rings level. */
 .tile-system-memory-charts.tp-rings {
     grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    align-items: stretch;
     gap: 1rem;
 }
 
@@ -903,16 +906,18 @@ a.tp-webui .fa {
     font: 600 1.1rem var(--tp-font-heading, inherit);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    text-wrap: balance;
 }
 
 .tile-system-memory-charts.tp-rings div.pie {
     --tp-ring: var(--tp-primary, #4f8bff);
     position: relative;
     flex-direction: column;
+    flex: none;
     gap: 0.2rem;
     width: 10.4rem;
     height: 10.4rem;
-    margin: 0;
+    margin: auto 0 0;
     border-radius: 50%;
     transition: background 0.6s;
 }
@@ -2049,7 +2054,8 @@ select.tp-select-open {
         var(--tp-elevated, var(--background-color));
 }
 
-.tp-ops tr.tp-op-array td.tp-op-state {
+/* Not for an empty status cell: the blank rule above hides those, but this one is more specific. */
+.tp-ops tr.tp-op-array td.tp-op-state:not(.tp-op-blank) {
     order: 1;
     display: inline-flex !important;
     align-items: center;
@@ -2269,11 +2275,6 @@ select.tp-select-open {
 
 @media (max-width: 767px) {
     .tp-ops {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    /* System tile: the size labels and the legend stacked, not squeezed side by side. */
-    .tp-enhance table.dashboard .tile-system-memory-labels {
         grid-template-columns: minmax(0, 1fr);
     }
 
