@@ -1143,6 +1143,37 @@ tbody.tp-gpu > tr > td > span.w26 {
     text-align: left;
 }
 
+/* PCI bus (NVIDIA, AMD): "PCIe Gen (Max)" and "Lanes (Max)" are plain spans; both go on the
+   right, one under the other, styled like the other values. */
+tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) {
+    grid-column: 2;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) span {
+    color: var(--tp-text, var(--text-color));
+    font-weight: 600;
+}
+
+/* "State:P2": the plugin leaves out the space. */
+tbody.tp-gpu [class^="gpu-perfstate"] {
+    margin-left: 0.3rem;
+}
+
+/* A clock of 0 (an idle GPU) reads "idle"; dashboardGpu() sets the mark. */
+tbody.tp-gpu [data-tp-idle] {
+    font-size: 0 !important;
+}
+
+tbody.tp-gpu [data-tp-idle]::after {
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    font-weight: 500;
+    content: "idle";
+}
+
 /* Active apps: only while one is using the GPU (the plugin adds its icon then). */
 tbody.tp-gpu > tr[class*="gpu-active-apps"]:not(:has(img)) {
     display: none !important;

@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.20.1925"
+        version="2026.10.20.1932"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.20.1925
+###2026.10.20.1932
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -6434,6 +6434,15 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
         const header = tile.querySelector('tr.header');
         if (header) header.classList.add('tp-gpu-moved');
       }
+
+      // A clock of 0 means the GPU is idle: an Intel GPU with nothing to do stops its clock
+      // (power saving). It reads "idle" instead (enhance.css). The plugin rewrites the value
+      // every few seconds, so it is watched and only marked, not replaced.
+      tile.querySelectorAll('[class^="gpu-clock"], [class*=" gpu-clock"]').forEach(function (clock) {
+        const mark = function () { clock.toggleAttribute('data-tp-idle', /^0(\.0+)?(\s*[MG]Hz)?$/i.test(clock.textContent.trim())); };
+        new MutationObserver(mark).observe(clock, { childList: true, characterData: true, subtree: true });
+        mark();
+      });
     });
   }
 
@@ -9228,6 +9237,37 @@ tbody.tp-gpu > tr > td > span.w26 {
     align-items: center;
     gap: 0.8rem;
     text-align: left;
+}
+
+/* PCI bus (NVIDIA, AMD): "PCIe Gen (Max)" and "Lanes (Max)" are plain spans; both go on the
+   right, one under the other, styled like the other values. */
+tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) {
+    grid-column: 2;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) span {
+    color: var(--tp-text, var(--text-color));
+    font-weight: 600;
+}
+
+/* "State:P2": the plugin leaves out the space. */
+tbody.tp-gpu [class^="gpu-perfstate"] {
+    margin-left: 0.3rem;
+}
+
+/* A clock of 0 (an idle GPU) reads "idle"; dashboardGpu() sets the mark. */
+tbody.tp-gpu [data-tp-idle] {
+    font-size: 0 !important;
+}
+
+tbody.tp-gpu [data-tp-idle]::after {
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    font-weight: 500;
+    content: "idle";
 }
 
 /* Active apps: only while one is using the GPU (the plugin adds its icon then). */
@@ -17909,7 +17949,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.20.1925 is installed."
+echo "Aurora-Theme 2026.10.20.1932 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

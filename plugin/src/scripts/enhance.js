@@ -1327,6 +1327,15 @@
         const header = tile.querySelector('tr.header');
         if (header) header.classList.add('tp-gpu-moved');
       }
+
+      // A clock of 0 means the GPU is idle: an Intel GPU with nothing to do stops its clock
+      // (power saving). It reads "idle" instead (enhance.css). The plugin rewrites the value
+      // every few seconds, so it is watched and only marked, not replaced.
+      tile.querySelectorAll('[class^="gpu-clock"], [class*=" gpu-clock"]').forEach(function (clock) {
+        const mark = function () { clock.toggleAttribute('data-tp-idle', /^0(\.0+)?(\s*[MG]Hz)?$/i.test(clock.textContent.trim())); };
+        new MutationObserver(mark).observe(clock, { childList: true, characterData: true, subtree: true });
+        mark();
+      });
     });
   }
 
