@@ -1,22 +1,14 @@
 #!/usr/bin/php
 <?php
-// Automatic updates for the Aurora Theme, run every hour by cron (autoupdate.cron).
+// Automatic updates for the Aurora Theme, run by cron (autoupdate.cron) at the time chosen on
+// the settings page (scripts/schedule.php writes that entry).
 // When "Automatic updates" is on, it installs the newest GitHub release if it is newer than
 // the installed version, the same way the settings page's "Update now" button does. A successful
 // update is quiet (no Unraid notification); a failed one raises a warning.
 // The outcome of the last check is kept in /var/lib/aurora-theme/autoupdate.json for that page.
 require '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
 
-const CONFIG_DIR = '/boot/config/plugins/' . AURORA_PLUGIN;
 const STATUS_FILE = '/var/lib/aurora-theme/autoupdate.json';
-
-function setting(string $key): string
-{
-    // The user's settings override the defaults, as Unraid's parse_plugin_cfg() does.
-    $defaults = @parse_ini_file('/usr/local/emhttp/plugins/' . AURORA_PLUGIN . '/default.cfg') ?: [];
-    $user = @parse_ini_file(CONFIG_DIR . '/' . AURORA_PLUGIN . '.cfg') ?: [];
-    return (string) ($user[$key] ?? $defaults[$key] ?? '');
-}
 
 function finish(string $result, string $message, string $version = ''): void
 {
@@ -43,7 +35,7 @@ if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
     exit(0);
 }
 
-if (setting('autoupdate') !== 'yes') {
+if (aurora_setting('autoupdate') !== 'yes') {
     finish('off', 'Automatic updates are turned off.');
 }
 

@@ -49,8 +49,31 @@ _(Stats page)_:
 _(Automatic updates)_:
 : <input type="hidden" name="autoupdate" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="autoupdate" value="yes"<?= ($aurora['autoupdate'] ?? 'yes') === 'yes' ? ' checked' : '' ?>> _(Install new versions automatically)_</label>
 
-> Once an hour the plugin looks for a newer release on GitHub and installs it quietly. Only a
-> failed update shows an Unraid notification; every check is noted in the system log.
+_(Check and install)_:
+: <span class="tft-schedule"><select name="autoupdate_when" id="tft-when" onchange="auroraSchedule()">
+  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "hourly", _("Every hour"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "daily", _("Every day"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "weekly", _("Every week"))?>
+  </select><select name="autoupdate_day" id="tft-day">
+<?php foreach ([1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 0 => 'Sunday'] as $auroraDay => $auroraDayName) echo mk_option($aurora['autoupdate_day'] ?? '0', (string) $auroraDay, _($auroraDayName)); ?>
+  </select><select name="autoupdate_time" id="tft-time">
+<?php for ($auroraMinutes = 0; $auroraMinutes < 1440; $auroraMinutes += 30) { $auroraTime = sprintf('%02d:%02d', intdiv($auroraMinutes, 60), $auroraMinutes % 60); echo mk_option($aurora['autoupdate_time'] ?? '03:00', $auroraTime, $auroraTime); } ?>
+  </select></span>
+
+> When the plugin looks for a newer release on GitHub and installs it quietly: every hour, or
+> once a day or a week at the chosen time (the server's time). Only a failed update shows an
+> Unraid notification; every check is noted in the system log.
+
+<input type="hidden" name="#command" value="/plugins/Aurora-Theme/scripts/schedule.php">
+<script>
+// The weekday only for "Every week", the time for daily and weekly checks.
+function auroraSchedule() {
+  var when = document.getElementById('tft-when').value;
+  document.getElementById('tft-day').hidden = when !== 'weekly';
+  document.getElementById('tft-time').hidden = when === 'hourly';
+}
+auroraSchedule();
+</script>
 
 &nbsp;
 : <span class="inline-block"><input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()"></span>
@@ -62,6 +85,9 @@ require_once '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
 $auroraInstalled = aurora_installed_version();
 // Outcome of the last automatic check (scripts/autoupdate.php); kept in RAM, so empty after a reboot.
 $auroraAuto = json_decode((string) @file_get_contents('/var/lib/aurora-theme/autoupdate.json'), true) ?: [];
+// The record names the version installed at that check. Once another version has been installed
+// ("Update now", the Plugins page), its outcome ("Up to date (old version)") no longer applies.
+if (!empty($auroraAuto['version']) && (string) $auroraAuto['version'] !== $auroraInstalled) $auroraAuto = [];
 $auroraAutoOn = ($aurora['autoupdate'] ?? 'yes') === 'yes';
 $auroraAutoNewer = ($auroraAuto['result'] ?? '') !== 'updated' && !empty($auroraAuto['version']) && strcmp((string) $auroraAuto['version'], $auroraInstalled) > 0;
 $auroraRepo = '@@GITHUB_REPO@@';
@@ -76,10 +102,9 @@ $auroraRepo = '@@GITHUB_REPO@@';
 <span class="tft-auto-status<?= ($auroraAuto['result'] ?? '') === 'failed' ? ' tft-auto-failed' : '' ?>"><i class="fa <?= $auroraAutoOn ? 'fa-refresh' : 'fa-pause-circle' ?>"></i> <?php
 if (!$auroraAutoOn) {
     echo 'Automatic updates are off.';
-} elseif (!empty($auroraAuto['time'])) {
-    echo 'Automatic updates on. Last check ' . htmlspecialchars(date('j M, H:i', (int) $auroraAuto['time'])) . ': ' . htmlspecialchars((string) $auroraAuto['message']);
 } else {
-    echo 'Automatic updates on. The first check runs within the hour.';
+    echo 'Automatic updates on, ' . htmlspecialchars(aurora_update_schedule()['text']) . '.';
+    if (!empty($auroraAuto['time'])) echo ' Last check ' . htmlspecialchars(date('j M, H:i', (int) $auroraAuto['time'])) . ': ' . htmlspecialchars((string) $auroraAuto['message']);
 }
 ?></span>
 <a class="tft-link" href="https://github.com/<?= htmlspecialchars($auroraRepo) ?>/releases" target="_blank" rel="noopener noreferrer"><i class="fa fa-external-link"></i> Release notes on GitHub</a>

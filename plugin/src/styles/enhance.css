@@ -992,6 +992,173 @@ a.tp-webui .fa {
     text-transform: uppercase;
 }
 
+/* ---- Dashboard: GPU Statistics plugin tile (dashboardGpu() in enhance.js)
+   Heading, device and a short readings line in the header; below, one row per reading: icon
+   and name on the left, the value on the right, and for readings with a bar a slim bar across
+   the tile under them. Rows the plugin hides (another vendor's readings, a GPU passed to a VM)
+   stay hidden: it sets display on the rows, the layout here is on their cells. */
+tbody.tp-gpu > tr.tp-gpu-moved {
+    display: none !important;
+}
+
+tbody.tp-gpu .tile-header-left .section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+tbody.tp-gpu .tile-header-left .tile-header-main {
+    margin: 0;
+}
+
+.tp-gpu-device {
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.25rem;
+}
+
+/* The plugin gives these Unraid's fixed column widths; here they are plain text. */
+:is(.tp-gpu-device, .tp-gpu-driver) > span {
+    display: inline;
+    float: none;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+
+.tp-gpu-driver > span + span {
+    margin-left: 0.4rem;
+}
+
+.tp-gpu-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+}
+
+.tp-gpu-meta > i.ups {
+    display: none;
+}
+
+.tp-gpu-meta :is([class^="gpu-util"], [class^="gpu-temp"], [class^="gpu-sessions"]) {
+    color: var(--tp-text, var(--text-color));
+    font-weight: 600;
+}
+
+/* The name keeps at least half the row; a long value (bus receive and transmit) wraps on the
+   right instead of pushing the name out. */
+tbody.tp-gpu > tr > td:has(> span.w36) {
+    display: grid;
+    grid-template-columns: minmax(50%, 1fr) minmax(0, auto);
+    align-items: center;
+    gap: 0.45rem 1.2rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+}
+
+tbody.tp-gpu > tr > td > span.w36 {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    float: none;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: hidden;
+    color: var(--tp-muted, var(--alt-text-color));
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+tbody.tp-gpu > tr > td > span.w36 > i.ups {
+    flex: none;
+    width: 1.6rem;
+    margin: 0;
+    color: var(--tp-primary, var(--brand-orange));
+    text-align: center;
+}
+
+/* Values bold; their captions ("Receive:", "State:") quiet. */
+tbody.tp-gpu > tr > td > span:is(.w26, .w44) {
+    float: none;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-variant-numeric: tabular-nums;
+    white-space: normal;
+    text-align: right;
+}
+
+tbody.tp-gpu > tr > td > span:is(.w26, .w44) span {
+    color: var(--tp-text, var(--text-color));
+    font-weight: 600;
+}
+
+/* One value with a bar: the value beside the name, the bar under both. */
+tbody.tp-gpu > tr > td > span.w44:has(> .usage-disk) {
+    display: contents;
+}
+
+tbody.tp-gpu > tr > td > span.w44 > span.load {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 4.4rem;
+    color: var(--tp-text, var(--text-color));
+    font-weight: 600;
+    text-align: right;
+}
+
+tbody.tp-gpu > tr > td > span:is(.w26, .w44) .usage-disk.sys {
+    width: auto;
+    height: 5px;
+    margin: 0 !important;
+}
+
+tbody.tp-gpu > tr > td > span.w44 > .usage-disk.sys {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+tbody.tp-gpu > tr > td > span:is(.w26, .w44) .usage-disk.sys > span:first-child {
+    height: 5px;
+}
+
+/* Two values (NVIDIA and AMD rows such as "Load - Memory"): the name on top, the two values,
+   each with its bar, side by side under it. */
+tbody.tp-gpu > tr > td:has(> span.w26) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+tbody.tp-gpu > tr > td:has(> span.w26) > span.w36 {
+    grid-column: 1 / -1;
+}
+
+tbody.tp-gpu > tr > td > span.w26 {
+    display: grid;
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.8rem;
+    text-align: left;
+}
+
+/* Active apps: only while one is using the GPU (the plugin adds its icon then). */
+tbody.tp-gpu > tr[class*="gpu-active-apps"]:not(:has(img)) {
+    display: none !important;
+}
+
+tbody.tp-gpu > tr > td:has(> .gpu-img-span) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+tbody.tp-gpu > tr > td:has(> .gpu-img-span) > span.w36 {
+    flex: 1 1 100%;
+}
+
 /* ---- Dashboard: fans as one row of small cards, wrapping only when needed */
 .tp-fans {
     display: grid;

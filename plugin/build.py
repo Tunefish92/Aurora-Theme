@@ -97,16 +97,13 @@ install += [
     LOGIN_HOOK,
     f"find {EMHTTP} -type d -exec chmod 755 {{}} +",
     f"find {EMHTTP} -type f -exec chmod 644 {{}} +",
-    f"chmod 755 {EMHTTP}/scripts/collect.php {EMHTTP}/scripts/autoupdate.php",
+    f"chmod 755 {EMHTTP}/scripts/collect.php {EMHTTP}/scripts/autoupdate.php {EMHTTP}/scripts/schedule.php",
     "# Unraid builds the crontab from the .cron files in each plugin's folder on the flash drive.",
     f"cat > /boot/config/plugins/{NAME}/stats.cron <<'{DELIMITER}'\n"
     "# Aurora Theme: one statistics sample per minute\n"
     f"* * * * * /usr/bin/php {EMHTTP}/scripts/collect.php &> /dev/null\n\n{DELIMITER}",
-    # The script itself checks the "Automatic updates" setting, so the job can stay in place.
-    f"cat > /boot/config/plugins/{NAME}/autoupdate.cron <<'{DELIMITER}'\n"
-    "# Aurora Theme: hourly check for a newer release on GitHub\n"
-    f"23 * * * * /usr/bin/php {EMHTTP}/scripts/autoupdate.php &> /dev/null\n\n{DELIMITER}",
-    "/usr/local/sbin/update_cron",
+    # Automatic updates at the time chosen on the settings page; this also reloads the crontab.
+    f"/usr/bin/php {EMHTTP}/scripts/schedule.php",
     'echo ""',
     f'echo "{NAME} {version} is installed."',
     'echo "Settings: Settings > User Utilities > Aurora Theme"',

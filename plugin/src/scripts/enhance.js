@@ -1289,6 +1289,47 @@
   // Airflow tile: Unraid prints fan names and speeds as rows of three. They become one row of
   // small cards that wraps only when there are more fans than fit. The speed elements are moved,
   // not copied, so Unraid keeps updating them by their ids.
+  // Dashboard, GPU Statistics plugin (one tile per GPU, #tblGPUDash1, 2, ...): its title is loose
+  // text in the line below the icon, and vendor, driver and device sit in a little table of
+  // their own under the header. The title becomes the tile heading, the device follows it as one
+  // line, and load, temperature and processes become a short line under that; the readings get
+  // their layout in enhance.css. The plugin's script finds its values by class, so the elements
+  // are moved, not copied.
+  function dashboardGpu() {
+    document.querySelectorAll('table.dashboard > tbody[id^="tblGPUDash"]:not(.tp-gpu)').forEach(function (tile) {
+      const section = tile.querySelector('.tile-header-left > .section');
+      if (!section) return;
+      tile.classList.add('tp-gpu');
+      const name = section.firstChild;
+      if (name && name.nodeType === Node.TEXT_NODE && name.textContent.trim()) {
+        name.replaceWith(element('h3', 'tile-header-main', name.textContent.trim()));
+      }
+      section.querySelectorAll(':scope > br').forEach(function (br) { br.remove(); });
+      const meta = section.querySelector(':scope > span');
+      if (meta) meta.classList.add('tp-gpu-meta');
+
+      // The device name under the heading; vendor and driver ("Intel i915") lead the readings line.
+      const find = function (key) {
+        return tile.querySelector('[class^="gpu-' + key + '"], [class*=" gpu-' + key + '"]');
+      };
+      const device = element('span', 'tp-gpu-device');
+      const driver = element('span', 'tp-gpu-driver');
+      [[find('name'), device], [find('vendor'), driver], [find('driver'), driver]].forEach(function (pair) {
+        if (!pair[0]) return;
+        const row = pair[0].closest('tr');
+        if (row) row.classList.add('tp-gpu-moved');
+        pair[1].append(pair[0]);
+      });
+      if (device.childElementCount || driver.childElementCount) {
+        const heading = section.querySelector('.tile-header-main');
+        if (heading) heading.after(device); else section.prepend(device);
+        if (meta) meta.prepend(driver); else device.after(driver);
+        const header = tile.querySelector('tr.header');
+        if (header) header.classList.add('tp-gpu-moved');
+      }
+    });
+  }
+
   function dashboardFans() {
     const firstSpeed = document.querySelector('table.dashboard td > span[id^="fan"]');
     if (!firstSpeed) return;
@@ -2620,7 +2661,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

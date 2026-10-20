@@ -1408,18 +1408,20 @@
             display: none;
         }
 
-        /* Shares and Users tiles: the description gives up room so the last two columns fit. */
-        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(1) {
+        /* Shares and Users tiles (name, description and two short columns; other tiles with a
+           header row, such as plugin tiles, keep theirs): the description gives up room so the
+           last two columns fit. */
+        table.dashboard > tbody:has(> tr.header > td > span.w26 + span.w44 + span.w18 + span:not([class])) > tr:not(:first-child) > td > span:nth-child(1) {
             min-width: 28%;
             max-width: 28%;
         }
 
-        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(2) {
+        table.dashboard > tbody:has(> tr.header > td > span.w26 + span.w44 + span.w18 + span:not([class])) > tr:not(:first-child) > td > span:nth-child(2) {
             min-width: 30%;
             max-width: 30%;
         }
 
-        table.dashboard > tbody:has(> tr.header > td > span.w44) > tr:not(:first-child) > td > span:nth-child(3) {
+        table.dashboard > tbody:has(> tr.header > td > span.w26 + span.w44 + span.w18 + span:not([class])) > tr:not(:first-child) > td > span:nth-child(3) {
             min-width: 21%;
             max-width: 21%;
         }

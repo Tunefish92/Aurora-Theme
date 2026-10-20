@@ -350,3 +350,27 @@ button.tft-link-button:hover {
         flex: 1 1 0;
     }
 }
+
+/* ---- Automatic update schedule: frequency, weekday and time in one row */
+.tft-schedule {
+    display: flex;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 40rem;
+}
+
+/* Each select would otherwise take the full field width and the three would stack. */
+.tft-schedule select {
+    flex: 1 1 0;
+    width: auto !important;
+    min-width: 0;
+    margin: 0;
+}
+
+.tft-schedule select[hidden] {
+    display: none;
+}
+
+.tft-schedule select#tft-when {
+    flex-grow: 1.4;
+}
