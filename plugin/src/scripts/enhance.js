@@ -2542,9 +2542,85 @@
     }
   }
 
+  // Plugins: Unraid checks every plugin for updates once per visit, with a single download that
+  // is not retried, so now and then a row ends on "not available" or "cannot check" although
+  // the plugin is fine. Such a row is checked again in the background, once per plugin and
+  // visit, with Unraid's own "plugin check" (include/plugin-recheck.php, up to three tries).
+  // Unraid's list code then redraws the row from the file that check left behind.
+  function pluginRecheck() {
+    const list = document.getElementById('plugin_list');
+    if (!list || typeof window.updateInfo !== 'function') return;
+    const SHOW = '/plugins/dynamix.plugin.manager/include/ShowPlugins.php';
+    const tried = new Set();
+    const queue = [];
+    let active = 0;
+
+    // Failed rows by their icon, so this works in every language: the broken link of "not
+    // available" and the red warning of "cannot check".
+    function failed(cell) {
+      return cell.querySelector('i.fa-unlink, .red-text > i.fa-exclamation-triangle');
+    }
+
+    function next() {
+      while (active < 2 && queue.length) recheck(queue.shift());
+    }
+
+    function recheck(cell) {
+      const box = cell.closest('tr') && cell.closest('tr').querySelector('input.remove[data$=".plg"]');
+      const plg = box ? box.getAttribute('data') : '';
+      if (!plg) return;
+      const before = cell.innerHTML;
+      const id = cell.id.replace(/^sid-/, '');
+      active++;
+      cell.innerHTML = "<span style='color:#267CA8'><i class='fa fa-refresh fa-spin fa-fw'></i>&nbsp;checking...</span>";
+      const body = new URLSearchParams({ plugin: plg, csrf_token: window.csrf_token || '' });
+      fetch(PLUGIN_BASE + '/include/plugin-recheck.php', { method: 'POST', credentials: 'same-origin', body: body })
+        .then(function (response) { return response.json(); })
+        .then(function (result) {
+          if (!result.ok) throw new Error('check failed');
+          // "return" draws every row from the files the checks left, without downloading
+          // again; only this plugin's two cells are taken from it.
+          return fetch(SHOW + '?' + new URLSearchParams({ audit: plg.replace(/\.plg$/, '') + ':return' }), { credentials: 'same-origin', cache: 'no-store' });
+        })
+        .then(function (response) { return response.text(); })
+        .then(function (text) {
+          const parts = text.split('\0');
+          const lines = parts[0].split('\n').filter(function (line) {
+            return line.indexOf('vid-' + id + '::') === 0 || line.indexOf('sid-' + id + '::') >= 0;
+          });
+          if (!lines.length) throw new Error('row not found');
+          window.updateInfo(lines.join('\n'));
+          // Unraid shows "Update all" when more than one plugin has an update.
+          if (window.jQuery) {
+            if (parseInt(parts[1], 10) > 1) window.jQuery('#updateall').show();
+            window.jQuery('#plugin_table').trigger('update');
+          }
+        })
+        .catch(function () { cell.innerHTML = before; })
+        .finally(function () { active--; next(); });
+    }
+
+    function scan() {
+      list.querySelectorAll('td[id^="sid-"]').forEach(function (cell) {
+        if (tried.has(cell.id) || !failed(cell)) return;
+        tried.add(cell.id);
+        queue.push(cell);
+      });
+      next();
+    }
+
+    // Unraid fills the status cells when its check returns; "Check For Updates" starts over,
+    // and then each plugin may be checked again once.
+    new MutationObserver(scan).observe(list, { childList: true, subtree: true });
+    document.addEventListener('click', function (event) {
+      if (event.target.closest && event.target.closest('#checkall')) tried.clear();
+    }, true);
+    scan();
+  }
+
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
