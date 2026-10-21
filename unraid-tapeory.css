@@ -1321,10 +1321,27 @@
         padding-bottom: 1.2rem;
     }
 
-    /* Tile header: icon in a tinted square, title in the heading font, quiet controls */
+    /* Tile header: icon in a tinted square, title in the heading font, quiet controls. The
+       title always sits beside the icon and wraps there: Unraid lets the header wrap, so a wide
+       title line (a collapsed tile's summary, such as the System tile's RAM bar, or a long
+       processor name) dropped the title under the icon. */
     table.dashboard .tile-header-left {
+        flex: 1 1 auto;
+        flex-wrap: nowrap;
         align-items: center;
         gap: 1.4rem;
+        min-width: 0;
+    }
+
+    table.dashboard .tile-header-left .section {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /* A line break Unraid ends some title lines with (the System tile's) became an empty line in
+       the flex row, so that title sat higher than the others next to its icon. */
+    table.dashboard .tile-header-left .section > span.flex > br {
+        display: none;
     }
 
     table.dashboard .tile-header-left > i.f32 {
@@ -1354,22 +1371,12 @@
         line-height: 1.5;
     }
 
-    /* Phones: Unraid's tile header wraps the title under the icon whenever its text is wide (a
-       long processor name), so some tiles had the title beside the icon and others below it.
-       The title now always sits beside the icon and wraps there. The server tile's stop /
-       reboot / power buttons move under its other controls (Unraid's wrap-reverse) instead of
-       squeezing the server name and description into a narrow column. */
+    /* Phones: the title aligns with the top of the icon. The server tile's stop / reboot /
+       power buttons move under its other controls (Unraid's wrap-reverse) instead of squeezing
+       the server name and description into a narrow column. */
     @media (max-width: 599px) {
         table.dashboard .tile-header-left {
-            flex: 1 1 auto;
-            flex-wrap: nowrap;
             align-items: flex-start;
-            min-width: 0;
-        }
-
-        table.dashboard .tile-header-left .section {
-            flex: 1 1 auto;
-            min-width: 0;
         }
 
         table.dashboard .tile-header-right {
@@ -2431,6 +2438,15 @@
         background-color: color-mix(in srgb, var(--tp-bg) 82%, transparent);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* While the footer is fixed to the window it is taller than Unraid's, which leaves 40px
+       under the page for its own; the end of a page (FolderView's folder editor with Apply and
+       Cancel at the very bottom) slid under it. */
+    @media (min-width: 768px) {
+        #displaybox {
+            padding-bottom: 6.8rem;
+        }
     }
 
     /* Array state as a status pill */
@@ -4950,7 +4966,10 @@
             background: var(--tp-elevated) !important;
         }
 
-        body:has(.searchAreaHolder) #displaybox .tp-heading {
+        /* Below the Apps tab's search bar (enhance.js marks the heading; a body:has() rule for
+           this made every change on a page with a heading re-check the whole document, and
+           Unraid's readmore on a phone's Docker list took half a minute). */
+        #displaybox .tp-heading.tp-heading-below-search {
             margin-top: 2.4rem;
         }
 
@@ -5444,8 +5463,19 @@
                 padding: 0 1.2rem;
             }
 
+            /* The quick actions take the full width and wrap: with the array usage widget the
+               row was wider than the phone, and the whole page was laid out wider and zoomed
+               out to fit. The widget gets a line of its own above the buttons. */
             .nav-tile.right {
+                flex: 1 1 100%;
                 flex-wrap: wrap;
+                min-width: 0;
+            }
+
+            .nav-tile.right > :is(.tp-usage, .usage-bar) {
+                flex: 1 1 100%;
+                width: auto;
+                margin-right: 0;
             }
         }
 

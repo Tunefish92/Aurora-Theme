@@ -151,9 +151,18 @@
 }
 
 .tp-server-card span {
+    overflow: hidden;
     color: var(--tp-header-muted, #a7b0c0);
     font: 1rem var(--tp-font-body, inherit);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tp-server-card b {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* ---- Top right: dark / light switch */
@@ -475,7 +484,8 @@
     gap: 0.4rem;
 }
 
-.tp-toolbar button.tp-tab {
+.tp-toolbar button.tp-tab,
+.tp-title-switch button.tp-tab {
     display: inline-flex;
     align-items: center;
     gap: 0.7rem;
@@ -493,7 +503,8 @@
     transform: none;
 }
 
-.tp-toolbar button.tp-tab:hover {
+.tp-toolbar button.tp-tab:hover,
+.tp-title-switch button.tp-tab:hover {
     border-color: transparent;
     color: var(--text-color);
     background: transparent;
@@ -501,7 +512,8 @@
     transform: none;
 }
 
-.tp-toolbar button.tp-tab[aria-selected="true"] {
+.tp-toolbar button.tp-tab[aria-selected="true"],
+.tp-title-switch button.tp-tab[aria-selected="true"] {
     border-color: var(--tp-border, var(--border-color));
     color: var(--tp-primary, var(--link-text-color));
     font-weight: 600;
@@ -837,6 +849,209 @@ a.tp-webui .fa {
     color: var(--red-600);
 }
 
+/* ---- Docker: long container names end in "…" (the full name is the tooltip), also in the
+   full table that FolderView gets. */
+#docker_list td.ct-name .appname {
+    display: inline-block;
+    max-width: 24rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+/* ---- Docker with FolderView: folders on a tinted band with an accent edge, an open folder's
+   containers on a lighter band of the same colour and indented, and space before the
+   containers outside any folder (arrangeFolders() in enhance.js puts them in that order). */
+/* Theme filters and search are hidden while FolderView arranges the list. */
+.tp-toolbar .tp-tabs[hidden],
+.tp-toolbar .tp-search[hidden] {
+    display: none;
+}
+
+/* Preview icons of a closed folder: long names end in "…" too. */
+#docker_list > tr.folder .folder-preview .appname {
+    display: inline-block;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+#docker_list > tr.folder > td {
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 8%, transparent);
+}
+
+#docker_list > tr.folder > td:first-child {
+    box-shadow: inset 3px 0 0 var(--tp-primary, var(--brand-orange));
+}
+
+#docker_list > tr.folder .folder-appname {
+    display: inline-block;
+    max-width: 22rem;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+#docker_list > tr.folder-element > td {
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 4%, transparent);
+}
+
+#docker_list > tr.folder-element > td:first-child {
+    padding-left: 2.6rem !important;
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 45%, transparent);
+}
+
+#docker_list > tr.tp-after-folders > td {
+    border-top: 1.6rem solid var(--tp-elevated, var(--background-color)) !important;
+}
+
+/* Dashboard, Docker tile with FolderView: folder chips tinted with an accent border; an open
+   folder's containers in a panel across the tile under it; a line before the containers
+   outside the folders (dashboardDockerOrder() in enhance.js). */
+table.dashboard span.outer.solid[class*="folder-docker"] {
+    border-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 45%, transparent);
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 10%, var(--tp-subtle, transparent));
+}
+
+table.dashboard .folder-showcase:not(:empty) {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: 0.6rem;
+    padding: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 30%, transparent);
+    border-radius: 12px;
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 5%, transparent);
+}
+
+/* Dashboard, Docker tile without FolderView: the theme's application groups. A chip like the
+   folder chips (folder icon, name, count, caret) opens or closes a panel with the group's
+   containers across the tile. */
+table.dashboard span.outer.solid.tp-group-chip {
+    cursor: pointer;
+    border-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 45%, transparent);
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 10%, var(--tp-subtle, transparent));
+}
+
+table.dashboard span.outer.solid.tp-group-chip:focus-visible {
+    outline: 2px solid var(--tp-primary, var(--brand-orange));
+    outline-offset: 2px;
+}
+
+.tp-group-chip-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 10px;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.7rem;
+    background: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 16%, transparent);
+}
+
+table.dashboard span.outer.solid.tp-group-chip .inner {
+    flex: 1 1 auto;
+}
+
+.tp-group-chip-name {
+    display: block;
+    overflow: hidden;
+    font: 600 1.25rem/1.3 var(--tp-font-heading, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-group-chip-count {
+    display: block;
+    overflow: hidden;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.05rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-group-chip-caret {
+    flex: none;
+    margin-right: 0.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    transition: transform 0.25s;
+}
+
+.tp-group-chip.tp-collapsed .tp-group-chip-caret {
+    transform: rotate(-90deg);
+}
+
+table.dashboard .tp-group-panel {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: 0.6rem;
+    padding: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 30%, transparent);
+    border-radius: 12px;
+    background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 5%, transparent);
+}
+
+table.dashboard .tp-group-panel[hidden] {
+    display: none;
+}
+
+/* An open group or FolderView folder reads as one card: its chip becomes a header across the
+   tile with the panel joined below it; closed ones stay chips side by side. */
+table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed),
+table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid {
+    grid-column: 1 / -1;
+    border-bottom-color: transparent;
+    border-radius: 12px 12px 0 0;
+}
+
+table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed) + .tp-group-panel,
+table.dashboard .folder-showcase-outer[expanded="true"] > .folder-showcase {
+    margin-top: -0.6rem;
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+}
+
+table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
+table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid:hover {
+    transform: none;
+}
+
+/* Phones: two chips per row on the Docker and VM tiles (one per row made a long tile with
+   many containers); the names end in "…" sooner. */
+@media (max-width: 480px) {
+    table.dashboard > tbody:is(#docker_view, #vm_view) > tr.updated > td,
+    table.dashboard .tp-group-panel,
+    table.dashboard .folder-showcase:not(:empty) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    table.dashboard span.outer.solid img.img {
+        width: 3rem;
+        height: 3rem;
+    }
+}
+
+.tp-chip-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    margin: 0.6rem 0;
+    background-color: var(--tp-border, var(--border-color));
+}
+
+/* Long names on the tile's chips end in "…" (FolderView folders and VMs have them as text). */
+table.dashboard span.outer.solid .inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ---- Docker: application groups */
 #docker_list > tr.tp-group > td {
     height: auto;
@@ -854,6 +1069,192 @@ a.tp-webui .fa {
     display: flex;
     align-items: center;
     gap: 1rem;
+}
+
+/* ---- Running apps of a group or folder: small icons with a status dot (appStrip() in
+   enhance.js), in the Docker tab's group headers and on the Dashboard's group and folder chips. */
+.tp-group-apps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.tp-group-apps[hidden] {
+    display: none;
+}
+
+.tp-group-head .tp-group-apps {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+/* A group's CPU and memory added up, in the same type as a container's values. In the compact
+   view on wider screens they sit in the table's CPU and Memory columns (below); otherwise they
+   are one line with small labels between the icons and the buttons. */
+.tp-group-load {
+    display: inline-flex;
+    flex: none;
+    gap: 1rem;
+    white-space: nowrap;
+}
+
+.tp-group-load[hidden] {
+    display: none;
+}
+
+.tp-group-load > span {
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.2rem var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-group-load > span::before {
+    margin-right: 0.4rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+}
+
+.tp-group-load > .tp-group-cpu::before { content: "CPU"; }
+.tp-group-load > .tp-group-mem::before { content: "RAM"; }
+
+/* Compact view, wider screens: the header uses the rows' grid, so the sums line up under
+   the container's CPU and Memory values. */
+@media (min-width: 768px) {
+    #docker_containers.tp-compact > tbody > tr.tp-group > td {
+        padding-right: 1.9rem;
+        padding-left: 1.9rem;
+    }
+
+    #docker_containers.tp-compact .tp-group-head {
+        display: grid;
+        grid-template-columns:
+            minmax(22rem, 2.4fr) minmax(5.5rem, 0.45fr) minmax(9rem, 0.8fr) minmax(10rem, 1fr) minmax(6rem, 0.6fr)
+            minmax(13rem, 1.3fr) minmax(12rem, 1.3fr) var(--tp-auto-column, minmax(8rem, 0.6fr)) 17.5rem;
+        column-gap: 1.4rem;
+    }
+
+    #docker_containers.tp-compact .tp-group-head > .tp-group-toggle { grid-column: 1; }
+    #docker_containers.tp-compact .tp-group-head > .tp-group-apps { grid-column: 2 / 5; }
+    #docker_containers.tp-compact .tp-group-head > .tp-group-load { display: contents; }
+    #docker_containers.tp-compact .tp-group-head .tp-group-cpu { grid-column: 5; }
+    #docker_containers.tp-compact .tp-group-head .tp-group-mem { grid-column: 6; }
+    #docker_containers.tp-compact .tp-group-head > .tp-actions { grid-column: 7 / -1; justify-self: end; }
+
+    #docker_containers.tp-compact .tp-group-load > span::before {
+        content: none;
+    }
+}
+
+/* Phones: the icons and the sums get a line of their own under the group's name and count. */
+@media (max-width: 767px) {
+    .tp-group-head {
+        flex-wrap: wrap;
+        row-gap: 0.4rem;
+    }
+
+    /* The icons keep their width; the sums move to the next line when both do not fit. */
+    .tp-group-head .tp-group-apps {
+        order: 3;
+        flex: 0 0 auto;
+        max-width: 100%;
+        padding-left: 2.4rem;
+        box-sizing: border-box;
+    }
+
+    .tp-group-head .tp-group-load {
+        order: 4;
+        margin-left: auto;
+    }
+
+    .tp-group-head::after {
+        order: 2;
+        flex-basis: 100%;
+        content: "";
+    }
+}
+
+.tp-app-icon {
+    position: relative;
+    flex: none;
+    width: 2.2rem;
+    height: 2.2rem;
+}
+
+.tp-app-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+.tp-app-icon::after {
+    position: absolute;
+    right: -0.2rem;
+    bottom: -0.2rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 2px solid var(--tp-elevated, var(--background-color));
+    border-radius: 50%;
+    background-color: #22c55e;
+    content: "";
+}
+
+.tp-app-icon.tp-app-paused::after {
+    background-color: #f59e0b;
+}
+
+.tp-app-more {
+    flex: none;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1rem/1.6 var(--tp-font-heading, inherit);
+    background: var(--tp-subtle, rgba(255, 255, 255, 0.06));
+}
+
+/* On a Dashboard chip the icons are a line under the count, a little smaller. */
+table.dashboard span.outer.solid .inner > .tp-group-apps {
+    flex-wrap: nowrap;
+    margin-top: 0.4rem;
+    overflow: hidden;
+}
+
+table.dashboard span.outer.solid .inner > .tp-group-apps .tp-app-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+}
+
+/* With FolderView installed, the switch above the list between Aurora's view and FolderView's;
+   in Aurora's view FolderView's "Add Folder" has nothing to add to. */
+.tp-view-switch button.tp-tab[disabled] {
+    opacity: 0.6;
+}
+
+/* Beside the "Docker Containers" title. */
+div.title > .tp-segment.tp-title-switch {
+    display: inline-flex;
+    margin-right: auto;
+    margin-left: 1.6rem;
+    vertical-align: middle;
+}
+
+div.title > .tp-title-switch button.tp-tab {
+    padding: 0.4rem 1.2rem;
+    font-size: 1.15rem;
+}
+
+.tp-aurora-view .fv3-add-folder-btn {
+    display: none !important;
+}
+
+/* FolderView in the Docker tab: the whole folder row opens and closes it. */
+#docker_list > tr.folder {
+    cursor: pointer;
 }
 
 .tp-group-head button.tp-group-toggle {
@@ -920,6 +1321,7 @@ a.tp-webui .fa {
 }
 
 .tp-modal {
+    box-sizing: border-box;
     width: min(44rem, 100%);
     padding: 2.6rem 2.6rem 2.2rem;
     border: 1px solid var(--tp-border, var(--border-color));
@@ -963,9 +1365,21 @@ a.tp-webui .fa {
 
 .tp-modal-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 1rem;
     margin-top: 2rem;
+}
+
+/* Small phones: long button labels ("Switch to FolderViewPlugin") stack full width. */
+@media (max-width: 479px) {
+    .tp-modal {
+        padding: 2.2rem 2rem 2rem;
+    }
+
+    .tp-modal-actions > .tp-modal-button {
+        flex: 1 1 100%;
+    }
 }
 
 .tp-modal-problem + .tp-modal-actions {
@@ -1161,6 +1575,68 @@ a.tp-webui .fa {
     text-transform: uppercase;
 }
 
+/* ---- Dashboard: Virtual Machines Usage tile (dashboardVmUsage() in enhance.js)
+   One card per running VM, as wide as the tile allows: icon and name on top, the readings in a
+   grid of two columns below (one on narrow screens), CPU readings with a slim bar. */
+table.dashboard #vm_view_usage > tr > td {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr));
+}
+
+table.dashboard #vm_view_usage span.outer.solid.tp-vmuse {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem 1rem;
+    padding: 1rem 1.2rem;
+}
+
+table.dashboard #vm_view_usage span.outer.solid.tp-vmuse:hover {
+    transform: none;
+}
+
+.tp-vmuse-readings {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: 0.8rem 1.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--tp-border, var(--border-color));
+}
+
+.tp-vmuse-readings > span {
+    display: block;
+    min-width: 0;
+    color: var(--tp-text, var(--text-color));
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+/* "Guest CPU: 3.1%": the reading and its bar stack in the cell. */
+.tp-vmuse-readings > span > span {
+    display: block;
+}
+
+.tp-vmuse-readings .usage-disk.mm {
+    position: relative;
+    width: 100%;
+    height: 0.5rem;
+    margin-top: 0.4rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--tp-border, var(--usage-disk-background-color));
+}
+
+.tp-vmuse-readings .usage-disk.mm > span:first-child {
+    position: absolute;
+    inset: 0 auto 0 0;
+    max-width: 100%;
+    font-size: 0;
+    border-radius: 999px;
+    background: var(--tp-gradient, var(--brand-orange));
+}
+
 /* ---- Dashboard: GPU Statistics plugin tile (dashboardGpu() in enhance.js)
    Heading, device and a short readings line in the header; below, one row per reading: icon
    and name on the left, the value on the right, and for readings with a bar a slim bar across
@@ -1344,19 +1820,47 @@ tbody.tp-gpu [data-tp-idle]::after {
 }
 
 /* Active apps: only while one is using the GPU (the plugin adds its icon then). */
-tbody.tp-gpu > tr[class*="gpu-active-apps"]:not(:has(img)) {
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"]:not(:has(img)) {
     display: none !important;
 }
 
-tbody.tp-gpu > tr > td:has(> .gpu-img-span) {
+/* Active apps: just their icons, side by side in the tile's bottom row and wrapping when many
+   containers use the GPU (they were stacked one per line). Each icon's tooltip names the app,
+   its process count and memory. */
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"] > td {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--tp-border, var(--border-color));
 }
 
-tbody.tp-gpu > tr > td:has(> .gpu-img-span) > span.w36 {
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"] > td > span.w36 {
+    display: none;
+}
+
+/* A title on a line of its own above the icons. */
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"] > td::before {
     flex: 1 1 100%;
+    margin-bottom: 0.2rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    content: "Apps using the GPU";
+}
+
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"] > td > span.gpu-img-span {
+    flex: none;
+}
+
+table.dashboard tbody.tp-gpu > tr[class*="gpu-active-apps"] img.gpu-image {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 8px;
+    object-fit: contain;
 }
 
 /* ---- Dashboard: fans as one row of small cards, wrapping only when needed */
@@ -3197,13 +3701,28 @@ tbody.tp-cpu-tile > tr.tp-core > td {
 
 tbody.tp-cpu-tile > tr.tp-core span.w26 {
     grid-area: label;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     width: auto !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
+    min-width: 0;
+    max-width: none !important; /* Unraid limits it to 26% on phones */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     margin: 0;
     color: var(--tp-muted);
     font: 600 1.15rem/1.2 var(--tp-font-heading);
     white-space: nowrap;
+}
+
+/* Intel hybrid CPUs: "P" or "E" after the core numbers. */
+.tp-core-type {
+    flex: none;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    color: var(--tp-primary, var(--brand-orange));
+    font: 700 0.9rem/1.2 var(--tp-font-heading, inherit);
+    background: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 14%, transparent);
 }
 
 tbody.tp-cpu-tile > tr.tp-core span.w72 {
@@ -3228,7 +3747,7 @@ tbody.tp-cpu-tile > tr.tp-core .usage-disk {
 
 /* Core with hyper-threading: one tile, both loads at the top right, two thin bars below. */
 tbody.tp-cpu-tile > tr.tp-core-pair > td {
-    grid-template-columns: max-content 1fr auto;
+    grid-template-columns: minmax(0, max-content) 1fr auto;
     column-gap: 0.5rem;
     grid-template-areas: "label v1 v2" "b1 b1 b1" "b2 b2 b2";
     row-gap: 0.4rem;

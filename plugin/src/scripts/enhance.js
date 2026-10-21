@@ -28,6 +28,55 @@
     return node;
   }
 
+  // Container names in A–Z order, ignoring case, with numbers compared as numbers ("tiny-2"
+  // before "tiny-10").
+  function compareNames(a, b) {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  // FolderView (folder.view, .view2, .view3) arranges the Docker list and the Dashboard's Docker
+  // tile, unless the switch above the Docker list is set to the theme's view (AuroraTheme.page
+  // then keeps FolderView out of the list).
+  function folderViewActive() {
+    const view = window.auroraDockerView;
+    if (view && view.mode === 'aurora') return false;
+    return Boolean(document.querySelector('script[src*="/folder.view"]'));
+  }
+
+  // A group's running apps as small icons with a status dot (green running, amber paused),
+  // the first `max` of them and "+n" for the rest; each icon's tooltip is the app's name. The
+  // strip is only rebuilt when the apps or their states change. apps: [{ name, src, state }].
+  function appStrip(strip, apps, max) {
+    const signature = apps.map(function (app) { return app.name + ':' + app.state; }).join('|');
+    if (strip.dataset.apps === signature) return;
+    strip.dataset.apps = signature;
+    const shown = apps.slice(0, max).map(function (app) {
+      const item = element('span', 'tp-app-icon tp-app-' + app.state);
+      item.title = app.name + (app.state === 'paused' ? ' (paused)' : '');
+      const image = element('img');
+      image.src = app.src || '/plugins/dynamix.docker.manager/images/question.png';
+      image.alt = '';
+      image.loading = 'lazy';
+      item.append(image);
+      return item;
+    });
+    if (apps.length > max) shown.push(element('span', 'tp-app-more', '+' + (apps.length - max)));
+    strip.replaceChildren(...shown);
+    strip.hidden = !apps.length;
+  }
+
+  // Puts the given children of parent (all of them by default) in A–Z order of keyOf, in the
+  // place the first of them had. Moves nothing when they are in order already, so it can run on
+  // every refresh without waking the observers that call it.
+  function sortChildren(parent, keyOf, items) {
+    const nodes = items || [...parent.children];
+    if (nodes.length < 2) return;
+    const sorted = nodes.slice().sort(function (a, b) { return compareNames(keyOf(a), keyOf(b)); });
+    if (sorted.every(function (node, index) { return node === nodes[index]; })) return;
+    const anchor = nodes[nodes.length - 1].nextSibling;
+    sorted.forEach(function (node) { parent.insertBefore(node, anchor); });
+  }
+
   // Opens a container's web interface the way Unraid's own context menu does (window.open).
   // The element is a link without href: Unraid shows its "external link" warning for real
   // links to other addresses, but not for its menu, so the WebUI buttons behave like the menu.
@@ -69,7 +118,8 @@
   }
 
   // Themed dialog, used instead of the browser's prompt / confirm / alert boxes.
-  //   modal({ title, message, input: { value, placeholder, maxLength }, validate, confirmLabel, danger, hideCancel })
+  //   modal({ title, message, input: { value, placeholder, maxLength }, validate, confirmLabel, cancelLabel, danger, hideCancel })
+  // message may be a list of paragraphs.
   // Resolves with the entered text (or true when there is no input), or null when cancelled.
   // validate(text) may return a message to show under the input and keep the dialog open.
   function modal(options) {
@@ -84,7 +134,9 @@
       const title = element('h2', 'tp-modal-title', options.title);
       title.id = titleId;
       box.append(title);
-      if (options.message) box.append(element('p', 'tp-modal-message', options.message));
+      (Array.isArray(options.message) ? options.message : [options.message]).forEach(function (text) {
+        if (text) box.append(element('p', 'tp-modal-message', text));
+      });
 
       let input = null;
       const problem = element('p', 'tp-modal-problem');
@@ -100,7 +152,7 @@
       }
 
       const actions = element('div', 'tp-modal-actions');
-      const cancel = element('button', 'tp-modal-button', 'Cancel');
+      const cancel = element('button', 'tp-modal-button', options.cancelLabel || 'Cancel');
       cancel.type = 'button';
       const confirm = element('button', 'tp-modal-button ' + (options.danger ? 'tp-modal-danger' : 'tp-modal-primary'), options.confirmLabel || 'OK');
       confirm.type = 'button';
@@ -316,7 +368,12 @@
     if (!menu || !info.server || menu.querySelector('.tp-server')) return;
     const block = element('div', 'tp-server');
     const card = element('div', 'tp-server-card');
-    card.append(element('b', '', info.server), element('span', '', location.host));
+    // Through Unraid's remote access the address is "10-10-1-3.<40 hex>.myunraid.net"; the card
+    // shows the IP inside it. Other long addresses are cut short; the whole one is the tooltip.
+    const remote = location.hostname.match(/^(\d{1,3}(?:-\d{1,3}){3})\.[0-9a-f]{20,}\.myunraid\.net$/i);
+    const address = element('span', '', remote ? remote[1].replace(/-/g, '.') : location.host);
+    address.title = location.host;
+    card.append(element('b', '', info.server), address);
     block.append(element('span', 'tp-server-label', 'Connected server'), card);
     menu.prepend(block);
   }
@@ -326,6 +383,8 @@
     if (!box || !info.tab || box.querySelector('.tp-heading')) return;
     const known = TABS[info.tab];
     const heading = element('div', 'tp-heading');
+    // The Apps tab's search bar sits above the heading on phones (theme.css adds the space).
+    if (document.querySelector('.searchAreaHolder')) heading.classList.add('tp-heading-below-search');
     const text = element('div', 'tp-heading-text');
     const eyebrow = info.subPage ? info.tab : known && known[0];
     if (eyebrow) text.append(element('p', 'tp-eyebrow', eyebrow));
@@ -361,13 +420,18 @@
     const anchor = table.closest('.TableContainer') || table;
     const filters = [['all', 'All'], ['running', 'Running'], ['stopped', 'Stopped'], ['updates', 'Updates']];
     let activeFilter = 'all';
+    // FolderView (folder.view, .view2, .view3) turns rows into folders and keeps the members of
+    // closed folders inside the folder's row. Then the theme leaves the rows to it: no compact
+    // columns, groups, filters or search (they would pull containers out of their folders), only
+    // the summary above the table.
+    const folderView = folderViewActive();
 
     // Compact view: Unraid's ten columns in the order its table prints them. The view is only
     // offered while the table still has exactly these, so a changed Unraid release falls back to
     // the stock table instead of showing shuffled columns.
     const COLUMNS = ['name', 'version', 'network', 'ip', 'cport', 'ports', 'volumes', 'load', 'auto', 'uptime'];
     const headRow = table.querySelector('thead tr');
-    const canCompact = Boolean(headRow) && headRow.children.length === COLUMNS.length;
+    const canCompact = !folderView && Boolean(headRow) && headRow.children.length === COLUMNS.length;
     let compact = canCompact;
     try { compact = canCompact && localStorage.getItem('tft-docker-view') !== 'full'; } catch (error) { /* storage blocked */ }
 
@@ -522,7 +586,71 @@
     newGroupButton.addEventListener('click', function () {
       createGroup().then(function (group) { if (group) saveGroups(); });
     });
-    tools.append(newGroupButton);
+    if (!folderView) tools.append(newGroupButton);
+    // With FolderView installed: Aurora's view (columns, groups, filters) or FolderView's
+    // folders, as a switch beside the list's title. Stored on the server for every browser; the
+    // page reloads to apply it.
+    if (window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE) {
+      const viewSwitch = element('div', 'tp-segment tp-view-switch');
+      viewSwitch.setAttribute('role', 'group');
+      viewSwitch.setAttribute('aria-label', 'Container list view');
+      [['aurora', 'Aurora'], ['folderview', 'FolderViewPlugin']].forEach(function (option) {
+        const button = element('button', 'tp-tab', option[1]);
+        button.type = 'button';
+        const active = (window.auroraDockerView.mode === 'aurora') === (option[0] === 'aurora');
+        button.setAttribute('aria-selected', String(active));
+        button.title = option[0] === 'aurora' ? 'Aurora\'s list: columns, groups, filters and search' : 'The FolderView plugin\'s folders';
+        const save = function () {
+          button.disabled = true;
+          const body = new URLSearchParams({ view: option[0], csrf_token: window.csrf_token || '' });
+          fetch(PLUGIN_BASE + '/include/docker-view.php', { method: 'POST', credentials: 'same-origin', body: body })
+            .then(function (response) {
+              if (!response.ok) throw new Error('saving the view failed with status ' + response.status);
+              location.reload();
+            })
+            .catch(function (error) {
+              console.error('Aurora Theme view:', error);
+              button.disabled = false;
+              modal({ title: 'View not changed', message: 'The server did not accept the change.', confirmLabel: 'OK', hideCancel: true });
+            });
+        };
+        button.addEventListener('click', function () {
+          if (active) return;
+          if (option[0] !== 'folderview') {
+            save();
+            return;
+          }
+          // FolderView's folders are fitted to the theme, but not all of the plugin is.
+          modal({
+            title: 'Switch to FolderViewPlugin?',
+            message: [
+              'Your containers will be shown in FolderView\'s folders, fitted to the Aurora look: folders on top, everything sorted A–Z, and a folder opens with a single click.',
+              'Aurora doesn\'t support every feature of the FolderView plugin yet. Some of its options and layouts may look a little different here, or not appear at all.',
+              'You can switch back to Aurora\'s view at any time with the same switch.',
+            ],
+            cancelLabel: 'Stay with Aurora',
+            confirmLabel: 'Switch to FolderViewPlugin',
+          }).then(function (confirmed) {
+            if (confirmed) save();
+          });
+        });
+        viewSwitch.append(button);
+      });
+      // Beside the "Docker Containers" title above the table; in the toolbar if there is none.
+      let title = anchor.previousElementSibling;
+      while (title && !title.matches('div.title')) title = title.previousElementSibling;
+      if (title) {
+        viewSwitch.classList.add('tp-title-switch');
+        const left = title.querySelector('span.left');
+        if (left) left.after(viewSwitch); else title.append(viewSwitch);
+      } else {
+        tools.prepend(viewSwitch);
+      }
+    }
+    if (folderView) {
+      tabs.hidden = true;
+      search.hidden = true;
+    }
     toolbar.append(tabs, tools);
     search.addEventListener('input', render);
 
@@ -537,6 +665,7 @@
     const groupRows = new Map();
 
     function loadGroups() {
+      if (folderView) return;
       // Normally the page already carries the groups (AuroraTheme.page); otherwise they are fetched.
       if (Array.isArray(window.auroraDockerGroups)) {
         groups = window.auroraDockerGroups.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); });
@@ -669,7 +798,9 @@
         try { localStorage.setItem('tft-docker-collapsed', JSON.stringify(collapsed)); } catch (error) { /* storage blocked */ }
         render();
       });
-      head.append(toggle);
+      const load = element('span', 'tp-group-load');
+      load.append(element('span', 'tp-group-cpu'), element('span', 'tp-group-mem'));
+      head.append(toggle, element('span', 'tp-group-apps'), load);
       const actions = element('div', 'tp-actions');
       const members = function () { return row.tpItems || []; };
       actions.append(iconButton('play', 'Start all stopped containers in this section', function () {
@@ -730,9 +861,11 @@
       if (node.textContent !== text) node.textContent = text;
     }
 
-    // Puts the section headers and their containers in order at the top of the list. Runs after
-    // every refresh, and moves nothing when the order is already right.
-    function layoutGroups(rows) {
+    // Puts the section headers and their containers in order at the top of the list, the
+    // containers A–Z inside each section (and the whole list A–Z when there are no groups). Runs
+    // after every refresh, and moves nothing when the order is already right.
+    function layoutGroups(unsorted) {
+      const rows = unsorted.slice().sort(function (a, b) { return compareNames(a.name, b.name); });
       const sections = groups.map(function (group) {
         return { key: 'g:' + group.name, group: group, title: group.name, items: rows.filter(function (item) { return group.containers.includes(item.name); }) };
       });
@@ -756,6 +889,15 @@
         const running = section.items.filter(function (item) { return item.running; }).length;
         setText(header.querySelector('.tp-group-name'), section.title);
         setText(header.querySelector('.tp-group-count'), section.items.length + (section.items.length === 1 ? ' container' : ' containers') + ' · ' + running + ' running');
+        const load = sectionLoad(section.items);
+        setText(header.querySelector('.tp-group-cpu'), load.cpu);
+        setText(header.querySelector('.tp-group-mem'), load.mem);
+        header.querySelector('.tp-group-load').hidden = !load.cpu;
+        // The running apps of each section, "Ungrouped" included.
+        appStrip(header.querySelector('.tp-group-apps'), section.items.filter(function (item) { return item.running || item.paused; }).map(function (item) {
+          const image = item.row.querySelector('td.ct-name img.img');
+          return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : 'running' };
+        }), 8);
         const isCollapsed = collapsed.includes(section.key);
         header.classList.toggle('tp-collapsed', isCollapsed);
         header.querySelector('.tp-group-toggle').setAttribute('aria-expanded', String(!isCollapsed));
@@ -765,9 +907,104 @@
           order.push(item.row);
         });
       });
+      if (!sections.length) rows.forEach(function (item) { order.push(item.row); });
       order.forEach(function (node, index) {
         if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
       });
+    }
+
+    // CPU and memory of a section's containers added up ({ cpu: "3.20%", mem: "1.4GiB / 15.2GiB" }), from
+    // the values Unraid writes into each row every few seconds ("1.5%", "464KiB / 15.2GiB"; the
+    // decimal mark follows Display Settings). Empty while nothing in the section runs. In the
+    // compact view they sit in the table's CPU and Memory columns (enhance.css).
+    const UNITS = { B: 1, KIB: 1024, MIB: 1024 ** 2, GIB: 1024 ** 3, TIB: 1024 ** 4, KB: 1e3, MB: 1e6, GB: 1e9, TB: 1e12 };
+    const number = function (text) { return parseFloat(String(text).replace(',', '.')) || 0; };
+    // CPU values with two decimals ("0.00%", "1.50%") in the decimal mark Unraid uses for them
+    // (Display Settings, Number format).
+    let decimalMark = window.auroraDecimalMark === ',' ? ',' : '.';
+    function cpuText(value) {
+      return value.toFixed(2).replace('.', decimalMark) + '%';
+    }
+    // Unraid writes a container's CPU as "0%" or "1.5%" every few seconds; it is rewritten with
+    // two decimals like the groups' sums. Only text that differs is written, so the list's
+    // observer settles after one more pass.
+    function formatCpu(rows) {
+      rows.forEach(function (item) {
+        const cell = item.row.querySelector('[class^="cpu-"]');
+        if (!cell) return;
+        const text = cell.textContent.trim();
+        if (!/^[\d.,]+%$/.test(text)) return;
+        if (text.includes(',')) decimalMark = ',';
+        const formatted = cpuText(number(text));
+        if (text !== formatted) cell.textContent = formatted;
+      });
+    }
+
+    function sectionLoad(items) {
+      let cpu = 0;
+      let bytes = 0;
+      let limit = 0;
+      let running = 0;
+      const toBytes = function (text) {
+        const value = String(text).trim().match(/^([\d.,]+)\s*([KMGT]?i?B)$/i);
+        return value ? number(value[1]) * (UNITS[value[2].toUpperCase()] || 1) : 0;
+      };
+      items.forEach(function (item) {
+        if (!item.running) return;
+        running++;
+        const cpuCell = item.row.querySelector('[class^="cpu-"]');
+        const memCell = item.row.querySelector('[class^="mem-"]');
+        if (cpuCell) cpu += number(cpuCell.textContent);
+        // "464KiB / 15.2GiB": used and the container's limit (the server's memory unless set).
+        const parts = memCell ? memCell.textContent.split('/') : [];
+        bytes += toBytes(parts[0] || '');
+        limit = Math.max(limit, toBytes(parts[1] || ''));
+      });
+      if (!running) return { cpu: '', mem: '' };
+      // Written like Unraid's own values: "2.3MiB / 15.2GiB".
+      const size = function (value) {
+        const unit = ['TiB', 'GiB', 'MiB', 'KiB'].find(function (name) { return value >= UNITS[name.toUpperCase()]; }) || 'B';
+        const amount = value / UNITS[unit.toUpperCase()];
+        return (amount >= 100 || unit === 'B' ? String(Math.round(amount)) : amount.toFixed(1).replace('.', decimalMark)) + unit;
+      };
+      return { cpu: cpuText(cpu), mem: size(bytes) + (limit ? ' / ' + size(limit) : '') };
+    }
+
+    // FolderView: the folders first (in the order set in FolderView), each followed by its
+    // containers when it is open; below them the containers outside any folder. Containers are
+    // A–Z inside a folder (open rows and the preview icons) and outside. The first container
+    // outside the folders is marked, so enhance.css can set the folders apart from it.
+    function arrangeFolders() {
+      const top = [...list.children];
+      const nameOf = function (node) {
+        const name = node.querySelector('.appname');
+        return name ? name.textContent.trim() : '';
+      };
+      const folders = top.filter(function (row) { return row.classList.contains('folder'); });
+      const inFolder = new Set();
+      const order = [];
+      folders.forEach(function (folder) {
+        order.push(folder);
+        const idClass = [...folder.classList].find(function (name) { return name.indexOf('folder-id-') === 0; });
+        const memberClass = idClass ? 'folder-' + idClass.slice('folder-id-'.length) + '-element' : '';
+        const members = memberClass ? top.filter(function (row) { return row.classList.contains(memberClass); }) : [];
+        members.sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); }).forEach(function (row) {
+          inFolder.add(row);
+          order.push(row);
+        });
+        const preview = folder.querySelector('.folder-preview');
+        if (preview) sortChildren(preview, nameOf);
+        const folderName = folder.querySelector('.folder-appname');
+        if (folderName && folderName.title !== folderName.textContent.trim()) folderName.title = folderName.textContent.trim();
+      });
+      const rest = top.filter(function (row) { return !row.classList.contains('folder') && !inFolder.has(row); });
+      const loose = rest.filter(function (row) { return row.querySelector(':scope > td.ct-name'); });
+      loose.sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); });
+      order.push(...loose, ...rest.filter(function (row) { return !loose.includes(row); }));
+      order.forEach(function (node, index) {
+        if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
+      });
+      top.forEach(function (row) { row.classList.toggle('tp-after-folders', folders.length > 0 && row === loose[0]); });
     }
 
     function describe(row) {
@@ -788,10 +1025,21 @@
     }
 
     function render() {
-      const rows = [...list.querySelectorAll('td.ct-name')].map(function (cell) { return describe(cell.parentElement); });
+      // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
+      const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
-      rows.forEach(function (item) { decorate(item.row); });
-      layoutGroups(rows);
+      formatCpu(rows);
+      // Long names end in "…" (enhance.css); the whole name is the tooltip.
+      rows.forEach(function (item) {
+        const name = item.row.querySelector('td.ct-name .appname');
+        if (name && name.title !== item.name) name.title = item.name;
+      });
+      if (folderView) {
+        arrangeFolders();
+      } else {
+        rows.forEach(function (item) { decorate(item.row); });
+        layoutGroups(rows);
+      }
       table.classList.toggle('tp-compact', compact);
       table.classList.toggle('tp-advanced', Boolean(nativeToggle && nativeToggle.checked));
       modeButtons.forEach(function (button, index) {
@@ -824,6 +1072,7 @@
       });
 
       const query = search.value.trim().toLowerCase();
+      if (folderView) return;
       rows.forEach(function (item) {
         const matchesFilter = activeFilter === 'all'
           || (activeFilter === 'running' && item.running)
@@ -840,6 +1089,22 @@
         const show = items.length ? items.some(function (item) { return item.visible; }) : !filtering;
         header.classList.toggle('tp-filtered-out', !show);
       });
+    }
+
+    // FolderView: a click anywhere on a folder's row opens or closes it, its name included
+    // (FolderView only does that with the arrow button). Its icon keeps FolderView's menu (Edit,
+    // Start, ...), and the preview icons, buttons and switches keep doing their own thing.
+    if (folderView) {
+      list.addEventListener('click', function (event) {
+        const row = event.target.closest('tr.folder');
+        if (!row || row.parentElement !== list || event.button !== 0) return;
+        if (event.target.closest('button, input, select, label, span.hand, .folder-preview, .switch-button-background')) return;
+        const arrow = row.querySelector('button.folder-dropdown');
+        if (!arrow) return;
+        event.preventDefault();
+        event.stopPropagation();
+        arrow.click();
+      }, true);
     }
 
     // Status under the table header while Unraid asks Docker for the list; with many containers
@@ -1065,7 +1330,10 @@
     const safeUrl = function (url) { return /^https?:\/\//i.test(url || '') ? url : ''; };
 
     function open(chip) {
-      const trigger = chip.querySelector('span.hand[onclick*="addDockerContainerContext"]');
+      // Only the chip's own icon: a FolderView folder holds its containers' chips inside it, and
+      // a folder keeps its own menu (Expand, Stop, ...).
+      if (chip.matches('[class*="folder-"]')) return false;
+      const trigger = chip.querySelector(':scope > span.hand[onclick*="addDockerContainerContext"]');
       const args = contextArguments(trigger);
       if (args.length < 11 || typeof window.eventControl !== 'function') return false;
       const ct = {
@@ -1188,10 +1456,36 @@
       return true;
     }
 
+    // FolderView folder: a click opens or closes it in place (FolderView's own expandFolderDocker);
+    // its menu (Stop all, Edit, ...) moves to the right click or a long press.
+    const folderId = function (chip) {
+      const hand = chip.matches('[class*="folder-docker"]') && chip.querySelector(':scope > span.hand[id^="folder-id-"]');
+      return hand ? hand.id.slice('folder-id-'.length) : '';
+    };
+    // The menu is shown by Unraid's menu script on the click that builds it, so the right click
+    // sends the folder icon a click of its own, which the handler below lets through.
+    let menuClick = false;
+    view.addEventListener('contextmenu', function (event) {
+      const chip = event.target.closest('span.outer.apps');
+      const hand = chip && folderId(chip) && chip.querySelector(':scope > span.hand');
+      if (!hand) return;
+      event.preventDefault();
+      menuClick = true;
+      hand.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: event.clientX, clientY: event.clientY }));
+      menuClick = false;
+    });
+
     // Captured before Unraid's own handler, which would open the small context menu instead.
     view.addEventListener('click', function (event) {
       const chip = event.target.closest('span.outer.apps');
-      if (!chip || event.button !== 0) return;
+      if (!chip || event.button !== 0 || menuClick) return;
+      const id = folderId(chip);
+      if (id && typeof expandFolderDocker === 'function') {
+        event.preventDefault();
+        event.stopPropagation();
+        expandFolderDocker(id);
+        return;
+      }
       if (open(chip)) {
         event.preventDefault();
         event.stopPropagation();
@@ -1265,6 +1559,8 @@
     tile.querySelectorAll('td.thin').forEach(function (cell) { cell.closest('tr').classList.add('tp-cpu-gap'); });
 
     // Core rows: "CPU 3" / "CPU 0 - HT 12" becomes "3" / "0 · 12", the full text stays as a tooltip.
+    // Intel hybrid CPUs add "(P-Core)" / "(E-Core)"; that becomes a small "P" / "E" badge, as the
+    // written-out type made the tile wider than its column.
     tile.querySelectorAll('tr.cpu_open').forEach(function (row) {
       row.classList.add('tp-core');
       const label = row.querySelector('span.w26');
@@ -1273,7 +1569,13 @@
       const match = full.match(/^CPU\s+(\d+)\s*(\([^)]*\))?\s*(?:-\s*HT\s+(\d+))?/);
       if (!match) return;
       row.title = full;
-      label.textContent = match[1] + (match[3] ? ' · ' + match[3] : '') + (match[2] ? ' ' + match[2].replace(/[()]/g, '') : '');
+      label.textContent = match[1] + (match[3] ? ' · ' + match[3] : '');
+      if (match[2]) {
+        const type = match[2].replace(/[()]/g, '').trim();
+        const badge = element('span', 'tp-core-type', type.split('-')[0] || type);
+        badge.title = type;
+        label.append(badge);
+      }
       if (match[3]) row.classList.add('tp-core-pair');
     });
   }
@@ -1315,9 +1617,6 @@
     });
   }
 
-  // Airflow tile: Unraid prints fan names and speeds as rows of three. They become one row of
-  // small cards that wraps only when there are more fans than fit. The speed elements are moved,
-  // not copied, so Unraid keeps updating them by their ids.
   // Dashboard, GPU Statistics plugin (one tile per GPU, #tblGPUDash1, 2, ...): its title is loose
   // text in the line below the icon, and vendor, driver and device sit in a little table of
   // their own under the header. The title becomes the tile heading, the device follows it as one
@@ -1368,6 +1667,204 @@
     });
   }
 
+  // Dashboard, Docker tile: the containers A–Z. With FolderView the folders stay first (in the
+  // order set there), the containers of an open folder are A–Z as well, and a line sets the
+  // folders apart from the containers outside them. Without FolderView the theme's application
+  // groups (the Docker tab's "+ Group") are shown here too: a chip per group at the top that
+  // opens or closes a panel with its containers, open or closed as on the Docker tab (the state
+  // is shared), and the ungrouped containers below a line. The tile is redrawn by Unraid and by
+  // FolderView, so this runs again after each redraw (once per frame at most).
+  function dashboardDockerOrder() {
+    const view = document.getElementById('docker_view');
+    if (!view) return;
+    const nameOf = function (chip) {
+      const inner = chip.querySelector('.inner');
+      const named = inner && inner.querySelector('.appname');
+      if (named) return named.textContent.trim();
+      return inner && inner.firstChild ? inner.firstChild.textContent.trim() : '';
+    };
+    const divider = element('div', 'tp-chip-divider');
+    divider.setAttribute('aria-hidden', 'true');
+    const folderView = folderViewActive();
+    // The running (or paused) apps among chips, for the icon strip of a group or folder.
+    const runningApps = function (chips) {
+      return chips.filter(function (chip) { return chip.classList.contains('started') || chip.classList.contains('paused'); }).map(function (chip) {
+        const image = chip.querySelector(':scope > span.hand img');
+        return { name: nameOf(chip), src: image && image.src, state: chip.classList.contains('paused') ? 'paused' : 'running' };
+      });
+    };
+
+    // ---- Theme groups (stored by include/docker-groups.php, collapsed state per browser)
+    let groups = [];
+    const validGroups = function (list) {
+      return Array.isArray(list) ? list.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); }) : [];
+    };
+    const COLLAPSED_KEY = 'tft-docker-collapsed';
+    const UNGROUPED_KEY = '\u0000ungrouped'; // the Docker tab's key for its "Ungrouped" section
+    const readCollapsed = function () {
+      try { return JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]'); } catch (error) { return []; }
+    };
+    const parts = new Map();
+    // key: the collapsed-state key shared with the Docker tab ('g:' + name, or the Docker tab's
+    // key for "Ungrouped").
+    const groupPart = function (group, key) {
+      if (parts.has(key)) return parts.get(key);
+      const chip = element('span', 'outer solid apps tp-group-chip');
+      chip.setAttribute('role', 'button');
+      chip.tabIndex = 0;
+      const icon = element('span', 'tp-group-chip-icon');
+      icon.append(element('i', 'fa fa-folder-open'));
+      const inner = element('span', 'inner');
+      inner.append(element('span', 'tp-group-chip-name', group.name), element('span', 'tp-group-chip-count'), element('span', 'tp-group-apps'));
+      chip.append(icon, inner, element('i', 'fa fa-chevron-down tp-group-chip-caret'));
+      const panel = element('div', 'tp-group-panel');
+      const toggle = function () {
+        const collapsed = readCollapsed();
+        const next = collapsed.includes(key) ? collapsed.filter(function (entry) { return entry !== key; }) : collapsed.concat(key);
+        try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next)); } catch (error) { /* storage blocked */ }
+        arrange();
+      };
+      chip.addEventListener('click', toggle);
+      chip.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); }
+      });
+      const part = { chip: chip, panel: panel, icon: icon.firstChild, count: inner.children[1], apps: inner.children[2] };
+      parts.set(key, part);
+      return part;
+    };
+
+    const arrangeGroups = function (cell) {
+      const chips = [...cell.querySelectorAll(':scope > span.outer.apps:not(.tp-group-chip), :scope > .tp-group-panel > span.outer.apps')];
+      const byName = function (a, b) { return compareNames(nameOf(a), nameOf(b)); };
+      const collapsed = readCollapsed();
+      const placed = new Set();
+      const wanted = [];
+      // The groups, then "Ungrouped" for the rest (only while there are groups, as on the Docker tab).
+      const sections = groups.map(function (group) {
+        const members = chips.filter(function (chip) { return !placed.has(chip) && group.containers.includes(nameOf(chip)); });
+        members.forEach(function (chip) { placed.add(chip); });
+        return { group: group, key: 'g:' + group.name, members: members };
+      });
+      if (sections.some(function (section) { return section.members.length; })) {
+        sections.push({ group: { name: 'Ungrouped', containers: [] }, key: UNGROUPED_KEY, members: chips.filter(function (chip) { return !placed.has(chip); }) });
+      }
+      sections.forEach(function (section) {
+        const group = section.group;
+        const part = groupPart(group, section.key);
+        const members = section.members.sort(byName);
+        if (!members.length) {
+          part.chip.remove();
+          part.panel.remove();
+          return;
+        }
+        members.forEach(function (chip) { placed.add(chip); });
+        if (members.some(function (chip, index) { return part.panel.children[index] !== chip; }) || part.panel.children.length !== members.length) {
+          part.panel.replaceChildren(...members);
+        }
+        const isCollapsed = collapsed.includes(section.key);
+        const running = members.filter(function (chip) { return chip.classList.contains('started'); }).length;
+        const count = members.length + (members.length === 1 ? ' container' : ' containers') + ' · ' + running + ' running';
+        if (part.count.textContent !== count) part.count.textContent = count;
+        appStrip(part.apps, runningApps(members), 4);
+        part.chip.title = group.name + ': ' + count;
+        part.chip.setAttribute('aria-expanded', String(!isCollapsed));
+        part.chip.classList.toggle('tp-collapsed', isCollapsed);
+        part.icon.className = 'fa ' + (isCollapsed ? 'fa-folder' : 'fa-folder-open');
+        part.panel.hidden = isCollapsed;
+        wanted.push(part.chip, part.panel);
+      });
+      const loose = chips.filter(function (chip) { return !placed.has(chip); }).sort(byName);
+      if (wanted.length && loose.length) wanted.push(divider);
+      else divider.remove();
+      wanted.push(...loose);
+      wanted.forEach(function (node, index) {
+        if (cell.children[index] !== node) cell.insertBefore(node, cell.children[index] || null);
+      });
+    };
+
+    const arrange = function () {
+      const first = view.querySelector('td > span.outer.apps, td > .folder-showcase-outer, td > .tp-group-panel');
+      if (!first) return;
+      const cell = first.parentElement;
+      if (!folderView) {
+        arrangeGroups(cell);
+      } else {
+        const folders = [...cell.children].filter(function (node) { return node.classList.contains('folder-showcase-outer'); });
+        folders.forEach(function (folder) {
+          const showcase = folder.querySelector('.folder-showcase');
+          if (showcase) sortChildren(showcase, nameOf, [...showcase.children].filter(function (node) { return node.matches('span.outer'); }));
+          // The folder chip shows its running apps; a closed folder keeps their chips in its
+          // hidden store, an open one in its panel.
+          const inner = folder.querySelector(':scope > span.outer > .inner');
+          if (!inner) return;
+          let strip = inner.querySelector(':scope > .tp-group-apps');
+          if (!strip) {
+            strip = element('span', 'tp-group-apps');
+            inner.append(strip);
+          }
+          const members = [...folder.querySelectorAll('.folder-storage > span.outer, .folder-showcase > span.outer')].sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); });
+          appStrip(strip, runningApps(members), 4);
+        });
+        const loose = [...cell.children].filter(function (node) { return node.matches('span.outer.apps'); });
+        sortChildren(cell, nameOf, loose);
+        const firstLoose = [...cell.children].find(function (node) { return node.matches('span.outer.apps'); });
+        if (folders.length && firstLoose) {
+          if (divider.nextElementSibling !== firstLoose) cell.insertBefore(divider, firstLoose);
+        } else if (divider.isConnected) {
+          divider.remove();
+        }
+      }
+      // Long names end in "…" (enhance.css); the whole name is the tooltip.
+      cell.querySelectorAll('span.outer:not(.tp-group-chip) .inner').forEach(function (inner) {
+        const name = nameOf(inner.parentElement);
+        if (name && inner.title !== name) inner.title = name;
+      });
+    };
+    let queued = false;
+    new MutationObserver(function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; arrange(); });
+    }).observe(view, { childList: true, subtree: true });
+
+    // Normally the page carries the groups (AuroraTheme.page); otherwise they are fetched.
+    if (!folderView && Array.isArray(window.auroraDockerGroups)) {
+      groups = validGroups(window.auroraDockerGroups);
+    } else if (!folderView && PLUGIN_BASE) {
+      fetch(PLUGIN_BASE + '/include/docker-groups.php', { credentials: 'same-origin' })
+        .then(function (response) { return response.json(); })
+        .then(function (data) { groups = validGroups(data.groups); arrange(); })
+        .catch(function (error) { console.error('Aurora Theme groups:', error); });
+    }
+    arrange();
+  }
+
+
+  // Dashboard, Virtual Machines Usage tile (VM Manager settings, "Show VM usage"): Unraid puts a
+  // running VM's icon, name and its five readings (guest and host CPU, memory, disk, network) in
+  // one small chip, where the values ran into each other. Each VM becomes a full card: icon and
+  // name on top, the readings in a grid below. Unraid rewrites the readings by their ids, so they
+  // are moved into the grid, not copied.
+  function dashboardVmUsage() {
+    const tile = document.getElementById('vm_view_usage');
+    if (!tile) return;
+    const arrange = function () {
+      tile.querySelectorAll('span.outer.vmsuse:not(.tp-vmuse)').forEach(function (chip) {
+        chip.classList.add('tp-vmuse');
+        const readings = element('span', 'tp-vmuse-readings');
+        chip.querySelectorAll(':scope > span[id^="vmmetrics-"]').forEach(function (reading) { readings.append(reading); });
+        chip.querySelectorAll(':scope > br').forEach(function (br) { br.remove(); });
+        chip.append(readings);
+      });
+    };
+    // Unraid adds the VM rows when the dashboard loads its app lists, and again on refresh.
+    new MutationObserver(arrange).observe(tile, { childList: true });
+    arrange();
+  }
+
+  // Airflow tile: Unraid prints fan names and speeds as rows of three. They become one row of
+  // small cards that wraps only when there are more fans than fit. The speed elements are moved,
+  // not copied, so Unraid keeps updating them by their ids.
   function dashboardFans() {
     const firstSpeed = document.querySelector('table.dashboard td > span[id^="fan"]');
     if (!firstSpeed) return;
@@ -2762,7 +3259,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardDockerOrder, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

@@ -41,6 +41,31 @@ foreach (['header' => '--tp-custom-header-text', 'headermetacolor' => '--tp-cust
 <?php if ($auroraHeaderVars): ?>
 <style id="aurora-header-colors">:root { <?= implode(' ', $auroraHeaderVars) ?> }</style>
 <?php endif; ?>
+<?php
+// Accent colour from the plugin's settings ("#e11d48"; empty keeps the theme's blue). The
+// theme's shades are mixed from it, and the text on accent buttons is white or near-black,
+// whichever stands out more.
+$auroraAccent = strtolower(ltrim(trim((string) ($aurora['accent'] ?? '')), '#'));
+if (preg_match('/^[0-9a-f]{3}$/', $auroraAccent)) $auroraAccent = preg_replace('/(.)/', '$1$1', $auroraAccent);
+if (preg_match('/^[0-9a-f]{6}$/', $auroraAccent)):
+    $auroraLum = function ($hex) {
+        $l = [];
+        foreach (str_split($hex, 2) as $c) { $v = hexdec($c) / 255; $l[] = $v <= 0.03928 ? $v / 12.92 : (($v + 0.055) / 1.055) ** 2.4; }
+        return 0.2126 * $l[0] + 0.7152 * $l[1] + 0.0722 * $l[2];
+    };
+    $auroraL = $auroraLum($auroraAccent);
+    $auroraOnAccent = (1.05 / ($auroraL + 0.05)) >= (($auroraL + 0.05) / ($auroraLum('06101f') + 0.05)) ? '#ffffff' : '#06101f';
+    $auroraHex = "#$auroraAccent";
+    $auroraScale = [];
+    foreach ([50 => 'white 92%', 100 => 'white 84%', 200 => 'white 68%', 300 => 'white 48%', 400 => 'white 24%', 500 => 'white 6%', 600 => 'black 8%', 700 => 'black 24%', 800 => 'black 40%', 900 => 'black 54%', 950 => 'black 70%'] as $auroraStep => $auroraMix) {
+        $auroraScale[] = "--color-primary-$auroraStep: color-mix(in oklab, $auroraHex, $auroraMix); --ui-color-primary-$auroraStep: color-mix(in oklab, $auroraHex, $auroraMix);";
+    }
+?>
+<style id="aurora-accent">
+:root:root:root { --tp-primary: <?= $auroraHex ?>; --tp-primary-ii: color-mix(in oklab, <?= $auroraHex ?> 62%, white); --tp-primary-soft: color-mix(in srgb, <?= $auroraHex ?> 15%, transparent); --tp-primary-text: <?= $auroraOnAccent ?>; }
+.unapi:not(#tp-none):not(#tp-none) { <?= implode(' ', $auroraScale) ?> }
+</style>
+<?php endif; ?>
 <script>
 // Theme credit at the end of the footer.
 document.addEventListener('DOMContentLoaded', function () {
@@ -91,13 +116,55 @@ try {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php
-// Docker tab: the saved application groups go straight into the page, so the list can be shown
-// grouped right away instead of waiting for a separate request.
-if (rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/') === '/Docker'):
+// Docker tab and Dashboard: the saved application groups go straight into the page, so the
+// containers can be shown grouped right away instead of waiting for a separate request.
+if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'), ['/Docker', '/Dashboard'], true)):
     $auroraGroups = json_decode((string) @file_get_contents("$auroraCustomDir/docker-groups.json"), true);
     $auroraGroups = is_array($auroraGroups['groups'] ?? null) ? $auroraGroups['groups'] : [];
 ?>
 <script>window.auroraDockerGroups = <?= json_encode($auroraGroups, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script>window.auroraDecimalMark = <?= json_encode(substr((string) ($display['number'] ?? '.,'), 0, 1) ?: '.') ?>;</script>
+<?php
+    // FolderView installed: the switch above the Docker list chooses between its folders and the
+    // theme's view (columns, groups). For the theme's view, FolderView's takeover of Unraid's
+    // listview() and loadlist() is undone: it keeps the originals as listview_original and
+    // loadlist_original, and as soon as it does, they are put back (after its script has run,
+    // before Unraid draws the list). FolderView's own "hide the list until the folders are
+    // built" is lifted at once.
+    $auroraFolderView = is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
+    $auroraDockerView = ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
+?>
+<?php if ($auroraFolderView): ?>
+<script>window.auroraDockerView = { folderView: true, mode: <?= json_encode($auroraDockerView) ?> };</script>
+<?php if ($auroraDockerView === 'aurora'): ?>
+<script>
+(function () {
+  document.documentElement.classList.add('tp-aurora-view', 'fv3-docker-ready', 'fv3-vm-ready');
+  // On the Dashboard FolderView builds its folders from a jQuery prefilter on the tile's data
+  // request (DashboardApps.php); that one prefilter is not registered.
+  if (window.jQuery && typeof jQuery.ajaxPrefilter === 'function') {
+    var addPrefilter = jQuery.ajaxPrefilter;
+    jQuery.ajaxPrefilter = function (types, handler) {
+      var fn = typeof types === 'function' ? types : handler;
+      if (typeof fn === 'function' && /createFolders/.test(String(fn))) return;
+      return addPrefilter.apply(this, arguments);
+    };
+  }
+  ['listview', 'loadlist'].forEach(function (name) {
+    var original;
+    Object.defineProperty(window, name + '_original', {
+      configurable: true,
+      get: function () { return original; },
+      set: function (value) {
+        original = value;
+        queueMicrotask(function () { window[name] = value; });
+      }
+    });
+  });
+})();
+</script>
+<?php endif; ?>
+<?php endif; ?>
 <?php endif; ?>
 <?php endif; ?>
 <?php if ($auroraClasses): ?>

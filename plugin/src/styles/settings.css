@@ -351,6 +351,40 @@ button.tft-link-button:hover {
     }
 }
 
+/* ---- Accent colour: picker, code and "Default" in one row */
+.tft-accent {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 40rem;
+}
+
+.tft-accent input[type="color"] {
+    flex: none;
+    width: 4rem;
+    height: 3.4rem;
+    margin: 0;
+    padding: 0.3rem;
+    border: 1px solid var(--tp-input-border, var(--border-color));
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.tft-accent input[type="text"] {
+    flex: 1 1 auto;
+    width: auto !important;
+    min-width: 0;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.tft-accent input[type="button"] {
+    flex: none;
+    margin: 0;
+}
+
 /* ---- Automatic update schedule: frequency, weekday and time in one row */
 .tft-schedule {
     display: flex;

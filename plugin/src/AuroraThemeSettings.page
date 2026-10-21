@@ -19,6 +19,30 @@ _(Colours and fonts)_:
 > chosen in Display Settings: **Black** gives the dark palette, **White** the light one. Other Dynamix
 > themes are left as they are.
 
+_(Accent colour)_:
+: <span class="tft-accent"><input type="color" id="tft-accent-pick" aria-label="_(Pick the accent colour)_" value="<?= htmlspecialchars(preg_match('/^#[0-9a-fA-F]{6}$/', $aurora['accent'] ?? '') ? $aurora['accent'] : '#4f8bff') ?>"><input type="text" name="accent" id="tft-accent" maxlength="7" placeholder="_(Theme blue)_" pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" title="_(Colour code such as #4f8bff; empty for the theme's blue)_" value="<?= htmlspecialchars($aurora['accent'] ?? '') ?>"><input type="button" value="_(Default)_" onclick="auroraAccent('')"></span>
+
+> The colour of highlights: the active menu entry, buttons, links, switches and bars. Pick one or
+> type its code (such as `#e11d48`); **Default** goes back to the theme's blue. Lighter shades and
+> the text on buttons are worked out from it.
+
+<script>
+// The colour picker and the code field follow each other; changes are announced so that
+// Unraid enables "Apply".
+function auroraAccent(value) {
+  var field = document.getElementById('tft-accent');
+  field.value = value;
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) document.getElementById('tft-accent-pick').value = value;
+  ['input', 'change'].forEach(function (type) { field.dispatchEvent(new Event(type, { bubbles: true })); });
+}
+document.getElementById('tft-accent-pick').addEventListener('input', function () { auroraAccent(this.value); });
+document.getElementById('tft-accent').addEventListener('input', function () {
+  var code = this.value.trim().replace(/^#?/, '#');
+  if (/^#[0-9a-fA-F]{3}$/.test(code)) code = '#' + code.slice(1).split('').map(function (c) { return c + c; }).join('');
+  if (/^#[0-9a-fA-F]{6}$/.test(code)) document.getElementById('tft-accent-pick').value = code;
+});
+</script>
+
 _(Navigation layout)_:
 : <select name="layout">
   <?=mk_option($aurora['layout'], "top", _("Top bar (Unraid default)"))?>
