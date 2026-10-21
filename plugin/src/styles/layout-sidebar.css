@@ -35,6 +35,32 @@
             background-image: none;
         }
 
+        /* Display Settings, "Show banner": the banner fills the top bar, whose text then uses the
+           header colours (custom ones included) instead of the page's. With "Show banner
+           background color fade" it fades into the header colour behind the buttons. */
+        #header.image {
+            --header-text-primary: var(--tp-header-text, var(--header-text-color));
+            --header-text-secondary: var(--tp-header-muted, var(--alt-text-color));
+            color: var(--tp-header-text, var(--header-text-color));
+            background: var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg, var(--header-background-color));
+        }
+
+        &.has-banner-gradient #header.image {
+            background:
+                linear-gradient(90deg, var(--tp-header-bg, var(--header-background-color)) 0, transparent 30%, transparent 48%, var(--tp-header-bg, var(--header-background-color)) 85%),
+                var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg, var(--header-background-color));
+        }
+
+        #header.image::before {
+            content: none;
+        }
+
+        #header.image #UserProfile > div:first-of-type {
+            background: color-mix(in srgb, var(--tp-header-bg, var(--header-background-color)) 72%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
         /* Unraid's logo, version and update badge become the sidebar's brand block. They stay
            where they are in the page and are only positioned over the top of the sidebar. */
         #header unraid-header-os-version {
@@ -325,6 +351,15 @@
             text-transform: uppercase;
             opacity: 0.75;
             content: "Quick actions";
+        }
+
+        /* Array usage indicator (Display Settings; the theme's widget when page enhancements are
+           on): a full-width row above the tiles. Unraid
+           places it absolutely, which laid it over the first row of buttons. */
+        #menu .nav-tile.right > :is(.usage-bar, .tp-usage) {
+            grid-column: 1 / -1;
+            width: auto;
+            margin: 0 0 0.4rem;
         }
 
         /* Unraid leaves empty placeholders between the buttons; they would take up tiles. */

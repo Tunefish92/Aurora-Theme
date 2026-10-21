@@ -10,11 +10,16 @@ $auroraCustomDir = '/boot/config/plugins/Aurora-Theme';
 $auroraClasses = [];
 if (($aurora['layout'] ?? 'top') == 'sidebar') $auroraClasses[] = 'tp-sidebar';
 if (($aurora['enhance'] ?? 'yes') == 'yes') $auroraClasses[] = 'tp-enhance';
+// Display Settings, "Favorites enabled" set to No also turns off the theme's starred cards.
+if (($display['favorites'] ?? 'yes') == 'no') $auroraClasses[] = 'tp-no-favourites';
 
 // Emergency switch: opening any page with ?aurora=off stops the plugin from loading anything
 // in this browser (remembered in a cookie) until a page is opened with ?aurora=on.
 $auroraSwitch = $_GET['aurora'] ?? '';
 $auroraOff = $auroraSwitch == 'off' || ($auroraSwitch != 'on' && !empty($_COOKIE['aurora_off']));
+// The theme is made for Unraid's top-navigation themes (Black, White). Azure and Gray have
+// their own sidebar layout, so there the plugin loads nothing and leaves them as they are.
+if (isset($themeHelper) && method_exists($themeHelper, 'isTopNavTheme') && !$themeHelper->isTopNavTheme()) $auroraOff = true;
 ?>
 <?php if ($auroraSwitch == 'off'): ?>
 <script>document.cookie = 'aurora_off=1; path=/; max-age=31536000; SameSite=Lax';</script>
@@ -24,6 +29,18 @@ $auroraOff = $auroraSwitch == 'off' || ($auroraSwitch != 'on' && !empty($_COOKIE
 <?php if (!$auroraOff): ?>
 <?php if (($aurora['theme'] ?? 'yes') == 'yes'): ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/theme.css') ?>">
+<?php
+// Display Settings, header custom text, secondary text and background colours: the theme sets
+// Unraid's header variables itself, so the chosen colours are handed to it under its own names.
+$auroraHeaderVars = [];
+foreach (['header' => '--tp-custom-header-text', 'headermetacolor' => '--tp-custom-header-muted', 'background' => '--tp-custom-header-bg'] as $auroraKey => $auroraVar) {
+    $auroraHex = (string) ($display[$auroraKey] ?? '');
+    if (preg_match('/^([0-9a-fA-F]{3}){1,2}$/', $auroraHex)) $auroraHeaderVars[] = "$auroraVar: #$auroraHex;";
+}
+?>
+<?php if ($auroraHeaderVars): ?>
+<style id="aurora-header-colors">:root { <?= implode(' ', $auroraHeaderVars) ?> }</style>
+<?php endif; ?>
 <script>
 // Theme credit at the end of the footer.
 document.addEventListener('DOMContentLoaded', function () {
@@ -54,6 +71,23 @@ document.addEventListener('DOMContentLoaded', function () {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/layout-sidebar.css') ?>">
 <?php endif; ?>
 <?php if (in_array('tp-enhance', $auroraClasses)): ?>
+<?php
+// The page's own title ("CPU Pinning", "UPS Settings") for the heading and breadcrumb, made the
+// way Unraid makes its section titles. Without it the script names the page from its address.
+$auroraTitle = '';
+try {
+    $auroraTitle = (string) ($myPage['Title'] ?? '');
+    if ($auroraTitle !== '' && function_exists('processTitle')) $auroraTitle = processTitle($auroraTitle);
+    if ($auroraTitle !== '' && function_exists('parse_text')) $auroraTitle = _(parse_text(html_entity_decode($auroraTitle)));
+    $auroraTitle = trim(preg_replace('/\s+/', ' ', strip_tags($auroraTitle)));
+    if (strpos($auroraTitle, '$') !== false || mb_strlen($auroraTitle) > 60) $auroraTitle = '';
+} catch (Throwable $auroraError) {
+    $auroraTitle = '';
+}
+?>
+<?php if ($auroraTitle !== ''): ?>
+<script>window.auroraPageTitle = <?= json_encode($auroraTitle, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<?php endif; ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php

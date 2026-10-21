@@ -290,6 +290,175 @@
     to { visibility: visible; }
 }
 
+/* ---- Loading status: under the Docker table header until the list arrives, and at the
+   bottom of the page while a menu click waits for the next page. */
+.tp-loader {
+    flex: none;
+    width: 1.8rem;
+    height: 1.8rem;
+    border: 2px solid var(--tp-border, var(--table-border-color));
+    border-top-color: var(--tp-primary, var(--brand-orange));
+    border-radius: 50%;
+    animation: tp-loader-spin 0.8s linear infinite;
+}
+
+@keyframes tp-loader-spin {
+    to { transform: rotate(360deg); }
+}
+
+.tp-docker-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 4rem 2rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+/* ---- Array usage widget at the start of the menu's quick actions, as tall as its buttons */
+.tp-usage {
+    --tp-usage-tone: var(--tp-primary, var(--brand-orange));
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.9rem;
+    width: 17rem;
+    height: 3.3rem;
+    margin-right: 0.6rem;
+    padding: 0 1.1rem 0 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    color: var(--tp-header-text, var(--text-color));
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.tp-usage:hover,
+.tp-usage:focus-visible {
+    border-color: color-mix(in srgb, var(--tp-usage-tone) 45%, transparent);
+    color: var(--tp-header-text, var(--text-color));
+    text-decoration: none;
+    background: color-mix(in srgb, var(--tp-usage-tone) 10%, transparent);
+}
+
+.tp-usage-good { --tp-usage-tone: var(--tp-success-text, #22c55e); }
+.tp-usage-warn { --tp-usage-tone: var(--tp-warn-text, #f59e0b); }
+.tp-usage-danger { --tp-usage-tone: var(--tp-danger, #ef4444); }
+.tp-usage-off { --tp-usage-tone: var(--tp-header-muted, var(--alt-text-color)); }
+
+.tp-usage-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 7px;
+    color: var(--tp-usage-tone);
+    font-size: 1.4rem;
+    background: color-mix(in srgb, var(--tp-usage-tone) 16%, transparent);
+}
+
+.tp-usage-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.tp-usage-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    line-height: 1;
+}
+
+.tp-usage-label {
+    color: var(--tp-header-muted, var(--alt-text-color));
+    font: 600 0.95rem/1 var(--tp-font-heading, inherit);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.tp-usage-value {
+    font: 700 1.25rem/1 var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-usage-off .tp-usage-value {
+    color: var(--tp-header-muted, var(--alt-text-color));
+    font-weight: 600;
+}
+
+.tp-usage-track {
+    display: block;
+    height: 0.4rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tp-usage-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--tp-usage-tone);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--tp-usage-tone) 60%, transparent);
+}
+
+.tp-docker-loading-on div.spinner.fixed {
+    display: none !important;
+}
+
+.tp-nav-progress {
+    position: fixed;
+    bottom: 2.4rem;
+    left: 50%;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: calc(100vw - 32px);
+    padding: 0.9rem 1.6rem 0.9rem 1.1rem;
+    border: 1px solid var(--tp-border, var(--table-border-color));
+    border-radius: 999px;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.25rem var(--tp-font-heading, inherit);
+    white-space: nowrap;
+    background-color: var(--tp-elevated, var(--table-background-color));
+    box-shadow: var(--tp-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.25));
+    transform: translateX(-50%);
+    animation: tp-nav-progress-in 0.2s ease-out;
+}
+
+.tp-nav-progress .tp-loader {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.tp-nav-progress-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes tp-nav-progress-in {
+    from { opacity: 0; transform: translate(-50%, 0.6rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-loader {
+        animation-duration: 2.4s;
+    }
+
+    .tp-nav-progress {
+        animation: none;
+    }
+}
+
 /* ---- Docker toolbar: filter tabs and search */
 .tp-toolbar {
     display: flex;

@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.20.1933"
+        version="2026.10.21.1807"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.20.1933
+###2026.10.21.1807
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -59,11 +59,16 @@ $auroraCustomDir = '/boot/config/plugins/Aurora-Theme';
 $auroraClasses = [];
 if (($aurora['layout'] ?? 'top') == 'sidebar') $auroraClasses[] = 'tp-sidebar';
 if (($aurora['enhance'] ?? 'yes') == 'yes') $auroraClasses[] = 'tp-enhance';
+// Display Settings, "Favorites enabled" set to No also turns off the theme's starred cards.
+if (($display['favorites'] ?? 'yes') == 'no') $auroraClasses[] = 'tp-no-favourites';
 
 // Emergency switch: opening any page with ?aurora=off stops the plugin from loading anything
 // in this browser (remembered in a cookie) until a page is opened with ?aurora=on.
 $auroraSwitch = $_GET['aurora'] ?? '';
 $auroraOff = $auroraSwitch == 'off' || ($auroraSwitch != 'on' && !empty($_COOKIE['aurora_off']));
+// The theme is made for Unraid's top-navigation themes (Black, White). Azure and Gray have
+// their own sidebar layout, so there the plugin loads nothing and leaves them as they are.
+if (isset($themeHelper) && method_exists($themeHelper, 'isTopNavTheme') && !$themeHelper->isTopNavTheme()) $auroraOff = true;
 ?>
 <?php if ($auroraSwitch == 'off'): ?>
 <script>document.cookie = 'aurora_off=1; path=/; max-age=31536000; SameSite=Lax';</script>
@@ -73,6 +78,18 @@ $auroraOff = $auroraSwitch == 'off' || ($auroraSwitch != 'on' && !empty($_COOKIE
 <?php if (!$auroraOff): ?>
 <?php if (($aurora['theme'] ?? 'yes') == 'yes'): ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/theme.css') ?>">
+<?php
+// Display Settings, header custom text, secondary text and background colours: the theme sets
+// Unraid's header variables itself, so the chosen colours are handed to it under its own names.
+$auroraHeaderVars = [];
+foreach (['header' => '--tp-custom-header-text', 'headermetacolor' => '--tp-custom-header-muted', 'background' => '--tp-custom-header-bg'] as $auroraKey => $auroraVar) {
+    $auroraHex = (string) ($display[$auroraKey] ?? '');
+    if (preg_match('/^([0-9a-fA-F]{3}){1,2}$/', $auroraHex)) $auroraHeaderVars[] = "$auroraVar: #$auroraHex;";
+}
+?>
+<?php if ($auroraHeaderVars): ?>
+<style id="aurora-header-colors">:root { <?= implode(' ', $auroraHeaderVars) ?> }</style>
+<?php endif; ?>
 <script>
 // Theme credit at the end of the footer.
 document.addEventListener('DOMContentLoaded', function () {
@@ -103,6 +120,23 @@ document.addEventListener('DOMContentLoaded', function () {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/layout-sidebar.css') ?>">
 <?php endif; ?>
 <?php if (in_array('tp-enhance', $auroraClasses)): ?>
+<?php
+// The page's own title ("CPU Pinning", "UPS Settings") for the heading and breadcrumb, made the
+// way Unraid makes its section titles. Without it the script names the page from its address.
+$auroraTitle = '';
+try {
+    $auroraTitle = (string) ($myPage['Title'] ?? '');
+    if ($auroraTitle !== '' && function_exists('processTitle')) $auroraTitle = processTitle($auroraTitle);
+    if ($auroraTitle !== '' && function_exists('parse_text')) $auroraTitle = _(parse_text(html_entity_decode($auroraTitle)));
+    $auroraTitle = trim(preg_replace('/\s+/', ' ', strip_tags($auroraTitle)));
+    if (strpos($auroraTitle, '$') !== false || mb_strlen($auroraTitle) > 60) $auroraTitle = '';
+} catch (Throwable $auroraError) {
+    $auroraTitle = '';
+}
+?>
+<?php if ($auroraTitle !== ''): ?>
+<script>window.auroraPageTitle = <?= json_encode($auroraTitle, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<?php endif; ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php
@@ -5282,12 +5316,15 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     // "PHPsettings"); otherwise the address is split into words.
     const titles = subPage ? document.querySelectorAll('#displaybox div.title > span.left') : [];
     const sectionName = titles.length === 1 ? titles[0].textContent.replace(/\s+/g, ' ').trim() : '';
+    // The page's own title from Unraid (AuroraTheme.page) comes first: the address split into
+    // words read "CP Uset" for CPU Pinning and "UP Ssettings" for UPS Settings.
+    const pageTitle = subPage && typeof window.auroraPageTitle === 'string' ? window.auroraPageTitle : '';
     return {
       server: titleParts.length > 1 ? titleParts[0] : '',
       tab: tab || (titleParts[1] || ''),
       // "DisplaySettings" reads better as "Display Settings".
       // ... and "VMTemplates" as "VM Templates".
-      subPage: sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
+      subPage: pageTitle || (sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' ')),
     };
   }
 
@@ -5947,17 +5984,43 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
       });
     }
 
+    // Status under the table header while Unraid asks Docker for the list; with many containers
+    // that can take a while, and a longer wait gets a message saying so.
+    const loading = element('div', 'tp-docker-loading');
+    loading.setAttribute('role', 'status');
+    const loadingText = element('span', 'tp-docker-loading-text', 'Loading containers…');
+    loading.append(element('span', 'tp-loader'), loadingText);
+    table.after(loading);
+    // Unraid's own spinner would show over it after half a second (see enhance.css).
+    document.body.classList.add('tp-docker-loading-on');
+    const loadingTimers = [
+      [3000, 'Still loading. Docker is taking a moment to list the containers.'],
+      [10000, 'Docker has not answered yet. The service may still be starting, or a container is busy.'],
+    ].map(function (step) {
+      return setTimeout(function () { loadingText.textContent = step[1]; }, step[0]);
+    });
+
+    // The list is ready once Unraid replaced its empty placeholder row with containers or with
+    // its "No Docker containers installed" row.
+    function markReady() {
+      if (list.classList.contains('tp-ready') || !(list.querySelector('td.ct-name') || list.textContent.trim())) return;
+      list.classList.add('tp-ready');
+      loadingTimers.forEach(clearTimeout);
+      loading.remove();
+      document.body.classList.remove('tp-docker-loading-on');
+    }
+
     // Rendered straight away when Unraid inserts its rows, before the browser paints them, so
     // the list never shows ungrouped. render() only moves or writes what changed, so its own
     // changes settle after one more pass. The list is shown once it is laid out (see
     // #docker_list.tp-ready in enhance.css, which also reveals it by itself after two seconds).
     new MutationObserver(function () {
       render();
-      if (list.querySelector('td.ct-name')) list.classList.add('tp-ready');
+      markReady();
     }).observe(list, { childList: true, subtree: true });
     loadGroups();
     render();
-    if (list.querySelector('td.ct-name')) list.classList.add('tp-ready');
+    markReady();
   }
 
   // Dashboard: uptime, CPU, memory and array at a glance, read from Unraid's own tiles and
@@ -6512,6 +6575,67 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     row.scrollLeft += a.left - r.left - (r.width - a.width) / 2;
   }
 
+  // Menu: Unraid's array usage bar (Display Settings, "Show array utilization indicator")
+  // becomes a widget at the start of the quick actions: a drive icon, "Array" with the
+  // percentage, and a thin bar in the usage colour Unraid chose (its warning and critical
+  // levels). It opens Main. Unraid's own bar stays in the page, hidden.
+  function usageBar() {
+    const native = document.querySelector('#menu .nav-tile.right > .usage-bar');
+    if (!native) return;
+    const fill = native.querySelector('span');
+    const text = fill ? fill.textContent.trim() : '';
+    const percent = /^(\d+)%$/.exec(text);
+    const tone = !fill ? '' : fill.classList.contains('redbar') ? 'danger' : fill.classList.contains('orangebar') ? 'warn' : fill.classList.contains('greenbar') ? 'good' : '';
+
+    const widget = element('a', 'tp-usage' + (tone ? ' tp-usage-' + tone : '') + (percent ? '' : ' tp-usage-off'));
+    widget.href = '/Main';
+    widget.title = (percent ? 'Array ' + text + ' used' : 'Array ' + (text || 'offline')) + '. Open Main';
+    const icon = element('span', 'tp-usage-icon');
+    icon.append(element('i', 'fa fa-hdd-o'));
+    const head = element('span', 'tp-usage-head');
+    head.append(element('span', 'tp-usage-label', 'Array'), element('span', 'tp-usage-value', percent ? text : text || 'offline'));
+    const track = element('span', 'tp-usage-track');
+    const bar = element('span', 'tp-usage-fill');
+    bar.style.width = percent ? Math.min(100, Number(percent[1])) + '%' : '0';
+    track.append(bar);
+    const body = element('span', 'tp-usage-body');
+    body.append(head, track);
+    widget.append(icon, body);
+
+    native.classList.add('tp-native-hidden');
+    native.parentElement.prepend(widget);
+  }
+
+  // Menu: when the next page takes a moment to arrive (Docker with many containers), "Opening
+  // Docker…" shows at the bottom so the click does not look missed. Quick pages never show it.
+  function navProgress() {
+    let timer = 0;
+    let notice = null;
+    document.addEventListener('click', function (event) {
+      if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const link = event.target.closest && event.target.closest('#menu .nav-tile:not(.right) .nav-item a[href]');
+      if (!link || link.target === '_blank' || link.origin !== location.origin || link.getAttribute('href').startsWith('#')) return;
+      const name = (link.title || link.textContent).trim();
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!notice) {
+          notice = element('div', 'tp-nav-progress');
+          notice.setAttribute('role', 'status');
+          notice.append(element('span', 'tp-loader'), element('span', 'tp-nav-progress-text'));
+          document.body.append(notice);
+        }
+        notice.querySelector('.tp-nav-progress-text').textContent = 'Opening ' + name + '…';
+      }, 250);
+    });
+    // Coming back with the browser's Back button can restore this page as it was left.
+    window.addEventListener('pageshow', function (event) {
+      if (!event.persisted) return;
+      clearTimeout(timer);
+      if (notice) notice.remove();
+      notice = null;
+    });
+  }
+
   // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
   // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
   // "No help on this page".
@@ -6694,6 +6818,8 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
   // the star is removed. The list is kept on the flash drive, so it is the same in every browser.
   function panelFavourites(info) {
     if (info.subPage || !/^(Settings|Tools)$/.test(info.tab)) return;
+    // Favourites switched off in Display Settings.
+    if (document.documentElement.classList.contains('tp-no-favourites')) return;
     const panels = [...document.querySelectorAll('#displaybox .Panels .Panel')];
     if (!panels.length || document.querySelector('.tp-fav-panels')) return;
     const URL_FAVOURITES = PLUGIN_BASE + '/include/favourites.php';
@@ -7778,7 +7904,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
@@ -8385,6 +8511,175 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
 
 @keyframes tp-docker-reveal {
     to { visibility: visible; }
+}
+
+/* ---- Loading status: under the Docker table header until the list arrives, and at the
+   bottom of the page while a menu click waits for the next page. */
+.tp-loader {
+    flex: none;
+    width: 1.8rem;
+    height: 1.8rem;
+    border: 2px solid var(--tp-border, var(--table-border-color));
+    border-top-color: var(--tp-primary, var(--brand-orange));
+    border-radius: 50%;
+    animation: tp-loader-spin 0.8s linear infinite;
+}
+
+@keyframes tp-loader-spin {
+    to { transform: rotate(360deg); }
+}
+
+.tp-docker-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 4rem 2rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+/* ---- Array usage widget at the start of the menu's quick actions, as tall as its buttons */
+.tp-usage {
+    --tp-usage-tone: var(--tp-primary, var(--brand-orange));
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.9rem;
+    width: 17rem;
+    height: 3.3rem;
+    margin-right: 0.6rem;
+    padding: 0 1.1rem 0 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    color: var(--tp-header-text, var(--text-color));
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.tp-usage:hover,
+.tp-usage:focus-visible {
+    border-color: color-mix(in srgb, var(--tp-usage-tone) 45%, transparent);
+    color: var(--tp-header-text, var(--text-color));
+    text-decoration: none;
+    background: color-mix(in srgb, var(--tp-usage-tone) 10%, transparent);
+}
+
+.tp-usage-good { --tp-usage-tone: var(--tp-success-text, #22c55e); }
+.tp-usage-warn { --tp-usage-tone: var(--tp-warn-text, #f59e0b); }
+.tp-usage-danger { --tp-usage-tone: var(--tp-danger, #ef4444); }
+.tp-usage-off { --tp-usage-tone: var(--tp-header-muted, var(--alt-text-color)); }
+
+.tp-usage-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 7px;
+    color: var(--tp-usage-tone);
+    font-size: 1.4rem;
+    background: color-mix(in srgb, var(--tp-usage-tone) 16%, transparent);
+}
+
+.tp-usage-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.tp-usage-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    line-height: 1;
+}
+
+.tp-usage-label {
+    color: var(--tp-header-muted, var(--alt-text-color));
+    font: 600 0.95rem/1 var(--tp-font-heading, inherit);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.tp-usage-value {
+    font: 700 1.25rem/1 var(--tp-font-heading, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-usage-off .tp-usage-value {
+    color: var(--tp-header-muted, var(--alt-text-color));
+    font-weight: 600;
+}
+
+.tp-usage-track {
+    display: block;
+    height: 0.4rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tp-usage-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--tp-usage-tone);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--tp-usage-tone) 60%, transparent);
+}
+
+.tp-docker-loading-on div.spinner.fixed {
+    display: none !important;
+}
+
+.tp-nav-progress {
+    position: fixed;
+    bottom: 2.4rem;
+    left: 50%;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: calc(100vw - 32px);
+    padding: 0.9rem 1.6rem 0.9rem 1.1rem;
+    border: 1px solid var(--tp-border, var(--table-border-color));
+    border-radius: 999px;
+    color: var(--tp-text, var(--text-color));
+    font: 600 1.25rem var(--tp-font-heading, inherit);
+    white-space: nowrap;
+    background-color: var(--tp-elevated, var(--table-background-color));
+    box-shadow: var(--tp-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.25));
+    transform: translateX(-50%);
+    animation: tp-nav-progress-in 0.2s ease-out;
+}
+
+.tp-nav-progress .tp-loader {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.tp-nav-progress-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes tp-nav-progress-in {
+    from { opacity: 0; transform: translate(-50%, 0.6rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-loader {
+        animation-duration: 2.4s;
+    }
+
+    .tp-nav-progress {
+        animation: none;
+    }
 }
 
 /* ---- Docker toolbar: filter tabs and search */
@@ -11217,6 +11512,32 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             background-image: none;
         }
 
+        /* Display Settings, "Show banner": the banner fills the top bar, whose text then uses the
+           header colours (custom ones included) instead of the page's. With "Show banner
+           background color fade" it fades into the header colour behind the buttons. */
+        #header.image {
+            --header-text-primary: var(--tp-header-text, var(--header-text-color));
+            --header-text-secondary: var(--tp-header-muted, var(--alt-text-color));
+            color: var(--tp-header-text, var(--header-text-color));
+            background: var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg, var(--header-background-color));
+        }
+
+        &.has-banner-gradient #header.image {
+            background:
+                linear-gradient(90deg, var(--tp-header-bg, var(--header-background-color)) 0, transparent 30%, transparent 48%, var(--tp-header-bg, var(--header-background-color)) 85%),
+                var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg, var(--header-background-color));
+        }
+
+        #header.image::before {
+            content: none;
+        }
+
+        #header.image #UserProfile > div:first-of-type {
+            background: color-mix(in srgb, var(--tp-header-bg, var(--header-background-color)) 72%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
         /* Unraid's logo, version and update badge become the sidebar's brand block. They stay
            where they are in the page and are only positioned over the top of the sidebar. */
         #header unraid-header-os-version {
@@ -11507,6 +11828,15 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             text-transform: uppercase;
             opacity: 0.75;
             content: "Quick actions";
+        }
+
+        /* Array usage indicator (Display Settings; the theme's widget when page enhancements are
+           on): a full-width row above the tiles. Unraid
+           places it absolutely, which laid it over the first row of buttons. */
+        #menu .nav-tile.right > :is(.usage-bar, .tp-usage) {
+            grid-column: 1 / -1;
+            width: auto;
+            margin: 0 0 0.4rem;
         }
 
         /* Unraid leaves empty placeholders between the buttons; they would take up tiles. */
@@ -12702,9 +13032,9 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     --tp-primary-soft: rgba(37, 99, 235, 0.1);
     --tp-tab-active: #ffffff;
     --tp-primary-text: #ffffff;
-    --tp-header-bg: #12161f;
-    --tp-header-text: #ffffff;
-    --tp-header-muted: #a7b0c0;
+    --tp-header-bg: var(--tp-custom-header-bg, #12161f);
+    --tp-header-text: var(--tp-custom-header-text, #ffffff);
+    --tp-header-muted: var(--tp-custom-header-muted, #a7b0c0);
     --tp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
     --tp-shadow-lg: 0 24px 56px -22px rgba(15, 23, 42, 0.3);
 
@@ -12743,9 +13073,9 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     --tp-primary-soft: rgba(79, 139, 255, 0.16);
     --tp-tab-active: #232a39;
     --tp-primary-text: #06101f;
-    --tp-header-bg: #05070a;
-    --tp-header-text: #f3f4f6;
-    --tp-header-muted: #93a0b8;
+    --tp-header-bg: var(--tp-custom-header-bg, #05070a);
+    --tp-header-text: var(--tp-custom-header-text, #f3f4f6);
+    --tp-header-muted: var(--tp-custom-header-muted, #93a0b8);
     --tp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
     --tp-shadow-lg: 0 32px 70px -26px rgba(0, 0, 0, 0.72);
 
@@ -13229,7 +13559,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         transition: color 0.3s var(--tp-ease), background-color 0.3s var(--tp-ease), border-color 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease);
     }
 
+    /* The label's span ends up display:block from a .left rule, which dropped the gap between
+       icon and text (Display Settings, Page view: Tabbed). */
     .tabs button[role="tab"] > span {
+        display: inline-flex;
+        align-items: center;
         gap: 0.8rem !important;
     }
 
@@ -13601,6 +13935,22 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         border-color: var(--tp-input-border);
         box-shadow: var(--tp-shadow-lg);
         transform: translateY(-3px);
+    }
+
+    /* The bar with "Install / Update selected applications", "Select all on page" and
+       "Clear" is fixed to the bottom of the window, where the fixed footer covered half of
+       its buttons. It now sits on top of the footer as a frosted bar of its own. Below 769px
+       Community Applications lets the bar scroll with the page, and the footer does too. */
+    @media (min-width: 769px) {
+        .multi_installDiv {
+            bottom: 4.4rem;
+            z-index: 8999;
+            padding: 1rem 0;
+            border-top: 1px solid var(--tp-border);
+            background-color: color-mix(in srgb, var(--tp-bg) 82%, transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
     }
 
     /* Phones: the cards in the Apps home rows are 36rem wide (set by Community Applications),
@@ -14363,6 +14713,63 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         font-variant-numeric: tabular-nums;
         line-height: 1.5;
         text-align: right;
+    }
+
+    /* Array usage in the menu (Display Settings, "Show array utilization indicator"), first
+       in the quick actions: a rounded track with the used part filled in the usage colour. The percentage is the fill's
+       own text; it may run past a short fill onto the track, so it stays readable at 2%. */
+    #menu .usage-bar {
+        position: relative;
+        inset: auto;
+        float: none;
+        flex: none;
+        order: -1;
+        align-self: center;
+        width: 14rem;
+        height: 2rem;
+        margin: 0 0.8rem 0 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        background-color: var(--tp-subtle);
+        box-shadow: none;
+    }
+
+    #menu .usage-bar::after {
+        position: absolute;
+        top: 0;
+        right: 0.9rem;
+        color: var(--tp-muted);
+        font: 600 0.95rem/1.8rem var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        content: "Array";
+        pointer-events: none;
+    }
+
+    #menu .usage-bar > span {
+        max-width: 100%;
+        padding-left: 0.8rem;
+        overflow: visible;
+        border-radius: 999px;
+        color: var(--tp-text);
+        font: 600 1.15rem/1.8rem var(--tp-font-body);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        text-align: left;
+        box-shadow: none;
+    }
+
+    #menu .usage-bar > span:not(.greenbar, .orangebar, .redbar) {
+        background: var(--tp-gradient);
+    }
+
+    /* Array stopped: "offline" or "Maintenance" on the empty track. */
+    #menu .usage-bar > span:not([style*="width"]) {
+        color: var(--tp-muted);
+        text-align: left !important;
+        background: none;
     }
 
     table.disk_status thead tr:first-child > td {
@@ -15630,13 +16037,20 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             background: var(--tp-subtle);
         }
 
+        /* Rows are divided by a top border, so a row can drop the line above itself. These
+           tables avoid :has(): row rules with it are checked on every table row of the page and
+           made Unraid's Docker list take seconds to lay out. */
         & > tbody > tr > td {
             height: auto;
             padding: 0.95rem 1.6rem;
-            border-bottom: 1px solid var(--tp-border);
+            border-top: 1px solid var(--tp-border);
             color: var(--tp-text);
             vertical-align: top;
             background: transparent;
+        }
+
+        & > tbody > tr:first-child > td {
+            border-top: 0;
         }
 
         /* Labels in the first column, values in plain text. */
@@ -15644,27 +16058,20 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             color: var(--tp-muted);
         }
 
-        & > tbody > tr:last-child > td {
-            border-bottom: 0;
-        }
-
         & > tbody > tr:hover > td {
             background-color: var(--tp-primary-soft);
         }
 
         /* Continuation rows (empty label, more values of the row above) sit closer. */
-        & > tbody > tr:has(> td:first-child:empty) > td {
-            padding-top: 0.3rem;
+        & > tbody > tr > td:first-child:empty,
+        & > tbody > tr > td:first-child:empty ~ td {
+            padding-top: 0;
             border-top: 0;
         }
 
-        & > tbody > tr:has(+ tr > td:first-child:empty) > td {
-            padding-bottom: 0.3rem;
-            border-bottom: 0;
-        }
-
         /* Section rows such as "Port eth0 Information". */
-        & > tbody > tr:has(> td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"])) > td {
+        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]),
+        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]) ~ td {
             padding-top: 1.2rem;
             color: var(--tp-primary);
             font: 600 1.3rem var(--tp-font-heading);
@@ -17481,6 +17888,32 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             background: var(--tp-header-bg);
         }
 
+        /* Display Settings, "Show banner": the uploaded PNG (or Unraid's own banner) fills the
+           bar, centred and cropped to its height. */
+        #header.image {
+            background: var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg);
+        }
+
+        /* "Show banner background color fade": the banner fades into the header colour behind
+           the logo and behind the buttons on the right. Unraid's own fade layer is not needed. */
+        &.has-banner-gradient #header.image {
+            background:
+                linear-gradient(90deg, var(--tp-header-bg) 0, transparent 22%, transparent 52%, var(--tp-header-bg) 86%),
+                var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg);
+        }
+
+        #header.image::before {
+            content: none;
+        }
+
+        /* On a banner the see-through version and licence pills get a frosted backing, so
+           their text stays readable whatever the image shows. */
+        #header.image :is(#UserProfile > div:first-of-type, unraid-header-os-version span[role="button"][aria-haspopup]) {
+            background: color-mix(in srgb, var(--tp-header-bg) 72%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
         /* Logo and version in one row. */
         #header unraid-header-os-version > div {
             flex-direction: row;
@@ -17950,7 +18383,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.20.1933 is installed."
+echo "Aurora-Theme 2026.10.21.1807 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

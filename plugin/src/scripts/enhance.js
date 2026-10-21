@@ -174,12 +174,15 @@
     // "PHPsettings"); otherwise the address is split into words.
     const titles = subPage ? document.querySelectorAll('#displaybox div.title > span.left') : [];
     const sectionName = titles.length === 1 ? titles[0].textContent.replace(/\s+/g, ' ').trim() : '';
+    // The page's own title from Unraid (AuroraTheme.page) comes first: the address split into
+    // words read "CP Uset" for CPU Pinning and "UP Ssettings" for UPS Settings.
+    const pageTitle = subPage && typeof window.auroraPageTitle === 'string' ? window.auroraPageTitle : '';
     return {
       server: titleParts.length > 1 ? titleParts[0] : '',
       tab: tab || (titleParts[1] || ''),
       // "DisplaySettings" reads better as "Display Settings".
       // ... and "VMTemplates" as "VM Templates".
-      subPage: sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' '),
+      subPage: pageTitle || (sectionName && sectionName.length <= 40 ? sectionName : subPage.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[._]/g, ' ')),
     };
   }
 
@@ -839,17 +842,43 @@
       });
     }
 
+    // Status under the table header while Unraid asks Docker for the list; with many containers
+    // that can take a while, and a longer wait gets a message saying so.
+    const loading = element('div', 'tp-docker-loading');
+    loading.setAttribute('role', 'status');
+    const loadingText = element('span', 'tp-docker-loading-text', 'Loading containers…');
+    loading.append(element('span', 'tp-loader'), loadingText);
+    table.after(loading);
+    // Unraid's own spinner would show over it after half a second (see enhance.css).
+    document.body.classList.add('tp-docker-loading-on');
+    const loadingTimers = [
+      [3000, 'Still loading. Docker is taking a moment to list the containers.'],
+      [10000, 'Docker has not answered yet. The service may still be starting, or a container is busy.'],
+    ].map(function (step) {
+      return setTimeout(function () { loadingText.textContent = step[1]; }, step[0]);
+    });
+
+    // The list is ready once Unraid replaced its empty placeholder row with containers or with
+    // its "No Docker containers installed" row.
+    function markReady() {
+      if (list.classList.contains('tp-ready') || !(list.querySelector('td.ct-name') || list.textContent.trim())) return;
+      list.classList.add('tp-ready');
+      loadingTimers.forEach(clearTimeout);
+      loading.remove();
+      document.body.classList.remove('tp-docker-loading-on');
+    }
+
     // Rendered straight away when Unraid inserts its rows, before the browser paints them, so
     // the list never shows ungrouped. render() only moves or writes what changed, so its own
     // changes settle after one more pass. The list is shown once it is laid out (see
     // #docker_list.tp-ready in enhance.css, which also reveals it by itself after two seconds).
     new MutationObserver(function () {
       render();
-      if (list.querySelector('td.ct-name')) list.classList.add('tp-ready');
+      markReady();
     }).observe(list, { childList: true, subtree: true });
     loadGroups();
     render();
-    if (list.querySelector('td.ct-name')) list.classList.add('tp-ready');
+    markReady();
   }
 
   // Dashboard: uptime, CPU, memory and array at a glance, read from Unraid's own tiles and
@@ -1404,6 +1433,67 @@
     row.scrollLeft += a.left - r.left - (r.width - a.width) / 2;
   }
 
+  // Menu: Unraid's array usage bar (Display Settings, "Show array utilization indicator")
+  // becomes a widget at the start of the quick actions: a drive icon, "Array" with the
+  // percentage, and a thin bar in the usage colour Unraid chose (its warning and critical
+  // levels). It opens Main. Unraid's own bar stays in the page, hidden.
+  function usageBar() {
+    const native = document.querySelector('#menu .nav-tile.right > .usage-bar');
+    if (!native) return;
+    const fill = native.querySelector('span');
+    const text = fill ? fill.textContent.trim() : '';
+    const percent = /^(\d+)%$/.exec(text);
+    const tone = !fill ? '' : fill.classList.contains('redbar') ? 'danger' : fill.classList.contains('orangebar') ? 'warn' : fill.classList.contains('greenbar') ? 'good' : '';
+
+    const widget = element('a', 'tp-usage' + (tone ? ' tp-usage-' + tone : '') + (percent ? '' : ' tp-usage-off'));
+    widget.href = '/Main';
+    widget.title = (percent ? 'Array ' + text + ' used' : 'Array ' + (text || 'offline')) + '. Open Main';
+    const icon = element('span', 'tp-usage-icon');
+    icon.append(element('i', 'fa fa-hdd-o'));
+    const head = element('span', 'tp-usage-head');
+    head.append(element('span', 'tp-usage-label', 'Array'), element('span', 'tp-usage-value', percent ? text : text || 'offline'));
+    const track = element('span', 'tp-usage-track');
+    const bar = element('span', 'tp-usage-fill');
+    bar.style.width = percent ? Math.min(100, Number(percent[1])) + '%' : '0';
+    track.append(bar);
+    const body = element('span', 'tp-usage-body');
+    body.append(head, track);
+    widget.append(icon, body);
+
+    native.classList.add('tp-native-hidden');
+    native.parentElement.prepend(widget);
+  }
+
+  // Menu: when the next page takes a moment to arrive (Docker with many containers), "Opening
+  // Docker…" shows at the bottom so the click does not look missed. Quick pages never show it.
+  function navProgress() {
+    let timer = 0;
+    let notice = null;
+    document.addEventListener('click', function (event) {
+      if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const link = event.target.closest && event.target.closest('#menu .nav-tile:not(.right) .nav-item a[href]');
+      if (!link || link.target === '_blank' || link.origin !== location.origin || link.getAttribute('href').startsWith('#')) return;
+      const name = (link.title || link.textContent).trim();
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!notice) {
+          notice = element('div', 'tp-nav-progress');
+          notice.setAttribute('role', 'status');
+          notice.append(element('span', 'tp-loader'), element('span', 'tp-nav-progress-text'));
+          document.body.append(notice);
+        }
+        notice.querySelector('.tp-nav-progress-text').textContent = 'Opening ' + name + '…';
+      }, 250);
+    });
+    // Coming back with the browser's Back button can restore this page as it was left.
+    window.addEventListener('pageshow', function (event) {
+      if (!event.persisted) return;
+      clearTimeout(timer);
+      if (notice) notice.remove();
+      notice = null;
+    });
+  }
+
   // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
   // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
   // "No help on this page".
@@ -1586,6 +1676,8 @@
   // the star is removed. The list is kept on the flash drive, so it is the same in every browser.
   function panelFavourites(info) {
     if (info.subPage || !/^(Settings|Tools)$/.test(info.tab)) return;
+    // Favourites switched off in Display Settings.
+    if (document.documentElement.classList.contains('tp-no-favourites')) return;
     const panels = [...document.querySelectorAll('#displaybox .Panels .Panel')];
     if (!panels.length || document.querySelector('.tp-fav-panels')) return;
     const URL_FAVOURITES = PLUGIN_BASE + '/include/favourites.php';
@@ -2670,7 +2762,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardMemory, dashboardGpu, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

@@ -164,9 +164,9 @@
     --tp-primary-soft: rgba(37, 99, 235, 0.1);
     --tp-tab-active: #ffffff;
     --tp-primary-text: #ffffff;
-    --tp-header-bg: #12161f;
-    --tp-header-text: #ffffff;
-    --tp-header-muted: #a7b0c0;
+    --tp-header-bg: var(--tp-custom-header-bg, #12161f);
+    --tp-header-text: var(--tp-custom-header-text, #ffffff);
+    --tp-header-muted: var(--tp-custom-header-muted, #a7b0c0);
     --tp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
     --tp-shadow-lg: 0 24px 56px -22px rgba(15, 23, 42, 0.3);
 
@@ -205,9 +205,9 @@
     --tp-primary-soft: rgba(79, 139, 255, 0.16);
     --tp-tab-active: #232a39;
     --tp-primary-text: #06101f;
-    --tp-header-bg: #05070a;
-    --tp-header-text: #f3f4f6;
-    --tp-header-muted: #93a0b8;
+    --tp-header-bg: var(--tp-custom-header-bg, #05070a);
+    --tp-header-text: var(--tp-custom-header-text, #f3f4f6);
+    --tp-header-muted: var(--tp-custom-header-muted, #93a0b8);
     --tp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
     --tp-shadow-lg: 0 32px 70px -26px rgba(0, 0, 0, 0.72);
 
@@ -691,7 +691,11 @@
         transition: color 0.3s var(--tp-ease), background-color 0.3s var(--tp-ease), border-color 0.3s var(--tp-ease), box-shadow 0.3s var(--tp-ease);
     }
 
+    /* The label's span ends up display:block from a .left rule, which dropped the gap between
+       icon and text (Display Settings, Page view: Tabbed). */
     .tabs button[role="tab"] > span {
+        display: inline-flex;
+        align-items: center;
         gap: 0.8rem !important;
     }
 
@@ -1063,6 +1067,22 @@
         border-color: var(--tp-input-border);
         box-shadow: var(--tp-shadow-lg);
         transform: translateY(-3px);
+    }
+
+    /* The bar with "Install / Update selected applications", "Select all on page" and
+       "Clear" is fixed to the bottom of the window, where the fixed footer covered half of
+       its buttons. It now sits on top of the footer as a frosted bar of its own. Below 769px
+       Community Applications lets the bar scroll with the page, and the footer does too. */
+    @media (min-width: 769px) {
+        .multi_installDiv {
+            bottom: 4.4rem;
+            z-index: 8999;
+            padding: 1rem 0;
+            border-top: 1px solid var(--tp-border);
+            background-color: color-mix(in srgb, var(--tp-bg) 82%, transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
     }
 
     /* Phones: the cards in the Apps home rows are 36rem wide (set by Community Applications),
@@ -1825,6 +1845,63 @@
         font-variant-numeric: tabular-nums;
         line-height: 1.5;
         text-align: right;
+    }
+
+    /* Array usage in the menu (Display Settings, "Show array utilization indicator"), first
+       in the quick actions: a rounded track with the used part filled in the usage colour. The percentage is the fill's
+       own text; it may run past a short fill onto the track, so it stays readable at 2%. */
+    #menu .usage-bar {
+        position: relative;
+        inset: auto;
+        float: none;
+        flex: none;
+        order: -1;
+        align-self: center;
+        width: 14rem;
+        height: 2rem;
+        margin: 0 0.8rem 0 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid var(--tp-border);
+        border-radius: 999px;
+        background-color: var(--tp-subtle);
+        box-shadow: none;
+    }
+
+    #menu .usage-bar::after {
+        position: absolute;
+        top: 0;
+        right: 0.9rem;
+        color: var(--tp-muted);
+        font: 600 0.95rem/1.8rem var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        content: "Array";
+        pointer-events: none;
+    }
+
+    #menu .usage-bar > span {
+        max-width: 100%;
+        padding-left: 0.8rem;
+        overflow: visible;
+        border-radius: 999px;
+        color: var(--tp-text);
+        font: 600 1.15rem/1.8rem var(--tp-font-body);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        text-align: left;
+        box-shadow: none;
+    }
+
+    #menu .usage-bar > span:not(.greenbar, .orangebar, .redbar) {
+        background: var(--tp-gradient);
+    }
+
+    /* Array stopped: "offline" or "Maintenance" on the empty track. */
+    #menu .usage-bar > span:not([style*="width"]) {
+        color: var(--tp-muted);
+        text-align: left !important;
+        background: none;
     }
 
     table.disk_status thead tr:first-child > td {
@@ -3092,13 +3169,20 @@
             background: var(--tp-subtle);
         }
 
+        /* Rows are divided by a top border, so a row can drop the line above itself. These
+           tables avoid :has(): row rules with it are checked on every table row of the page and
+           made Unraid's Docker list take seconds to lay out. */
         & > tbody > tr > td {
             height: auto;
             padding: 0.95rem 1.6rem;
-            border-bottom: 1px solid var(--tp-border);
+            border-top: 1px solid var(--tp-border);
             color: var(--tp-text);
             vertical-align: top;
             background: transparent;
+        }
+
+        & > tbody > tr:first-child > td {
+            border-top: 0;
         }
 
         /* Labels in the first column, values in plain text. */
@@ -3106,27 +3190,20 @@
             color: var(--tp-muted);
         }
 
-        & > tbody > tr:last-child > td {
-            border-bottom: 0;
-        }
-
         & > tbody > tr:hover > td {
             background-color: var(--tp-primary-soft);
         }
 
         /* Continuation rows (empty label, more values of the row above) sit closer. */
-        & > tbody > tr:has(> td:first-child:empty) > td {
-            padding-top: 0.3rem;
+        & > tbody > tr > td:first-child:empty,
+        & > tbody > tr > td:first-child:empty ~ td {
+            padding-top: 0;
             border-top: 0;
         }
 
-        & > tbody > tr:has(+ tr > td:first-child:empty) > td {
-            padding-bottom: 0.3rem;
-            border-bottom: 0;
-        }
-
         /* Section rows such as "Port eth0 Information". */
-        & > tbody > tr:has(> td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"])) > td {
+        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]),
+        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]) ~ td {
             padding-top: 1.2rem;
             color: var(--tp-primary);
             font: 600 1.3rem var(--tp-font-heading);
@@ -4941,6 +5018,32 @@
             padding: 0 2.4rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             background: var(--tp-header-bg);
+        }
+
+        /* Display Settings, "Show banner": the uploaded PNG (or Unraid's own banner) fills the
+           bar, centred and cropped to its height. */
+        #header.image {
+            background: var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg);
+        }
+
+        /* "Show banner background color fade": the banner fades into the header colour behind
+           the logo and behind the buttons on the right. Unraid's own fade layer is not needed. */
+        &.has-banner-gradient #header.image {
+            background:
+                linear-gradient(90deg, var(--tp-header-bg) 0, transparent 22%, transparent 52%, var(--tp-header-bg) 86%),
+                var(--customer-header-background-image) center / cover no-repeat var(--tp-header-bg);
+        }
+
+        #header.image::before {
+            content: none;
+        }
+
+        /* On a banner the see-through version and licence pills get a frosted backing, so
+           their text stays readable whatever the image shows. */
+        #header.image :is(#UserProfile > div:first-of-type, unraid-header-os-version span[role="button"][aria-haspopup]) {
+            background: color-mix(in srgb, var(--tp-header-bg) 72%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         /* Logo and version in one row. */
