@@ -7,7 +7,7 @@
 
 A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional sidebar layout, a card-based Dashboard, a redesigned Main page, a compact Docker list with groups, and a built-in Stats page. Dark and light, with a one-click switch, and it works on phones.
 
-![Dashboard with the Aurora Theme, dark palette and top bar](docs/screenshots/dashboard-dark.png)
+![Dashboard with the Aurora Theme, dark palette and top bar: summary strip, server card and Docker groups with their app icons](docs/screenshots/dashboard-dark.png)
 
 | Light palette | Sidebar layout |
 | --- | --- |
@@ -17,9 +17,13 @@ A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional 
 | --- | --- |
 | ![Settings page with a favourites section and a search field](docs/screenshots/settings-favourites.png) | ![Array Operation as cards: array status, parity check, last check, disks, mover and power](docs/screenshots/array-operation.png) |
 
-| Docker | Apps |
+| Docker | VMs |
 | --- | --- |
-| ![Docker list with totals, filters, search and a WebUI button per container](docs/screenshots/docker.png) | ![Apps tab with a nav menu, a centred search and app cards with spotlight badges](docs/screenshots/apps.png) |
+| ![Docker list with totals, filters, search, the Aurora / FolderView3 switch and collapsible groups with their app icons](docs/screenshots/docker.png) | ![VMs tab with groups, a buttons column and the Aurora / FolderView3 switch](docs/screenshots/vms.png) |
+
+| GPUs on the Dashboard | Apps |
+| --- | --- |
+| ![Two GPU tiles with load, memory, clocks, fan and power bars, and the apps using the GPU as icons](docs/screenshots/gpu.png) | ![Apps tab with a nav menu, a centred search and app cards with spotlight badges](docs/screenshots/apps.png) |
 
 | Tools | Login page |
 | --- | --- |

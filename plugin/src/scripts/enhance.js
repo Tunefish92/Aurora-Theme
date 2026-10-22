@@ -2252,7 +2252,24 @@
     widget.append(icon, body);
 
     native.classList.add('tp-native-hidden');
-    native.parentElement.prepend(widget);
+    // Where it goes: with the menu as a bar across the top of a wide screen, the menu row has no
+    // room left (Stats and Tools were pushed out of view), so it sits in the top bar after
+    // Unraid's logo; in the sidebar and on phones it stays with the quick actions.
+    const row = native.parentElement;
+    const wide = window.matchMedia('(min-width: 1024px)');
+    const place = function () {
+      const header = document.getElementById('header');
+      const logo = header && header.querySelector(':scope > unraid-header-os-version');
+      const inHeader = Boolean(logo) && wide.matches && document.documentElement.classList.contains('tp-topbar');
+      widget.classList.toggle('tp-usage-header', inHeader);
+      if (inHeader) {
+        if (widget.previousElementSibling !== logo) logo.after(widget);
+      } else if (widget.parentElement !== row) {
+        row.prepend(widget);
+      }
+    };
+    place();
+    wide.addEventListener('change', place);
   }
 
   // Menu: when the next page takes a moment to arrive (Docker with many containers), "Opening

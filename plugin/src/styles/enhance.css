@@ -344,6 +344,29 @@
     background: color-mix(in srgb, var(--tp-usage-tone) 10%, transparent);
 }
 
+/* In the top bar (top layout on wide screens), after Unraid's logo: a pill as tall as the bar's
+   round buttons. */
+#header > .tp-usage.tp-usage-header {
+    align-self: center;
+    width: 18rem;
+    height: 3.6rem;
+    margin: 0 auto 0 2.4rem;
+    padding: 0 1.4rem 0 0.5rem;
+    /* From the top bar's own text colour: the bar stays dark in the light palette, and custom
+       header colours (Display Settings) are followed. */
+    border-color: color-mix(in srgb, var(--tp-header-text, #ffffff) 12%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tp-header-text, #ffffff) 5%, transparent);
+}
+
+#header > .tp-usage.tp-usage-header .tp-usage-track {
+    background: color-mix(in srgb, var(--tp-header-text, #ffffff) 12%, transparent);
+}
+
+#header > .tp-usage.tp-usage-header .tp-usage-icon {
+    border-radius: 50%;
+}
+
 .tp-usage-good { --tp-usage-tone: var(--tp-success-text, #22c55e); }
 .tp-usage-warn { --tp-usage-tone: var(--tp-warn-text, #f59e0b); }
 .tp-usage-danger { --tp-usage-tone: var(--tp-danger, #ef4444); }
