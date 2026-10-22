@@ -265,12 +265,36 @@ function auroraInstall(button, plg) {
       options.forEach(function (other) { other.setAttribute('aria-checked', String(other === option)); });
     });
   });
+  // The browser as a name and major version ("Brave 141", "Firefox 157"), not the whole
+  // user-agent string, which every Chromium browser fills with "Chrome" and "Safari". Chromium
+  // browsers name themselves in userAgentData; Brave also marks itself with navigator.brave.
+  function browserName() {
+    var ua = navigator.userAgent;
+    var data = navigator.userAgentData;
+    var brand = data && Array.isArray(data.brands) && data.brands.filter(function (entry) {
+      return !/chromium|not.?a.?brand/i.test(entry.brand);
+    })[0];
+    if (navigator.brave) {
+      var chromium = data && Array.isArray(data.brands) && data.brands.filter(function (entry) { return /chromium/i.test(entry.brand); })[0];
+      var match = ua.match(/Chrome\/(\d+)/);
+      return 'Brave ' + (chromium ? chromium.version : match ? match[1] : '');
+    }
+    if (brand) return brand.brand.replace(/^(?:Google|Microsoft) /, '') + ' ' + brand.version;
+    var known = [['Edge', /Edg(?:e|A|iOS)?\/(\d+)/], ['Opera', /OPR\/(\d+)/], ['Vivaldi', /Vivaldi\/(\d+)/],
+      ['Samsung Internet', /SamsungBrowser\/(\d+)/], ['Firefox', /(?:Firefox|FxiOS)\/(\d+)/],
+      ['Chrome', /(?:Chrome|CriOS)\/(\d+)/], ['Safari', /Version\/(\d+).*Safari/]];
+    for (var i = 0; i < known.length; i++) {
+      var found = ua.match(known[i][1]);
+      if (found) return known[i][0] + ' ' + found[1];
+    }
+    return 'unknown';
+  }
   title.addEventListener('input', function () { open.disabled = !title.value.trim(); });
   open.addEventListener('click', function () {
     var text = body.value.trim() || '_No details given._';
     if (document.getElementById('tft-issue-env').checked) {
       text += '\n\n---\n**System**\n' + Object.keys(details).map(function (key) { return '- ' + key + ': ' + details[key]; }).join('\n')
-        + '\n- Browser: ' + navigator.userAgent;
+        + '\n- Browser: ' + browserName();
     }
     var url = 'https://github.com/' + repo + '/issues/new?title=' + encodeURIComponent('[' + kinds[kind] + '] ' + title.value.trim())
       + '&body=' + encodeURIComponent(text) + '&labels=' + encodeURIComponent(labels[kind]);

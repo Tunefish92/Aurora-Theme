@@ -2554,6 +2554,19 @@
         height: 1.3rem;
     }
 
+    /* Phones: the footer's line wraps (centred) instead of scrolling sideways, where the
+       manual link and the theme credit were out of sight. */
+    @media (max-width: 767px) {
+        #footer #copyright {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            row-gap: 0.6rem;
+            overflow: visible;
+            white-space: normal;
+        }
+    }
+
     /* ======================================================================
        Short dialogs (confirmations, warnings, external links)
        ====================================================================== */
@@ -3224,6 +3237,474 @@
             color: var(--tp-primary);
             font: 600 1.3rem var(--tp-font-heading);
             background-color: color-mix(in srgb, var(--tp-primary) 6%, transparent);
+        }
+    }
+
+    /* ======================================================================
+       FolderView3 plugin, settings page (Settings → FolderView3): its own stylesheet centres
+       everything in narrow columns with right-aligned labels. Here it reads like the theme's
+       settings: tabs as the theme's tabs, left-aligned sections with one heading style, rows
+       with the label on the left and the control on the right, cards for the Dashboard columns
+       and the backup groups, and every button row in the same place.
+       ====================================================================== */
+    :is(.fv3-page-tabs, .fv3-csstool-tiers, .fv3-customize-col-left .fv3-subtabs) {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        max-width: 100%;
+        margin: 1.2rem 0 2.2rem;
+        padding: 0.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 14px;
+        background: var(--tp-subtle);
+        box-sizing: border-box;
+    }
+
+    :is(.fv3-csstool-tiers, .fv3-customize-col-left .fv3-subtabs) {
+        margin-top: 0;
+    }
+
+    .fv3-customize-col-left .fv3-subtabs {
+        margin-bottom: 1rem;
+    }
+
+    :is(.fv3-page-tabs .fv3-page-tab, .fv3-csstool-tiers .fv3-tier-btn, .fv3-subtabs .fv3-subtab) {
+        min-height: 3.6rem;
+        margin: 0;
+        padding: 0.8rem 1.6rem;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        color: var(--tp-muted);
+        font: 500 1.3rem/1 var(--tp-font-heading);
+        letter-spacing: 0;
+        text-transform: none;
+        white-space: nowrap;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    :is(.fv3-page-tabs .fv3-page-tab, .fv3-csstool-tiers .fv3-tier-btn, .fv3-subtabs .fv3-subtab):hover {
+        border-color: transparent;
+        color: var(--tp-text);
+        background: color-mix(in srgb, var(--tp-text) 6%, transparent);
+        box-shadow: none;
+        transform: none;
+    }
+
+    :is(.fv3-page-tabs .fv3-page-tab-active, .fv3-csstool-tiers .fv3-tier-active, .fv3-subtabs .fv3-subtab-active),
+    :is(.fv3-page-tabs .fv3-page-tab-active, .fv3-csstool-tiers .fv3-tier-active, .fv3-subtabs .fv3-subtab-active):hover {
+        border-color: var(--tp-border);
+        color: var(--tp-text);
+        font-weight: 600;
+        background: var(--tp-tab-active);
+        box-shadow: var(--tp-shadow-sm);
+    }
+
+    .fv3-page-panel {
+        max-width: 120rem;
+    }
+
+    /* One heading style for every section, left-aligned with a line under it. */
+    .fv3-page-panel .fv3-section-heading,
+    .fv3-page-panel .fv3-section-heading.fv3-heading-center {
+        display: block;
+        width: 100%;
+        margin: 2.6rem 0 0.6rem;
+        padding: 0 0 0.9rem;
+        border-bottom: 1px solid var(--tp-border);
+        color: var(--tp-text);
+        font: 600 1.5rem/1.3 var(--tp-font-heading);
+        letter-spacing: -0.01em;
+        text-align: left;
+        text-transform: none;
+    }
+
+    .fv3-page-panel .fv3-section-heading-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem 1.2rem;
+    }
+
+    .fv3-page-panel .fv3-section-heading .fv3-folder-count {
+        margin-left: 0.4rem;
+        color: var(--tp-muted);
+        font-weight: 500;
+    }
+
+    .fv3-page-panel > .fv3-section-heading:first-child,
+    .fv3-page-panel .fv3-backup-section > .fv3-section-heading:first-child,
+    .fv3-dashboard-col > .fv3-section-heading:first-child,
+    .fv3-dashboard-global > .fv3-section-heading:first-child {
+        margin-top: 0;
+    }
+
+    /* Folder Defaults: its first "heading" is an introduction. */
+    #fv3-panel-defaults > .fv3-section-heading:first-child {
+        margin-bottom: 0.8rem;
+        padding-bottom: 0;
+        border-bottom: 0;
+        color: var(--tp-muted);
+        font: 400 1.3rem/1.5 var(--tp-font-body);
+    }
+
+    :is(.fv3-backup-hint, .fv3-customize-hint) {
+        margin: 0.4rem 0 1rem;
+        color: var(--tp-muted);
+        font-size: 1.2rem;
+        line-height: 1.5;
+        text-align: left;
+    }
+
+    /* Settings rows: label left, control right, a thin line between rows. */
+    .fv3-page-panel .basic {
+        width: 100%;
+    }
+
+    .fv3-page-panel .basic dl {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+        align-items: center;
+        gap: 0.4rem 2rem;
+        margin: 0;
+        padding: 1rem 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--tp-border) 60%, transparent);
+    }
+
+    .fv3-page-panel .basic dt {
+        width: auto !important;
+        margin: 0;
+        padding: 0;
+        color: var(--tp-text);
+        font-size: 1.3rem;
+        font-weight: 500;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .fv3-page-panel .basic dt.fv3-setting-sub label {
+        padding-left: 1.6rem;
+        color: var(--tp-muted);
+    }
+
+    .fv3-page-panel .basic dd {
+        justify-content: flex-end;
+        justify-self: end;
+        width: auto;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .fv3-page-panel .basic dd > :is(select, input[type="text"], input[type="number"]) {
+        flex: 0 1 24rem;
+        width: 24rem;
+        max-width: 100%;
+    }
+
+    /* Dashboard tab: Docker and VM as two cards; the general options below them. */
+    .fv3-dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 38rem), 1fr));
+        gap: 1.6rem;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .fv3-dashboard-col,
+    .fv3-dashboard-col:first-child {
+        padding: 1.8rem 2rem 1rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+    }
+
+    .fv3-dashboard-col .basic dl {
+        grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    }
+
+    .fv3-dashboard-col .basic dt {
+        white-space: normal;
+    }
+
+    .fv3-dashboard-col .basic:last-child dl {
+        border-bottom: 0;
+    }
+
+    .fv3-dashboard-global {
+        display: block;
+        max-width: none;
+        margin: 1.6rem 0 0;
+        padding: 1.4rem 2rem 0.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+    }
+
+    .fv3-dashboard-global .basic dl {
+        grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+        justify-content: stretch;
+        border-bottom: 0;
+    }
+
+    /* Button rows: left-aligned under their section; Autostart's sit beside its select. */
+    :is(.fv3-button-bar, .fv3-csstool-actions) {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 0.8rem;
+        max-width: none;
+        margin: 2rem 0 0;
+        padding: 1.6rem 0 0;
+        border-top: 1px solid var(--tp-border);
+    }
+
+    :is(.fv3-button-bar, .fv3-csstool-actions, .fv3-backup-actions, .fv3-section-heading-actions, .fv3-theme-import) :is(button, input[type="button"]) {
+        margin: 0;
+    }
+
+    .fv3-button-bar.fv3-as-buttons {
+        margin: 0;
+        padding: 0;
+        border-top: 0;
+    }
+
+    #fv3-panel-autostart > :first-child {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.2rem;
+        margin-bottom: 0.6rem;
+        padding-bottom: 1.6rem;
+        border-bottom: 1px solid var(--tp-border);
+    }
+
+    #fv3-panel-autostart > .basic > dl {
+        flex: 1 1 40rem;
+        justify-content: start;
+        grid-template-columns: auto minmax(0, 30rem);
+        padding: 0;
+        border-bottom: 0;
+    }
+
+    #fv3-panel-autostart > .basic > dl dd {
+        justify-self: stretch;
+    }
+
+    #fv3-panel-autostart > .basic > dl dd > select {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    /* Import / Export: the two backup groups as cards side by side, the tables full width. */
+    .fv3-backup-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 38rem), 1fr));
+        gap: 0 1.6rem;
+        max-width: none;
+        margin: 0;
+    }
+
+    .fv3-backup-section > :not(.fv3-backup-group) {
+        grid-column: 1 / -1;
+    }
+
+    .fv3-backup-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        box-sizing: border-box;
+        margin: 0 0 1.6rem;
+        padding: 1.6rem 1.8rem;
+        border: 1px solid var(--tp-border);
+        border-radius: var(--tp-r-md);
+        background-color: var(--tp-elevated);
+        vertical-align: top;
+    }
+
+    .fv3-backup-group.fv3-backup-danger {
+        border-color: color-mix(in srgb, var(--tp-danger) 45%, transparent);
+        background-color: color-mix(in srgb, var(--tp-danger) 7%, var(--tp-elevated));
+    }
+
+    .fv3-backup-group-label {
+        color: var(--tp-text);
+        font: 600 1.3rem var(--tp-font-heading);
+    }
+
+    .fv3-backup-danger .fv3-backup-group-label {
+        color: var(--tp-danger);
+    }
+
+    .fv3-backup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    .fv3-backup-group .fv3-backup-hint {
+        margin: 0;
+    }
+
+    .fv3-folder-table-wrap,
+    .fv3-folder-table {
+        width: 100%;
+        max-width: none;
+    }
+
+    .fv3-theme-import {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        max-width: 64rem;
+    }
+
+    /* CSS Tool, Customize: the variables get the wider column; the two columns stack when
+       there is no room for both. */
+    .fv3-customize-col-left {
+        flex: 3 1 0;
+    }
+
+    .fv3-customize-col-right {
+        flex: 2 1 0;
+        top: 1.2rem;
+    }
+
+    .fv3-customize-col-right > .fv3-section-heading:first-child,
+    .fv3-customize-col-left > .fv3-section-heading:first-child {
+        margin-top: 0;
+    }
+
+    .fv3-var-group-heading {
+        margin: 1.8rem 0 0.2rem;
+        color: var(--tp-muted);
+        font: 600 1.1rem/1.3 var(--tp-font-heading);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .fv3-var-row {
+        gap: 1.2rem;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--tp-border) 60%, transparent);
+    }
+
+    .fv3-var-label {
+        color: var(--tp-text);
+        font-size: 1.3rem;
+        font-weight: 500;
+    }
+
+    .fv3-var-label code {
+        margin-top: 0.2rem;
+        color: var(--tp-muted);
+        font-size: 1.1rem;
+        font-weight: 400;
+        opacity: 1;
+        overflow-wrap: anywhere;
+    }
+
+    .fv3-var-inputs {
+        flex: 0 1 26rem;
+        min-width: 0;
+    }
+
+    .fv3-var-inputs input[type="text"] {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .fv3-var-row .fv3-var-reset {
+        min-width: 0;
+        margin: 0;
+        padding-right: 1.2rem;
+        padding-left: 1.2rem;
+    }
+
+    @media (max-width: 1279px) {
+        .fv3-customize-columns {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .fv3-customize-col-left,
+        .fv3-customize-col-right {
+            flex: 1 1 auto;
+            position: static;
+        }
+
+        .fv3-customize-col-right #fv3-custom-css {
+            min-height: 32rem;
+        }
+    }
+
+    .fv3-theme-import input {
+        flex: 1 1 24rem;
+        min-width: 0;
+        margin: 0;
+    }
+
+    /* Phones: tabs scroll sideways; a row's control goes under its label. */
+    @media (max-width: 767px) {
+        :is(.fv3-page-tabs, .fv3-csstool-tiers, .fv3-customize-col-left .fv3-subtabs) {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .fv3-page-panel .basic dl,
+        .fv3-dashboard-col .basic dl,
+        .fv3-dashboard-global .basic dl {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .fv3-page-panel .basic dd {
+            justify-content: flex-start;
+            justify-self: stretch;
+        }
+
+        .fv3-page-panel .basic dd > :is(select, input[type="text"], input[type="number"]) {
+            flex: 1 1 auto;
+            width: auto;
+        }
+
+        .fv3-dashboard-col,
+        .fv3-dashboard-col:first-child,
+        .fv3-dashboard-global {
+            padding-right: 1.4rem;
+            padding-left: 1.4rem;
+        }
+
+        /* Autostart: the name gets the room; the toggle and its label stay on one line. */
+        .fv3-as-table {
+            table-layout: auto;
+        }
+
+        .fv3-as-table :is(th, td) {
+            width: auto;
+            padding-right: 0.6rem;
+            padding-left: 0.6rem;
+            white-space: nowrap;
+        }
+
+        .fv3-as-table td.fv3-as-name {
+            width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .fv3-as-table .fv3-as-toggle-cell > .switch-button-background {
+            float: left;
+            margin-right: 0.6rem;
+        }
+
+        .fv3-as-table input.fv3-as-wait {
+            width: 5rem;
+            min-width: 0;
         }
     }
 

@@ -1,5 +1,10 @@
 # Aurora Theme for Unraid
 
+[![Buy me a coffee](https://img.shields.io/badge/Buy_me_a_coffee-PayPal-0070ba?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/tunefish92)
+
+> [!WARNING]
+> **Aurora Theme is still at an early stage.** It is used on real servers, but it touches almost every page of the webGUI, and not every setup, plugin or screen size has been tried yet. Expect rough edges. I'm relying on feedback from the whole community to make it more stable, fix bugs and add features: if something looks wrong or you have an idea, please [open an issue](https://github.com/Tunefish92/Aurora-Theme/issues). The settings page can fill one in for you, including the system details. If a page ever becomes unusable, add `?aurora=off` to its address to switch the theme off in that browser (see [If something looks wrong](#if-something-looks-wrong)).
+
 A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional sidebar layout, a card-based Dashboard, a redesigned Main page, a compact Docker list with groups, and a built-in Stats page. Dark and light, with a one-click switch, and it works on phones.
 
 ![Dashboard with the Aurora Theme, dark palette and top bar](docs/screenshots/dashboard-dark.png)
@@ -45,8 +50,8 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 - **Login page**: a glass card on an aurora background, in the dark or light palette.
 - **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, the processor's cores as a compact grid with power and temperature chips, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
 - **Main**: device tables with status dots, temperature and error chips and slim usage bars; Array Operation as cards (array, parity check with live progress, last check, disks, mover, power).
-- **Docker**: a compact list with status, CPU, memory and a one-click WebUI button, filters and search, collapsible application groups with start/stop for a whole group, and a card layout on phones. In the container editor every port is checked while typing (range, duplicates, ports used by other containers or by the server), and the "docker allocations" list becomes a searchable overview.
-- **VMs**: an expand button per VM for its disks, interfaces and snapshots, with buttons to create, revert and remove snapshots.
+- **Docker**: a compact list with status, CPU, memory and a one-click WebUI button, filters and search, collapsible application groups with start/stop for a whole group, and a card layout on phones. Containers keep Unraid's order and start in the order they are listed; unlock the list to drag them within and between groups or to move whole groups. With the FolderView3 plugin installed, a switch chooses between Aurora's groups and FolderView3's folders. In the container editor every port is checked while typing (range, duplicates, ports used by other containers or by the server), and the "docker allocations" list becomes a searchable overview.
+- **VMs**: groups like on the Docker tab, a column with start / stop, group and menu buttons, and an expand button per VM for its disks, interfaces and snapshots, with buttons to create, revert and remove snapshots.
 - **Apps** (Community Applications): a nav-style menu, the search centred in the title row with themed suggestions, "Installed", "Official" and spotlight badges as pills, page numbers that stay in place, and Change Log, Credits and Statistics as modals.
 - **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top. The tool pages get readable help text: notes and warnings as callouts, command output in monospaced boxes, and the Diagnostics file list as cards. Help boxes and notices look the same everywhere.
 - **Users**: user cards with avatars or coloured initials, roles, search and an "Add user" button.
@@ -70,6 +75,14 @@ python3 plugin/build.py
 ```
 
 This writes `Aurora-Theme.plg` with a version based on the current date and time.
+
+## Buy me a coffee
+
+Aurora Theme is free and open source, and it will stay that way. If it makes your Unraid server nicer to use and you'd like to say thanks, you can buy me a coffee:
+
+**☕ [paypal.me/tunefish92](https://paypal.me/tunefish92)**
+
+It's entirely voluntary and a thank-you only: it doesn't buy features, priority support or a warranty, and the software stays under the MIT license either way. Please don't send money as "Friends and Family" on PayPal.
 
 ## A note about this project
 

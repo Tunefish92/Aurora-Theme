@@ -94,6 +94,36 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <?php if (in_array('tp-sidebar', $auroraClasses)): ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/layout-sidebar.css') ?>">
+<script>
+// Sidebar layout: a button at the left of the top bar hides the sidebar completely or brings it
+// back. This browser remembers the choice; it is applied here in the head, so there is no flash.
+(function (root) {
+  var key = 'tft-sidebar-collapsed';
+  try { if (localStorage.getItem(key) === '1') root.classList.add('tp-sidebar-collapsed'); } catch (e) {}
+  document.addEventListener('DOMContentLoaded', function () {
+    var header = document.getElementById('header');
+    if (!header || header.querySelector('.tp-sidebar-toggle')) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tp-sidebar-toggle';
+    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>';
+    var label = function () {
+      var collapsed = root.classList.contains('tp-sidebar-collapsed');
+      button.title = collapsed ? 'Show sidebar' : 'Hide sidebar';
+      button.setAttribute('aria-label', button.title);
+      button.setAttribute('aria-expanded', String(!collapsed));
+    };
+    button.addEventListener('click', function () {
+      root.classList.add('tp-sidebar-animate');
+      var collapsed = root.classList.toggle('tp-sidebar-collapsed');
+      try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {}
+      label();
+    });
+    label();
+    header.prepend(button);
+  });
+})(document.documentElement);
+</script>
 <?php endif; ?>
 <?php if (in_array('tp-enhance', $auroraClasses)): ?>
 <?php
@@ -116,13 +146,17 @@ try {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php
-// Docker tab and Dashboard: the saved application groups go straight into the page, so the
-// containers can be shown grouped right away instead of waiting for a separate request.
-if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'), ['/Docker', '/Dashboard'], true)):
-    $auroraGroups = json_decode((string) @file_get_contents("$auroraCustomDir/docker-groups.json"), true);
-    $auroraGroups = is_array($auroraGroups['groups'] ?? null) ? $auroraGroups['groups'] : [];
+// Docker and VMs tabs and Dashboard: the saved groups go straight into the page, so the
+// containers and VMs can be shown grouped right away instead of waiting for a separate request.
+if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'), ['/Docker', '/VMs', '/Dashboard'], true)):
+    $auroraGroups = [];
+    foreach (['docker', 'vm'] as $auroraKind) {
+        $auroraStored = json_decode((string) @file_get_contents("$auroraCustomDir/$auroraKind-groups.json"), true);
+        $auroraGroups[$auroraKind] = is_array($auroraStored['groups'] ?? null) ? $auroraStored['groups'] : [];
+    }
 ?>
-<script>window.auroraDockerGroups = <?= json_encode($auroraGroups, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script>window.auroraDockerGroups = <?= json_encode($auroraGroups['docker'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
+<script>window.auroraVmGroups = <?= json_encode($auroraGroups['vm'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 <script>window.auroraDecimalMark = <?= json_encode(substr((string) ($display['number'] ?? '.,'), 0, 1) ?: '.') ?>;</script>
 <?php
     // FolderView installed: the switch above the Docker list chooses between its folders and the
@@ -149,6 +183,27 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
       if (typeof fn === 'function' && /createFolders/.test(String(fn))) return;
       return addPrefilter.apply(this, arguments);
     };
+  }
+  // FolderView3 rewrites the containers' start order after every change of the list order or of
+  // an autostart setting (sync_order.php): from its own folders, or from the custom sequence on
+  // its Autostart tab. In the theme's view the list as shown (groups and all) is the start order,
+  // so the folder-based rewrite is left out; a custom sequence is still applied, the same way.
+  if (window.jQuery && jQuery.fn && typeof jQuery.fn.ajaxComplete === 'function') {
+    var addComplete = jQuery.fn.ajaxComplete;
+    jQuery.fn.ajaxComplete = function (handler) {
+      if (typeof handler === 'function' && /sync_order\.php/.test(String(handler))) return this;
+      return addComplete.apply(this, arguments);
+    };
+    jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+      var url = (settings && settings.url) || '';
+      var data = settings && typeof settings.data === 'string' ? settings.data : '';
+      var orderSaved = url.indexOf('/dynamix.docker.manager/include/UserPrefs.php') !== -1 && data.indexOf('names=') !== -1;
+      var autostartSaved = url.indexOf('/dynamix.docker.manager/include/UpdateConfig.php') !== -1 && /action=(autostart|wait)/.test(data);
+      if (!(orderSaved || autostartSaved) || xhr.status !== 200) return;
+      jQuery.getJSON('/plugins/folder.view3/server/read_autostart.php').done(function (config) {
+        if (config && config.mode === 'custom') jQuery.post('/plugins/folder.view3/server/sync_order.php', { type: 'docker' });
+      });
+    });
   }
   ['listview', 'loadlist'].forEach(function (name) {
     var original;

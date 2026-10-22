@@ -150,15 +150,6 @@
     font: 600 1.3rem var(--tp-font-heading, inherit);
 }
 
-.tp-server-card span {
-    overflow: hidden;
-    color: var(--tp-header-muted, #a7b0c0);
-    font: 1rem var(--tp-font-body, inherit);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
 .tp-server-card b {
     overflow: hidden;
     white-space: nowrap;
@@ -849,6 +840,17 @@ a.tp-webui .fa {
     color: var(--red-600);
 }
 
+/* A group's "move up" in the first place, "move down" in the last. */
+.tp-actions button.tp-icon-button:disabled,
+.tp-actions button.tp-icon-button:disabled:hover {
+    color: var(--tp-muted, var(--alt-text-color));
+    background: transparent;
+    box-shadow: none;
+    opacity: 0.3;
+    transform: none;
+    cursor: default;
+}
+
 /* ---- Docker: long container names end in "…" (the full name is the tooltip), also in the
    full table that FolderView gets. */
 #docker_list td.ct-name .appname {
@@ -1052,8 +1054,8 @@ table.dashboard span.outer.solid .inner {
     white-space: nowrap;
 }
 
-/* ---- Docker: application groups */
-#docker_list > tr.tp-group > td {
+/* ---- Docker and VMs: application groups */
+:is(#docker_list, #kvm_list) > tr.tp-group > td {
     height: auto;
     padding: 0.7rem 1.9rem;
     border-top: 1px solid var(--tp-border, var(--table-border-color));
@@ -1101,6 +1103,7 @@ table.dashboard span.outer.solid .inner {
     white-space: nowrap;
 }
 
+.tp-group-load > span[hidden],
 .tp-group-load[hidden] {
     display: none;
 }
@@ -1137,7 +1140,27 @@ table.dashboard span.outer.solid .inner {
         column-gap: 1.4rem;
     }
 
-    #docker_containers.tp-compact .tp-group-head > .tp-group-toggle { grid-column: 1; }
+    #docker_containers.tp-compact .tp-group-head > .tp-group-toggle { grid-column: 1; min-width: 0; }
+
+    /* The name with the count under it, so both fit the first column. */
+    #docker_containers.tp-compact .tp-group-head > button.tp-group-toggle {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 1rem;
+        row-gap: 0.1rem;
+        justify-items: start;
+        text-align: left;
+    }
+
+    #docker_containers.tp-compact .tp-group-toggle > .fa { grid-row: 1 / span 2; }
+    #docker_containers.tp-compact .tp-group-toggle > .tp-group-name,
+    #docker_containers.tp-compact .tp-group-toggle > .tp-group-count {
+        grid-column: 2;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     #docker_containers.tp-compact .tp-group-head > .tp-group-apps { grid-column: 2 / 5; }
     #docker_containers.tp-compact .tp-group-head > .tp-group-load { display: contents; }
     #docker_containers.tp-compact .tp-group-head .tp-group-cpu { grid-column: 5; }
@@ -1208,6 +1231,37 @@ table.dashboard span.outer.solid .inner {
     background-color: #f59e0b;
 }
 
+/* Stopped: greyed out, without a dot. */
+.tp-app-icon.tp-app-stopped img {
+    opacity: 0.45;
+    filter: grayscale(1);
+}
+
+.tp-app-icon.tp-app-stopped::after {
+    content: none;
+}
+
+/* An icon opens the app's menu. */
+.tp-app-icon[role="button"] {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.tp-app-icon[role="button"]:hover {
+    transform: translateY(-1px);
+}
+
+.tp-app-icon[role="button"]:hover img {
+    opacity: 1;
+    filter: none;
+}
+
+.tp-app-icon[role="button"]:focus-visible {
+    border-radius: 6px;
+    outline: 2px solid var(--tp-primary, var(--link-text-color));
+    outline-offset: 2px;
+}
+
 .tp-app-more {
     flex: none;
     padding: 0.1rem 0.5rem;
@@ -1243,7 +1297,14 @@ div.title > .tp-segment.tp-title-switch {
     vertical-align: middle;
 }
 
-div.title > .tp-title-switch button.tp-tab {
+/* VMs tab: in the tab bar, after the "Virtual Machines" tab. */
+nav.tabs > .tp-segment.tp-title-switch {
+    align-self: center;
+    margin-right: auto;
+    margin-left: 1.6rem;
+}
+
+:is(div.title, nav.tabs) > .tp-title-switch button.tp-tab {
     padding: 0.4rem 1.2rem;
     font-size: 1.15rem;
 }
@@ -1291,6 +1352,89 @@ div.title > .tp-title-switch button.tp-tab {
 
 .tp-group.tp-collapsed .tp-group-toggle .fa {
     transform: rotate(-90deg);
+}
+
+/* A group's grip, in front of its name: drag it to move the group. Every section's name leaves
+   room for it, so the names line up ("Ungrouped" has none). The grip and the up / down buttons
+   are there only while Unraid's lock button has the lists unlocked (html.tp-unlocked). */
+:root:not(.tp-unlocked) :is(.tp-group-grip, .tp-actions button.tp-group-move) {
+    display: none !important;
+}
+
+:root:not(.tp-unlocked) .tp-group-head > button.tp-group-toggle,
+:root:not(.tp-unlocked) .tp-group-head > button.tp-group-toggle:hover {
+    padding-left: 0;
+}
+
+.tp-group-head {
+    position: relative;
+}
+
+.tp-group-head > button.tp-group-toggle,
+.tp-group-head > button.tp-group-toggle:hover {
+    padding-left: 2.8rem;
+}
+
+.tp-group-grip {
+    position: absolute;
+    top: 50%;
+    left: -0.4rem;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.8rem;
+    margin-top: -1.4rem;
+    border-radius: 6px;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+    cursor: grab;
+    opacity: 0.6;
+    touch-action: none;
+    transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.tp-group-grip:hover,
+.tp-group-dragging .tp-group-grip {
+    color: var(--tp-primary, var(--link-text-color));
+    background: var(--tp-elevated, var(--background-color));
+    opacity: 1;
+}
+
+.tp-group-dragging .tp-group-grip {
+    cursor: grabbing;
+}
+
+:is(#docker_list, #kvm_list) > tr.tp-group.tp-group-dragging > td {
+    background-color: var(--tp-primary-soft, rgba(79, 139, 255, 0.15));
+}
+
+.tp-group-drop-line {
+    position: fixed;
+    z-index: 10002;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--tp-primary, var(--link-text-color));
+    box-shadow: 0 0 0 3px var(--tp-primary-soft, rgba(79, 139, 255, 0.2));
+    pointer-events: none;
+}
+
+/* A long group name ends in "…" (the whole name is the tooltip); the count stays beside it. */
+.tp-group-head > button.tp-group-toggle {
+    flex: 0 1 auto;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.tp-group-toggle > .tp-group-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-group-toggle > .tp-group-count {
+    flex: none;
 }
 
 .tp-group-count {
@@ -1371,7 +1515,7 @@ div.title > .tp-title-switch button.tp-tab {
     margin-top: 2rem;
 }
 
-/* Small phones: long button labels ("Switch to FolderViewPlugin") stack full width. */
+/* Small phones: long button labels ("Switch to FolderView3") stack full width. */
 @media (max-width: 479px) {
     .tp-modal {
         padding: 2.2rem 2rem 2rem;
@@ -2671,6 +2815,19 @@ select.tp-select-open {
     white-space: nowrap;
 }
 
+/* The VM list's actions column (start / stop, group, menu), as on the Docker tab. */
+#kvm_table th.tp-vm-actions,
+#kvm_list > tr > td.tp-vm-actions {
+    width: 1%;
+    padding-right: 1.9rem;
+    white-space: nowrap;
+}
+
+/* "+ Group" above the VM list, on the right. */
+.tp-vm-toolbar {
+    justify-content: flex-end;
+}
+
 #kvm_list button.tp-vm-expand {
     display: inline-grid;
     place-items: center;
@@ -3526,13 +3683,30 @@ select.tp-select-open {
         white-space: nowrap;
     }
 
-    #docker_list > tr.tp-group > td {
+    :is(#docker_list, #kvm_list) > tr.tp-group > td {
         padding: 0.7rem 1.4rem;
     }
 
-    .tp-group-head .tp-actions .tp-icon-button[title^="Rename"],
-    .tp-group-head .tp-actions .tp-icon-button[title^="Delete"] {
+    .tp-group-head .tp-actions {
+        gap: 0;
+    }
+
+    /* The VM table scrolls sideways; a section's header stays in view with its buttons. */
+    #kvm_list > tr.tp-group .tp-group-head {
+        position: sticky;
+        left: 1.4rem;
+        box-sizing: border-box;
+        max-width: calc(100vw - 6rem);
+    }
+
+    .tp-group-head .tp-actions .tp-icon-button {
         width: 2.8rem;
+    }
+
+    /* The header wraps; the grip stays beside the name on its first line. */
+    .tp-group-grip {
+        top: 0;
+        margin-top: 0;
     }
 
     .tp-toolbar {

@@ -9,6 +9,11 @@
     }
 }
 
+/* The sidebar toggle only exists where there is a sidebar. */
+#header .tp-sidebar-toggle {
+    display: none;
+}
+
 @media (min-width: 1024px) {
     :root.tp-sidebar.Theme--nav-top {
         --tp-sidebar-width: 22rem;
@@ -129,6 +134,77 @@
         .navigationSection {
             left: var(--tp-sidebar-width);
             width: calc(100% - var(--tp-sidebar-width));
+        }
+
+        /* ---- Sidebar toggle at the left of the top bar (added in AuroraTheme.page). Collapsed,
+           the sidebar and the logo above it slide out and the page takes the full width. */
+        #header .tp-sidebar-toggle {
+            display: grid;
+            flex: none;
+            order: -1;
+            place-items: center;
+            width: 3.6rem;
+            height: 3.6rem;
+            min-width: 0;
+            margin: 0 1.6rem 0 0;
+            padding: 0;
+            border: 1px solid var(--tp-border, var(--border-color));
+            border-radius: 10px;
+            color: var(--tp-muted, var(--alt-text-color));
+            background: var(--tp-elevated, transparent);
+            box-shadow: none;
+            cursor: pointer;
+            transition: border-color 0.35s, color 0.35s;
+        }
+
+        #header .tp-sidebar-toggle:hover,
+        #header .tp-sidebar-toggle:focus-visible {
+            border-color: var(--tp-primary, var(--brand-orange));
+            color: var(--tp-primary, var(--brand-orange));
+            background: var(--tp-elevated, transparent);
+            transform: none;
+        }
+
+        #header .tp-sidebar-toggle svg {
+            width: 1.8rem;
+            height: 1.8rem;
+        }
+
+        &.tp-sidebar-collapsed {
+            body {
+                padding-left: 0;
+            }
+
+            /* The page lines up with the toggle in the top bar. */
+            #displaybox {
+                padding-left: 2.4rem;
+            }
+
+            #menu,
+            #header unraid-header-os-version {
+                visibility: hidden;
+                transform: translateX(-100%);
+            }
+
+            #footer,
+            .navigationSection {
+                left: 0;
+                width: 100%;
+            }
+        }
+
+        /* Only after a click, so a page opened with the sidebar hidden does not animate. */
+        &.tp-sidebar-animate {
+            body,
+            #footer,
+            .navigationSection {
+                transition: padding-left 0.3s ease, left 0.3s ease, width 0.3s ease;
+            }
+
+            #menu,
+            #header unraid-header-os-version {
+                transition: transform 0.3s ease, visibility 0.3s;
+            }
         }
 
         /* ---- Top right: uptime chip, server identity, notification and menu buttons.

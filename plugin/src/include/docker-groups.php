@@ -1,11 +1,12 @@
 <?php
-// Docker application groups for the Docker tab.
+// Application groups for the Docker tab, the VMs tab ("?type=vm") and the Dashboard.
 //   GET                      returns {"groups": [{"name": "...", "containers": ["...", ...]}, ...]}
 //   POST groups=<that JSON>  replaces the stored groups
+// "containers" holds the members' names for both kinds.
 // Unraid checks its csrf_token on every POST before this file runs, so writes can only come
 // from a logged-in webGUI page. The groups live on the flash drive and survive reboots.
 
-const TFT_GROUPS_FILE = '/boot/config/plugins/Aurora-Theme/docker-groups.json';
+define('TFT_GROUPS_FILE', '/boot/config/plugins/Aurora-Theme/' . (($_GET['type'] ?? '') === 'vm' ? 'vm-groups.json' : 'docker-groups.json'));
 
 /** Keeps only well-formed groups; a container can be in one group, the first that names it. */
 function tft_clean_groups($groups): array

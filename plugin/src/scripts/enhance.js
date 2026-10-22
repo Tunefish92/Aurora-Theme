@@ -28,10 +28,14 @@
     return node;
   }
 
-  // Container names in A–Z order, ignoring case, with numbers compared as numbers ("tiny-2"
-  // before "tiny-10").
-  function compareNames(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  function iconButton(icon, label, onClick, extraClass) {
+    const button = element('button', 'tp-icon-button' + (extraClass ? ' ' + extraClass : ''));
+    button.type = 'button';
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.append(element('i', 'fa fa-' + icon));
+    button.addEventListener('click', onClick);
+    return button;
   }
 
   // FolderView (folder.view, .view2, .view3) arranges the Docker list and the Dashboard's Docker
@@ -43,16 +47,33 @@
     return Boolean(document.querySelector('script[src*="/folder.view"]'));
   }
 
-  // A group's running apps as small icons with a status dot (green running, amber paused),
-  // the first `max` of them and "+n" for the rest; each icon's tooltip is the app's name. The
-  // strip is only rebuilt when the apps or their states change. apps: [{ name, src, state }].
-  function appStrip(strip, apps, max) {
-    const signature = apps.map(function (app) { return app.name + ':' + app.state; }).join('|');
+  // A group's apps (containers or VMs) as small icons: running and paused ones first with a
+  // status dot (green, amber), then the stopped ones greyed out, each part in the list's order.
+  // The first `max` of them are shown and "+n" for the rest; each icon's tooltip is the app's
+  // name. An app with a target (the element whose click opens its menu) opens that menu when
+  // its icon is clicked. The strip is only rebuilt when the apps or their states change.
+  //   apps: [{ name, src, state: 'running' | 'paused' | 'stopped', target }]
+  const STRIP_ORDER = { running: 0, paused: 1, stopped: 2 };
+  function appStrip(strip, list, max) {
+    const apps = list.slice().sort(function (a, b) { return STRIP_ORDER[a.state] - STRIP_ORDER[b.state]; });
+    // The targets are replaced on every call: Unraid rebuilds its rows and chips on refresh.
+    strip.tpTargets = new Map(apps.map(function (app) { return [app.name, app.target]; }));
+    if (!strip.tpBound) {
+      strip.tpBound = true;
+      strip.addEventListener('click', openFromStrip);
+      strip.addEventListener('keydown', openFromStrip);
+    }
+    const signature = apps.map(function (app) { return app.name + ':' + app.state + (app.target ? '' : ':-'); }).join('|');
     if (strip.dataset.apps === signature) return;
     strip.dataset.apps = signature;
     const shown = apps.slice(0, max).map(function (app) {
       const item = element('span', 'tp-app-icon tp-app-' + app.state);
-      item.title = app.name + (app.state === 'paused' ? ' (paused)' : '');
+      item.dataset.name = app.name;
+      item.title = app.name + (app.state === 'running' ? '' : ' (' + app.state + ')');
+      if (app.target) {
+        item.setAttribute('role', 'button');
+        item.tabIndex = 0;
+      }
       const image = element('img');
       image.src = app.src || '/plugins/dynamix.docker.manager/images/question.png';
       image.alt = '';
@@ -65,16 +86,421 @@
     strip.hidden = !apps.length;
   }
 
-  // Puts the given children of parent (all of them by default) in A–Z order of keyOf, in the
-  // place the first of them had. Moves nothing when they are in order already, so it can run on
-  // every refresh without waking the observers that call it.
-  function sortChildren(parent, keyOf, items) {
-    const nodes = items || [...parent.children];
-    if (nodes.length < 2) return;
-    const sorted = nodes.slice().sort(function (a, b) { return compareNames(keyOf(a), keyOf(b)); });
-    if (sorted.every(function (node, index) { return node === nodes[index]; })) return;
-    const anchor = nodes[nodes.length - 1].nextSibling;
-    sorted.forEach(function (node) { parent.insertBefore(node, anchor); });
+  // A click (or Enter) on an icon of a strip: the click is passed on to the app's own element,
+  // at the icon's position, so its menu opens there, and it goes no further (the strip sits
+  // inside a group's header or chip, which would open or close the group).
+  function openFromStrip(event) {
+    if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+    const icon = event.target.closest('.tp-app-icon');
+    const target = icon && event.currentTarget.tpTargets && event.currentTarget.tpTargets.get(icon.dataset.name);
+    if (!target || !target.isConnected) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const box = icon.getBoundingClientRect();
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true, cancelable: true, view: window,
+      clientX: event.clientX || box.left, clientY: event.clientY || box.bottom,
+    }));
+  }
+
+  // ---- Application groups: named sets of containers (type 'docker') or VMs (type 'vm'),
+  // shown as collapsible sections on the Docker and VMs tabs and on the Dashboard. Stored on the
+  // server (include/docker-groups.php) so every browser sees the same groups, in the order they
+  // are arranged in; members are kept by name, in "containers" for both kinds.
+  function validGroups(list) {
+    return Array.isArray(list) ? list.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); }) : [];
+  }
+
+  // Which sections are collapsed, remembered per browser (shared by the tab and the Dashboard).
+  function collapsedState(storageKey) {
+    const read = function () {
+      try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (error) { return []; }
+    };
+    return {
+      has: function (key) { return read().includes(key); },
+      toggle: function (key) {
+        const keys = read();
+        const next = keys.includes(key) ? keys.filter(function (entry) { return entry !== key; }) : keys.concat(key);
+        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch (error) { /* storage blocked */ }
+      },
+    };
+  }
+
+  // changed() redraws after the groups changed; saved(), if given, runs after a change was
+  // drawn (the tabs save Unraid's order there, see saveUnraidOrder).
+  function groupStore(type, changed, saved) {
+    const url = PLUGIN_BASE + '/include/docker-groups.php' + (type === 'vm' ? '?type=vm' : '');
+    const noun = type === 'vm' ? 'VMs' : 'containers';
+    let menu = null;
+    const closeMenu = function () {
+      if (menu) menu.remove();
+      menu = null;
+    };
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMenu(); });
+
+    const store = {
+      groups: [],
+      load: function () {
+        // Normally the page already carries the groups (AuroraTheme.page); otherwise they are fetched.
+        const preset = type === 'vm' ? window.auroraVmGroups : window.auroraDockerGroups;
+        if (Array.isArray(preset)) {
+          store.groups = validGroups(preset);
+          changed();
+          return;
+        }
+        if (!PLUGIN_BASE) return;
+        fetch(url, { credentials: 'same-origin' })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            store.groups = validGroups(data.groups);
+            changed();
+          })
+          .catch(function (error) { console.error('Aurora Theme groups:', error); });
+      },
+      save: function () {
+        changed();
+        if (saved) saved();
+        if (!PLUGIN_BASE) return;
+        const body = new URLSearchParams({ groups: JSON.stringify(store.groups), csrf_token: window.csrf_token || '' });
+        fetch(url, { method: 'POST', credentials: 'same-origin', body: body })
+          .then(function (response) {
+            if (!response.ok) throw new Error('saving groups failed with status ' + response.status);
+          })
+          .catch(function (error) {
+            console.error('Aurora Theme groups:', error);
+            modal({ title: 'Group change not saved', message: 'The server did not accept the change. It will be lost when the page reloads.', confirmLabel: 'OK', hideCancel: true });
+          });
+      },
+      of: function (name) {
+        return store.groups.find(function (group) { return group.containers.includes(name); }) || null;
+      },
+      // Asks for a name; resolves with the new group, an existing group of that name, or null.
+      create: function () {
+        return modal({
+          title: 'New group',
+          message: 'Give the group a name. ' + (type === 'vm' ? 'VMs' : 'Containers') + ' are added to it from their folder button, or by dragging them into it while the list is unlocked.',
+          input: { placeholder: 'Group name', maxLength: 60 },
+          confirmLabel: 'Create group',
+        }).then(function (name) {
+          if (!name) return null;
+          const existing = store.groups.find(function (group) { return group.name.toLowerCase() === name.toLowerCase(); });
+          if (existing) return existing;
+          const group = { name: name, containers: [] };
+          store.groups.push(group);
+          return group;
+        });
+      },
+      assign: function (name, group) {
+        store.groups.forEach(function (other) {
+          other.containers = other.containers.filter(function (entry) { return entry !== name; });
+        });
+        if (group) group.containers.push(name);
+        store.save();
+      },
+      // One place up (-1) or down (1) in the order of the groups.
+      move: function (group, step) {
+        const from = store.groups.indexOf(group);
+        const to = from + step;
+        if (from < 0 || to < 0 || to >= store.groups.length) return;
+        store.groups.splice(to, 0, store.groups.splice(from, 1)[0]);
+        store.save();
+      },
+      rename: function (group) {
+        modal({
+          title: 'Rename group',
+          input: { value: group.name, placeholder: 'Group name', maxLength: 60 },
+          validate: function (name) {
+            const taken = store.groups.some(function (other) { return other !== group && other.name.toLowerCase() === name.toLowerCase(); });
+            return taken ? 'A group with that name already exists.' : '';
+          },
+          confirmLabel: 'Rename',
+        }).then(function (name) {
+          if (!name || name === group.name) return;
+          group.name = name;
+          store.save();
+        });
+      },
+      remove: function (group) {
+        modal({
+          title: 'Delete "' + group.name + '"?',
+          message: 'Only the group is removed. Its ' + noun + ' are kept and become ungrouped.',
+          confirmLabel: 'Delete group',
+          danger: true,
+        }).then(function (confirmed) {
+          if (!confirmed) return;
+          store.groups = store.groups.filter(function (other) { return other !== group; });
+          store.save();
+        });
+      },
+      // Small menu next to a folder button: pick a group, make a new one, or leave the group.
+      openMenu: function (anchor, name) {
+        closeMenu();
+        const current = store.of(name);
+        const list = element('ul', 'dropdown-menu tp-group-menu');
+        const entry = function (icon, text, onClick) {
+          const item = element('li');
+          const link = element('a');
+          link.href = '#';
+          link.append(element('i', 'fa fa-fw ' + icon), ' ' + text);
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            closeMenu();
+            onClick();
+          });
+          item.append(link);
+          list.append(item);
+        };
+        store.groups.forEach(function (group) {
+          entry(group === current ? 'fa-check' : 'fa-folder-o', group.name, function () { store.assign(name, group); });
+        });
+        if (store.groups.length) list.append(element('li', 'divider'));
+        entry('fa-plus', 'New group…', function () {
+          store.create().then(function (group) { if (group) store.assign(name, group); });
+        });
+        if (current) entry('fa-times', 'Remove from group', function () { store.assign(name, null); });
+        document.body.append(list);
+        const box = anchor.getBoundingClientRect();
+        list.style.cssText = 'display:block;position:fixed;z-index:10001;margin:0';
+        list.style.top = Math.min(box.bottom + 6, window.innerHeight - list.offsetHeight - 8) + 'px';
+        list.style.left = Math.max(8, Math.min(box.right - list.offsetWidth, window.innerWidth - list.offsetWidth - 8)) + 'px';
+        menu = list;
+      },
+    };
+    return store;
+  }
+
+  // A section's header row on the Docker or VMs tab: open / close with the name and count, the
+  // members' icons, and buttons to start or stop the whole section, move the group up or down,
+  // rename or delete it (the last four not for "Ungrouped"). The row's tpItems are the section's
+  // members ({ name, running, paused }), set by the tab on every refresh.
+  //   options: { noun ('container' / 'VM'), onToggle(), start(stopped items), stop(running items), load }
+  function sectionHeader(store, group, options) {
+    const row = element('tr', 'tp-group');
+    const cell = element('td');
+    cell.colSpan = 20;
+    const head = element('div', 'tp-group-head');
+    const toggle = element('button', 'tp-group-toggle');
+    toggle.type = 'button';
+    toggle.append(element('i', 'fa fa-chevron-down'), element('span', 'tp-group-name'), element('span', 'tp-group-count'));
+    toggle.addEventListener('click', options.onToggle);
+    if (group) {
+      row.tpGroup = group;
+      const grip = element('span', 'tp-group-grip');
+      grip.title = 'Drag to move the group';
+      grip.setAttribute('aria-hidden', 'true');
+      grip.append(element('i', 'fa fa-arrows-v'));
+      dragGroup(row, grip, store);
+      head.append(grip);
+    }
+    head.append(toggle, element('span', 'tp-group-apps'));
+    if (options.load) {
+      const load = element('span', 'tp-group-load');
+      load.append(element('span', 'tp-group-cpu'), element('span', 'tp-group-mem'));
+      head.append(load);
+    }
+    const actions = element('div', 'tp-actions');
+    const members = function () { return row.tpItems || []; };
+    const plural = options.noun + 's';
+    actions.append(iconButton('play', 'Start all stopped ' + plural + ' in this section', function () {
+      options.start(members().filter(function (item) { return !item.running && !item.paused; }));
+    }));
+    actions.append(iconButton('stop', 'Stop all running ' + plural + ' in this section', function () {
+      const running = members().filter(function (item) { return item.running; });
+      if (!running.length) return;
+      modal({
+        title: 'Stop ' + running.length + ' ' + (running.length === 1 ? options.noun : plural) + '?',
+        message: 'All running ' + plural + ' in this section will be stopped: ' + running.map(function (item) { return item.name; }).join(', ') + '.',
+        confirmLabel: 'Stop',
+        danger: true,
+      }).then(function (confirmed) {
+        if (confirmed) options.stop(running);
+      });
+    }, 'tp-danger'));
+    if (group) {
+      row.tpUp = iconButton('arrow-up', 'Move group up', function () { store.move(group, -1); }, 'tp-group-move');
+      row.tpDown = iconButton('arrow-down', 'Move group down', function () { store.move(group, 1); }, 'tp-group-move');
+      actions.append(row.tpUp, row.tpDown);
+      actions.append(iconButton('pencil', 'Rename group', function () { store.rename(group); }));
+      actions.append(iconButton('trash-o', 'Delete group (its ' + plural + ' stay)', function () { store.remove(group); }, 'tp-danger'));
+    }
+    head.append(actions);
+    cell.append(head);
+    row.append(cell);
+    return row;
+  }
+
+  // Unraid's lock button (in the menu) turns rearranging the Docker and VM lists on and off and
+  // remembers "unlocked" in its lockbutton cookie. The groups' move controls (grip, up, down)
+  // follow it: html.tp-unlocked is set while the lists can be rearranged (enhance.css shows the
+  // controls only then).
+  function listsUnlocked() {
+    return /(?:^|;\s*)lockbutton=/.test(document.cookie);
+  }
+
+  function lockState() {
+    const sync = function () { document.documentElement.classList.toggle('tp-unlocked', listsUnlocked()); };
+    sync();
+    // The Docker and VMs pages clear the cookie when they start (every visit begins locked), in
+    // a jQuery ready handler that may run after this one.
+    if (window.jQuery) window.jQuery(function () { setTimeout(sync); });
+    if (typeof window.LockButton === 'function' && !window.LockButton.tpWrapped) {
+      const original = window.LockButton;
+      window.LockButton = function () {
+        const result = original.apply(this, arguments);
+        sync();
+        return result;
+      };
+      window.LockButton.tpWrapped = true;
+    }
+  }
+
+  // Moves a group by dragging its header's grip (mouse, pen or touch) above or below another
+  // group; its members move with it. A line shows where it will go. "Ungrouped" stays last.
+  function dragGroup(row, grip, store) {
+    grip.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0 || !listsUnlocked()) return;
+      const list = row.parentElement;
+      const others = list ? [...list.querySelectorAll(':scope > tr.tp-group')].filter(function (header) { return header.tpGroup && header !== row; }) : [];
+      if (!others.length) return;
+      event.preventDefault();
+      grip.setPointerCapture(event.pointerId);
+      row.classList.add('tp-group-dragging');
+      const line = element('div', 'tp-group-drop-line');
+      document.body.append(line);
+      let place = -1;
+      // place: how many of the other groups come before the dragged one.
+      const update = function (y) {
+        place = others.filter(function (header) {
+          const box = header.getBoundingClientRect();
+          return box.top + box.height / 2 < y;
+        }).length;
+        // The line goes above the group that will follow, or under the last group's section.
+        const next = others[place];
+        let lineY;
+        if (next) {
+          lineY = next.getBoundingClientRect().top;
+        } else {
+          let end = others[others.length - 1];
+          for (let sibling = end.nextElementSibling; sibling && !(sibling.classList.contains('tp-group') && sibling !== row); sibling = sibling.nextElementSibling) {
+            if (sibling.offsetParent && sibling !== row) end = sibling;
+          }
+          lineY = end.getBoundingClientRect().bottom;
+        }
+        const box = list.getBoundingClientRect();
+        line.style.cssText = 'top:' + (lineY - 1) + 'px;left:' + box.left + 'px;width:' + box.width + 'px';
+      };
+      const onMove = function (moveEvent) {
+        if (moveEvent.clientY < 60) window.scrollBy(0, -12);
+        else if (moveEvent.clientY > window.innerHeight - 60) window.scrollBy(0, 12);
+        update(moveEvent.clientY);
+      };
+      const finish = function (endEvent) {
+        grip.removeEventListener('pointermove', onMove);
+        grip.removeEventListener('pointerup', finish);
+        grip.removeEventListener('pointercancel', finish);
+        row.classList.remove('tp-group-dragging');
+        line.remove();
+        if (endEvent.type !== 'pointerup' || place < 0) return;
+        const group = row.tpGroup;
+        const order = others.map(function (header) { return header.tpGroup; });
+        order.splice(place, 0, group);
+        const current = store.groups.filter(function (entry) { return order.includes(entry); });
+        if (order.every(function (entry, index) { return entry === current[index]; })) return;
+        store.groups = order.concat(store.groups.filter(function (entry) { return !order.includes(entry); }));
+        store.save();
+      };
+      grip.addEventListener('pointermove', onMove);
+      grip.addEventListener('pointerup', finish);
+      grip.addEventListener('pointercancel', finish);
+      update(event.clientY);
+    });
+  }
+
+  // Fills in a section header: name, count, icons, open or closed, and which move buttons work.
+  function updateSectionHeader(header, section, options) {
+    const running = section.items.filter(function (item) { return item.running; }).length;
+    const setText = function (node, text) { if (node.textContent !== text) node.textContent = text; };
+    setText(header.querySelector('.tp-group-name'), section.title);
+    const toggle = header.querySelector('.tp-group-toggle');
+    if (toggle.title !== section.title) toggle.title = section.title;
+    setText(header.querySelector('.tp-group-count'), section.items.length + ' ' + (section.items.length === 1 ? options.noun : options.noun + 's') + ' · ' + running + ' running');
+    appStrip(header.querySelector('.tp-group-apps'), section.items.map(options.app), 8);
+    header.classList.toggle('tp-collapsed', section.collapsed);
+    header.querySelector('.tp-group-toggle').setAttribute('aria-expanded', String(!section.collapsed));
+    if (header.tpUp) {
+      header.tpUp.disabled = section.index === 0;
+      header.tpDown.disabled = section.index === options.groupCount - 1;
+    }
+  }
+
+  // Unraid's own order of the Docker or VM list: the one its lock button lets you drag, which is
+  // also the order the containers start in and the Dashboard shows. Saved from the list as it now
+  // stands (sections and all), the way Unraid's drag and drop saves it.
+  function saveUnraidOrder(type, list) {
+    const jq = window.jQuery;
+    if (!jq || !list) return;
+    const names = [...list.querySelectorAll(type === 'vm' ? ':scope > tr[parent-id] > td.vm-name .inner > a' : 'td.ct-name:not(.folder-name) .appname')]
+      .map(function (node) { return node.textContent.trim(); })
+      .filter(Boolean);
+    if (!names.length) return;
+    jq.post('/plugins/dynamix.' + (type === 'vm' ? 'vm' : 'docker') + '.manager/include/UserPrefs.php', {
+      names: names.join(';') + ';',
+      index: names.map(function (name, index) { return index; }).join(';') + ';',
+    });
+  }
+
+  // Unraid's drag and drop keeps a dragged row within the list's rows. A row taller than the
+  // first one (a FolderView folder) then never gets far enough up to go before it, so the
+  // dragged row may also move over the table's header. Applied whenever Unraid's lock button
+  // turns dragging on (and at once if it already is).
+  function roomToDragToTop(list) {
+    const jq = window.jQuery;
+    const table = list.closest('table');
+    if (!jq || !table) return;
+    const widen = function () {
+      if (jq(list).data('ui-sortable')) jq(list).sortable('option', 'containment', table);
+    };
+    jq(list).on('sortcreate', widen);
+    widen();
+  }
+
+  // Unraid's drag and drop (unlocked with the lock button in the menu) moves a row and saves the
+  // order itself. Dropped in another group's section, the container or VM joins that group (or
+  // leaves its group in "Ungrouped"); the section is read right at the drop, before the list is
+  // laid out again. While a row is dragged, list.tpSorting is set and the tab leaves the list
+  // alone (its placeholder row would be moved away); redraw() runs once the row is dropped.
+  function dropIntoSections(list, store, nameOfRow, ungroupedKey, redraw) {
+    const jq = window.jQuery;
+    if (!jq) return;
+    jq(list).on('sortstart', function () { list.tpSorting = true; });
+    jq(list).on('sortstop', function () {
+      list.tpSorting = false;
+      setTimeout(redraw);
+    });
+    jq(list).on('sortupdate', function (event, ui) {
+      const row = ui && ui.item && ui.item[0];
+      if (!row || !store.groups.length) return;
+      let header = row.previousElementSibling;
+      while (header && !header.classList.contains('tp-group')) header = header.previousElementSibling;
+      header = header || list.querySelector(':scope > tr.tp-group');
+      if (!header || !header.tpKey) return;
+      const name = nameOfRow(row);
+      const target = header.tpKey === ungroupedKey ? null : store.groups.find(function (group) { return 'g:' + group.name === header.tpKey; }) || null;
+      if (name && target !== store.of(name)) store.assign(name, target);
+    });
+  }
+
+
+  // Opens Unraid's menu for a container or VM (the click on its icon) from a button at the end of
+  // its row. Unraid opens the menu at the click's position and does not keep it on screen, so the
+  // click is placed left of the button: the menu then ends at the button instead of past the edge.
+  function openMenuFrom(trigger, button) {
+    const box = button.getBoundingClientRect();
+    trigger.dispatchEvent(new MouseEvent('click', {
+      bubbles: true, cancelable: true, view: window,
+      clientX: Math.max(8, box.right - 260), clientY: box.bottom,
+    }));
   }
 
   // Opens a container's web interface the way Unraid's own context menu does (window.open).
@@ -362,18 +788,15 @@
     new MutationObserver(place).observe(document.getElementById('header') || document.body, { childList: true, subtree: true });
   }
 
-  // Sidebar: which server this browser is connected to.
+  // Sidebar: which server this browser is connected to. Only its name; the address is in the
+  // browser's own address bar (and the card's tooltip).
   function serverCard(info) {
     const menu = document.getElementById('menu');
     if (!menu || !info.server || menu.querySelector('.tp-server')) return;
     const block = element('div', 'tp-server');
     const card = element('div', 'tp-server-card');
-    // Through Unraid's remote access the address is "10-10-1-3.<40 hex>.myunraid.net"; the card
-    // shows the IP inside it. Other long addresses are cut short; the whole one is the tooltip.
-    const remote = location.hostname.match(/^(\d{1,3}(?:-\d{1,3}){3})\.[0-9a-f]{20,}\.myunraid\.net$/i);
-    const address = element('span', '', remote ? remote[1].replace(/-/g, '.') : location.host);
-    address.title = location.host;
-    card.append(element('b', '', info.server), address);
+    card.title = location.host;
+    card.append(element('b', '', info.server));
     block.append(element('span', 'tp-server-label', 'Connected server'), card);
     menu.prepend(block);
   }
@@ -413,6 +836,80 @@
 
   // Docker tab: totals, filter tabs and search above the container table, kept current as
   // Unraid refreshes the rows.
+  // With FolderView installed: a switch between Aurora's view (columns, groups, filters) and
+  // FolderView's folders, for the Docker and VMs tabs alike. Stored on the server for every
+  // browser (include/docker-view.php); the page reloads to apply it. Null without FolderView.
+  function folderViewSwitch() {
+    if (!(window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE)) return null;
+    const viewSwitch = element('div', 'tp-segment tp-view-switch');
+    viewSwitch.setAttribute('role', 'group');
+    viewSwitch.setAttribute('aria-label', 'List view');
+    [['aurora', 'Aurora'], ['folderview', 'FolderView3']].forEach(function (option) {
+      const button = element('button', 'tp-tab', option[1]);
+      button.type = 'button';
+      const active = (window.auroraDockerView.mode === 'aurora') === (option[0] === 'aurora');
+      button.setAttribute('aria-selected', String(active));
+      button.title = option[0] === 'aurora' ? 'Aurora\'s list: columns, groups, filters and search' : 'The FolderView3 plugin\'s folders';
+      const save = function () {
+        button.disabled = true;
+        const body = new URLSearchParams({ view: option[0], csrf_token: window.csrf_token || '' });
+        fetch(PLUGIN_BASE + '/include/docker-view.php', { method: 'POST', credentials: 'same-origin', body: body })
+          .then(function (response) {
+            if (!response.ok) throw new Error('saving the view failed with status ' + response.status);
+            location.reload();
+          })
+          .catch(function (error) {
+            console.error('Aurora Theme view:', error);
+            button.disabled = false;
+            modal({ title: 'View not changed', message: 'The server did not accept the change.', confirmLabel: 'OK', hideCancel: true });
+          });
+      };
+      button.addEventListener('click', function () {
+        if (active) return;
+        if (option[0] !== 'folderview') {
+          save();
+          return;
+        }
+        // FolderView's folders are fitted to the theme, but not all of the plugin is.
+        modal({
+          title: 'Switch to FolderView3?',
+          message: [
+            'Your containers and VMs will be shown in FolderView3\'s folders, fitted to the Aurora look, and a folder opens with a single click.',
+            'Aurora doesn\'t support every feature of the FolderView3 plugin yet. Some of its options and layouts may look a little different here, or not appear at all.',
+            'You can switch back to Aurora\'s view at any time with the same switch.',
+          ],
+          cancelLabel: 'Stay with Aurora',
+          confirmLabel: 'Switch to FolderView3',
+        }).then(function (confirmed) {
+          if (confirmed) save();
+        });
+      });
+      viewSwitch.append(button);
+    });
+    return viewSwitch;
+  }
+
+  // VMs tab: the same switch, beside the page's title: the "Virtual Machines" tab, or the
+  // title above the list when the page has no tabs (Display Settings).
+  function vmViewSwitch() {
+    const table = document.getElementById('kvm_table');
+    const viewSwitch = table && folderViewSwitch();
+    if (!viewSwitch) return;
+    viewSwitch.classList.add('tp-title-switch');
+    const anchor = table.closest('.TableContainer') || table;
+    let title = anchor.previousElementSibling;
+    while (title && !title.matches('div.title')) title = title.previousElementSibling;
+    const tabs = document.querySelector('#displaybox nav.tabs');
+    if (title) {
+      const left = title.querySelector('span.left');
+      if (left) left.after(viewSwitch); else title.append(viewSwitch);
+    } else if (tabs) {
+      tabs.append(viewSwitch);
+    } else {
+      anchor.before(viewSwitch);
+    }
+  }
+
   function docker() {
     const table = document.getElementById('docker_containers');
     const list = document.getElementById('docker_list');
@@ -440,16 +937,6 @@
       [['webui', 'WebUI'], ['status', 'Status'], ['cpu', 'CPU'], ['mem', 'Memory'], ['actions', '']].forEach(function (extra) {
         headRow.append(element('th', 'tp-extra tp-c-' + extra[0], extra[1]));
       });
-    }
-
-    function iconButton(icon, label, onClick, extraClass) {
-      const button = element('button', 'tp-icon-button' + (extraClass ? ' ' + extraClass : ''));
-      button.type = 'button';
-      button.title = label;
-      button.setAttribute('aria-label', label);
-      button.append(element('i', 'fa fa-' + icon));
-      button.addEventListener('click', onClick);
-      return button;
     }
 
     // Adds the image name, a status cell and an actions cell to one of Unraid's rows. The actions
@@ -506,13 +993,13 @@
       else actions.append(iconButton('play', 'Start ' + name, control('start'), 'tp-primary'));
       actions.append(iconButton('folder-o', 'Group for ' + name, function (event) {
         event.stopPropagation();
-        openGroupMenu(event.currentTarget, name);
+        store.openMenu(event.currentTarget, name);
       }));
       // Unraid's full menu (WebUI, console, edit, remove, ...) opens from the container icon;
       // the click is passed on with this button's position so the menu appears next to it.
       actions.append(iconButton('ellipsis-h', 'More actions for ' + name, function (event) {
         event.stopPropagation();
-        if (trigger) trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: event.clientX, clientY: event.clientY }));
+        if (trigger) openMenuFrom(trigger, event.currentTarget);
       }));
       const actionsCell = element('td', 'tp-extra tp-c-actions');
       actionsCell.append(actions);
@@ -584,59 +1071,13 @@
     newGroupButton.title = 'Create an application group';
     newGroupButton.setAttribute('aria-selected', 'true');
     newGroupButton.addEventListener('click', function () {
-      createGroup().then(function (group) { if (group) saveGroups(); });
+      store.create().then(function (group) { if (group) store.save(); });
     });
     if (!folderView) tools.append(newGroupButton);
-    // With FolderView installed: Aurora's view (columns, groups, filters) or FolderView's
-    // folders, as a switch beside the list's title. Stored on the server for every browser; the
-    // page reloads to apply it.
-    if (window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE) {
-      const viewSwitch = element('div', 'tp-segment tp-view-switch');
-      viewSwitch.setAttribute('role', 'group');
-      viewSwitch.setAttribute('aria-label', 'Container list view');
-      [['aurora', 'Aurora'], ['folderview', 'FolderViewPlugin']].forEach(function (option) {
-        const button = element('button', 'tp-tab', option[1]);
-        button.type = 'button';
-        const active = (window.auroraDockerView.mode === 'aurora') === (option[0] === 'aurora');
-        button.setAttribute('aria-selected', String(active));
-        button.title = option[0] === 'aurora' ? 'Aurora\'s list: columns, groups, filters and search' : 'The FolderView plugin\'s folders';
-        const save = function () {
-          button.disabled = true;
-          const body = new URLSearchParams({ view: option[0], csrf_token: window.csrf_token || '' });
-          fetch(PLUGIN_BASE + '/include/docker-view.php', { method: 'POST', credentials: 'same-origin', body: body })
-            .then(function (response) {
-              if (!response.ok) throw new Error('saving the view failed with status ' + response.status);
-              location.reload();
-            })
-            .catch(function (error) {
-              console.error('Aurora Theme view:', error);
-              button.disabled = false;
-              modal({ title: 'View not changed', message: 'The server did not accept the change.', confirmLabel: 'OK', hideCancel: true });
-            });
-        };
-        button.addEventListener('click', function () {
-          if (active) return;
-          if (option[0] !== 'folderview') {
-            save();
-            return;
-          }
-          // FolderView's folders are fitted to the theme, but not all of the plugin is.
-          modal({
-            title: 'Switch to FolderViewPlugin?',
-            message: [
-              'Your containers will be shown in FolderView\'s folders, fitted to the Aurora look: folders on top, everything sorted A–Z, and a folder opens with a single click.',
-              'Aurora doesn\'t support every feature of the FolderView plugin yet. Some of its options and layouts may look a little different here, or not appear at all.',
-              'You can switch back to Aurora\'s view at any time with the same switch.',
-            ],
-            cancelLabel: 'Stay with Aurora',
-            confirmLabel: 'Switch to FolderViewPlugin',
-          }).then(function (confirmed) {
-            if (confirmed) save();
-          });
-        });
-        viewSwitch.append(button);
-      });
-      // Beside the "Docker Containers" title above the table; in the toolbar if there is none.
+    // With FolderView installed: Aurora's view or FolderView's folders (viewSwitch), beside the
+    // "Docker Containers" title above the table; in the toolbar if there is none.
+    const viewSwitch = folderViewSwitch();
+    if (viewSwitch) {
       let title = anchor.previousElementSibling;
       while (title && !title.matches('div.title')) title = title.previousElementSibling;
       if (title) {
@@ -654,118 +1095,13 @@
     toolbar.append(tabs, tools);
     search.addEventListener('input', render);
 
-    // ---- Application groups: named sets of containers, shown as collapsible sections.
-    // Stored on the server (include/docker-groups.php) so every browser sees the same groups;
-    // which sections are collapsed is remembered per browser.
-    const GROUPS_URL = PLUGIN_BASE + '/include/docker-groups.php';
+    // ---- Application groups (groupStore): collapsible sections in the list, each with its
+    // containers in Unraid's order. Changing the groups saves Unraid's order as the list now
+    // shows it, so the containers start in the order they are listed.
     const UNGROUPED = '\u0000ungrouped';
-    let groups = [];
-    let collapsed = [];
-    try { collapsed = JSON.parse(localStorage.getItem('tft-docker-collapsed') || '[]'); } catch (error) { collapsed = []; }
+    const collapsed = collapsedState('tft-docker-collapsed');
     const groupRows = new Map();
-
-    function loadGroups() {
-      if (folderView) return;
-      // Normally the page already carries the groups (AuroraTheme.page); otherwise they are fetched.
-      if (Array.isArray(window.auroraDockerGroups)) {
-        groups = window.auroraDockerGroups.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); });
-        render();
-        return;
-      }
-      if (!PLUGIN_BASE) return;
-      fetch(GROUPS_URL, { credentials: 'same-origin' })
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          groups = Array.isArray(data.groups) ? data.groups : [];
-          render();
-        })
-        .catch(function (error) { console.error('Aurora Theme groups:', error); });
-    }
-
-    function saveGroups() {
-      render();
-      if (!PLUGIN_BASE) return;
-      const body = new URLSearchParams({ groups: JSON.stringify(groups), csrf_token: window.csrf_token || '' });
-      fetch(GROUPS_URL, { method: 'POST', credentials: 'same-origin', body: body })
-        .then(function (response) {
-          if (!response.ok) throw new Error('saving groups failed with status ' + response.status);
-        })
-        .catch(function (error) {
-          console.error('Aurora Theme groups:', error);
-          modal({ title: 'Group change not saved', message: 'The server did not accept the change. It will be lost when the page reloads.', confirmLabel: 'OK', hideCancel: true });
-        });
-    }
-
-    function groupOf(containerName) {
-      return groups.find(function (group) { return group.containers.includes(containerName); });
-    }
-
-    // Asks for a name; resolves with the new group, an existing group of that name, or null.
-    function createGroup() {
-      return modal({
-        title: 'New application group',
-        message: 'Give the group a name. Containers are added to it from their folder button.',
-        input: { placeholder: 'Group name', maxLength: 60 },
-        confirmLabel: 'Create group',
-      }).then(function (name) {
-        if (!name) return null;
-        const existing = groups.find(function (group) { return group.name.toLowerCase() === name.toLowerCase(); });
-        if (existing) return existing;
-        const group = { name: name, containers: [] };
-        groups.push(group);
-        return group;
-      });
-    }
-
-    function assign(containerName, group) {
-      groups.forEach(function (other) {
-        other.containers = other.containers.filter(function (entry) { return entry !== containerName; });
-      });
-      if (group) group.containers.push(containerName);
-      saveGroups();
-    }
-
-    // Small menu next to a row's folder button: pick a group, make a new one, or leave the group.
-    let groupMenu = null;
-    function closeGroupMenu() {
-      if (groupMenu) groupMenu.remove();
-      groupMenu = null;
-    }
-    document.addEventListener('click', closeGroupMenu);
-    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeGroupMenu(); });
-
-    function openGroupMenu(anchor, containerName) {
-      closeGroupMenu();
-      const current = groupOf(containerName);
-      const menu = element('ul', 'dropdown-menu tp-group-menu');
-      const entry = function (icon, text, onClick) {
-        const item = element('li');
-        const link = element('a');
-        link.href = '#';
-        link.append(element('i', 'fa fa-fw ' + icon), ' ' + text);
-        link.addEventListener('click', function (event) {
-          event.preventDefault();
-          closeGroupMenu();
-          onClick();
-        });
-        item.append(link);
-        menu.append(item);
-      };
-      groups.forEach(function (group) {
-        entry(group === current ? 'fa-check' : 'fa-folder-o', group.name, function () { assign(containerName, group); });
-      });
-      if (groups.length) menu.append(element('li', 'divider'));
-      entry('fa-plus', 'New group…', function () {
-        createGroup().then(function (group) { if (group) assign(containerName, group); });
-      });
-      if (current) entry('fa-times', 'Remove from group', function () { assign(containerName, null); });
-      document.body.append(menu);
-      const box = anchor.getBoundingClientRect();
-      menu.style.cssText = 'display:block;position:fixed;z-index:10001;margin:0';
-      menu.style.top = Math.min(box.bottom + 6, window.innerHeight - menu.offsetHeight - 8) + 'px';
-      menu.style.left = Math.max(8, Math.min(box.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + 'px';
-      groupMenu = menu;
-    }
+    const store = groupStore('docker', render, function () { if (!folderView) saveUnraidOrder('docker', list); });
 
     // Starts or stops several containers one after another, then lets Unraid reload the list once.
     function runAll(action, ids) {
@@ -786,72 +1122,16 @@
 
     function groupRow(key, group) {
       if (groupRows.has(key)) return groupRows.get(key);
-      const row = element('tr', 'tp-group');
-      const cell = element('td');
-      cell.colSpan = 20;
-      const head = element('div', 'tp-group-head');
-      const toggle = element('button', 'tp-group-toggle');
-      toggle.type = 'button';
-      toggle.append(element('i', 'fa fa-chevron-down'), element('span', 'tp-group-name'), element('span', 'tp-group-count'));
-      toggle.addEventListener('click', function () {
-        collapsed = collapsed.includes(key) ? collapsed.filter(function (entry) { return entry !== key; }) : collapsed.concat(key);
-        try { localStorage.setItem('tft-docker-collapsed', JSON.stringify(collapsed)); } catch (error) { /* storage blocked */ }
-        render();
+      const row = sectionHeader(store, group, {
+        noun: 'container',
+        load: true,
+        onToggle: function () {
+          collapsed.toggle(key);
+          render();
+        },
+        start: function (items) { runAll('start', items.map(function (item) { return item.id; })); },
+        stop: function (items) { runAll('stop', items.map(function (item) { return item.id; })); },
       });
-      const load = element('span', 'tp-group-load');
-      load.append(element('span', 'tp-group-cpu'), element('span', 'tp-group-mem'));
-      head.append(toggle, element('span', 'tp-group-apps'), load);
-      const actions = element('div', 'tp-actions');
-      const members = function () { return row.tpItems || []; };
-      actions.append(iconButton('play', 'Start all stopped containers in this section', function () {
-        runAll('start', members().filter(function (item) { return !item.running && !item.paused; }).map(function (item) { return item.id; }));
-      }));
-      actions.append(iconButton('stop', 'Stop all running containers in this section', function () {
-        const running = members().filter(function (item) { return item.running; });
-        if (!running.length) return;
-        modal({
-          title: 'Stop ' + running.length + ' container' + (running.length === 1 ? '' : 's') + '?',
-          message: 'All running containers in this section will be stopped: ' + running.map(function (item) { return item.name; }).join(', ') + '.',
-          confirmLabel: 'Stop',
-          danger: true,
-        }).then(function (confirmed) {
-          if (confirmed) runAll('stop', running.map(function (item) { return item.id; }));
-        });
-      }, 'tp-danger'));
-      if (group) {
-        actions.append(iconButton('pencil', 'Rename group', function () {
-          modal({
-            title: 'Rename group',
-            input: { value: group.name, placeholder: 'Group name', maxLength: 60 },
-            validate: function (name) {
-              const taken = groups.some(function (other) { return other !== group && other.name.toLowerCase() === name.toLowerCase(); });
-              return taken ? 'A group with that name already exists.' : '';
-            },
-            confirmLabel: 'Rename',
-          }).then(function (name) {
-            if (!name || name === group.name) return;
-            groupRows.delete(key);
-            row.remove();
-            group.name = name;
-            saveGroups();
-          });
-        }));
-        actions.append(iconButton('trash-o', 'Delete group (its containers stay)', function () {
-          modal({
-            title: 'Delete "' + group.name + '"?',
-            message: 'Only the group is removed. Its containers are kept and become ungrouped.',
-            confirmLabel: 'Delete group',
-            danger: true,
-          }).then(function (confirmed) {
-            if (!confirmed) return;
-            groups = groups.filter(function (other) { return other !== group; });
-            saveGroups();
-          });
-        }, 'tp-danger'));
-      }
-      head.append(actions);
-      cell.append(head);
-      row.append(cell);
       groupRows.set(key, row);
       return row;
     }
@@ -861,16 +1141,16 @@
       if (node.textContent !== text) node.textContent = text;
     }
 
-    // Puts the section headers and their containers in order at the top of the list, the
-    // containers A–Z inside each section (and the whole list A–Z when there are no groups). Runs
-    // after every refresh, and moves nothing when the order is already right.
-    function layoutGroups(unsorted) {
-      const rows = unsorted.slice().sort(function (a, b) { return compareNames(a.name, b.name); });
-      const sections = groups.map(function (group) {
+    // Puts the section headers and their containers in order at the top of the list: the groups
+    // in their saved order, then "Ungrouped"; the containers in each section (and the whole list
+    // when there are no groups) in Unraid's order. Runs after every refresh, and moves nothing
+    // when the order is already right.
+    function layoutGroups(rows) {
+      const sections = store.groups.map(function (group) {
         return { key: 'g:' + group.name, group: group, title: group.name, items: rows.filter(function (item) { return group.containers.includes(item.name); }) };
       });
       if (sections.length) {
-        const rest = rows.filter(function (item) { return !groupOf(item.name); });
+        const rest = rows.filter(function (item) { return !store.of(item.name); });
         if (rest.length) sections.push({ key: UNGROUPED, group: null, title: 'Ungrouped', items: rest });
       }
       const wanted = new Set(sections.map(function (section) { return section.key; }));
@@ -882,32 +1162,33 @@
       });
 
       const order = [];
-      sections.forEach(function (section) {
+      sections.forEach(function (section, index) {
         const header = groupRow(section.key, section.group);
         header.tpItems = section.items;
         header.tpKey = section.key;
-        const running = section.items.filter(function (item) { return item.running; }).length;
-        setText(header.querySelector('.tp-group-name'), section.title);
-        setText(header.querySelector('.tp-group-count'), section.items.length + (section.items.length === 1 ? ' container' : ' containers') + ' · ' + running + ' running');
+        section.index = index;
+        section.collapsed = collapsed.has(section.key);
+        updateSectionHeader(header, section, {
+          noun: 'container',
+          groupCount: store.groups.length,
+          app: function (item) {
+            const image = item.row.querySelector('td.ct-name img.img');
+            const trigger = item.row.querySelector('td.ct-name span.hand[id]');
+            return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : item.running ? 'running' : 'stopped', target: trigger };
+          },
+        });
         const load = sectionLoad(section.items);
         setText(header.querySelector('.tp-group-cpu'), load.cpu);
         setText(header.querySelector('.tp-group-mem'), load.mem);
+        header.querySelector('.tp-group-mem').hidden = !load.mem;
         header.querySelector('.tp-group-load').hidden = !load.cpu;
-        // The running apps of each section, "Ungrouped" included.
-        appStrip(header.querySelector('.tp-group-apps'), section.items.filter(function (item) { return item.running || item.paused; }).map(function (item) {
-          const image = item.row.querySelector('td.ct-name img.img');
-          return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : 'running' };
-        }), 8);
-        const isCollapsed = collapsed.includes(section.key);
-        header.classList.toggle('tp-collapsed', isCollapsed);
-        header.querySelector('.tp-group-toggle').setAttribute('aria-expanded', String(!isCollapsed));
         order.push(header);
         section.items.forEach(function (item) {
-          item.collapsed = isCollapsed;
+          item.collapsed = section.collapsed;
           order.push(item.row);
         });
       });
-      if (!sections.length) rows.forEach(function (item) { order.push(item.row); });
+      if (!sections.length) return;
       order.forEach(function (node, index) {
         if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
       });
@@ -967,44 +1248,26 @@
         const amount = value / UNITS[unit.toUpperCase()];
         return (amount >= 100 || unit === 'B' ? String(Math.round(amount)) : amount.toFixed(1).replace('.', decimalMark)) + unit;
       };
-      return { cpu: cpuText(cpu), mem: size(bytes) + (limit ? ' / ' + size(limit) : '') };
+      // Nothing to add up (Unraid shows "0 / 0" while it has no reading): no memory total.
+      return { cpu: cpuText(cpu), mem: bytes ? size(bytes) + (limit ? ' / ' + size(limit) : '') : '' };
     }
 
-    // FolderView: the folders first (in the order set in FolderView), each followed by its
-    // containers when it is open; below them the containers outside any folder. Containers are
-    // A–Z inside a folder (open rows and the preview icons) and outside. The first container
-    // outside the folders is marked, so enhance.css can set the folders apart from it.
+    // FolderView: the list stays in FolderView's order (folders and containers where they were
+    // dragged to, an open folder's containers under it). A container right after a folder (or
+    // after an open folder's containers) is marked, so enhance.css can set the folder apart
+    // from it, and a long folder name gets its full name as the tooltip.
     function arrangeFolders() {
-      const top = [...list.children];
-      const nameOf = function (node) {
-        const name = node.querySelector('.appname');
-        return name ? name.textContent.trim() : '';
-      };
-      const folders = top.filter(function (row) { return row.classList.contains('folder'); });
-      const inFolder = new Set();
-      const order = [];
-      folders.forEach(function (folder) {
-        order.push(folder);
-        const idClass = [...folder.classList].find(function (name) { return name.indexOf('folder-id-') === 0; });
-        const memberClass = idClass ? 'folder-' + idClass.slice('folder-id-'.length) + '-element' : '';
-        const members = memberClass ? top.filter(function (row) { return row.classList.contains(memberClass); }) : [];
-        members.sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); }).forEach(function (row) {
-          inFolder.add(row);
-          order.push(row);
-        });
-        const preview = folder.querySelector('.folder-preview');
-        if (preview) sortChildren(preview, nameOf);
-        const folderName = folder.querySelector('.folder-appname');
+      let afterFolder = false;
+      [...list.children].forEach(function (row) {
+        const isFolder = row.classList.contains('folder');
+        const inFolder = row.classList.contains('folder-element');
+        const loose = !isFolder && !inFolder && Boolean(row.querySelector(':scope > td.ct-name'));
+        row.classList.toggle('tp-after-folders', loose && afterFolder);
+        if (isFolder || inFolder) afterFolder = true;
+        else if (loose) afterFolder = false;
+        const folderName = isFolder && row.querySelector('.folder-appname');
         if (folderName && folderName.title !== folderName.textContent.trim()) folderName.title = folderName.textContent.trim();
       });
-      const rest = top.filter(function (row) { return !row.classList.contains('folder') && !inFolder.has(row); });
-      const loose = rest.filter(function (row) { return row.querySelector(':scope > td.ct-name'); });
-      loose.sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); });
-      order.push(...loose, ...rest.filter(function (row) { return !loose.includes(row); }));
-      order.forEach(function (node, index) {
-        if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
-      });
-      top.forEach(function (row) { row.classList.toggle('tp-after-folders', folders.length > 0 && row === loose[0]); });
     }
 
     function describe(row) {
@@ -1020,11 +1283,14 @@
         text: row.textContent.toLowerCase(),
         running: Boolean(name.querySelector('i.started')),
         paused: Boolean(name.querySelector('i.paused')),
-        update: Boolean(update && (update.querySelector('.orange-text') || /update ready/i.test(update.textContent))),
+        // "update ready" (and "rebuild ready") carry a flash icon; "not available" (no update
+        // information, e.g. a container without a template) is orange too, but not an update.
+        update: Boolean(update && (update.querySelector('.orange-text .fa-flash') || /update ready/i.test(update.textContent))),
       };
     }
 
     function render() {
+      if (list.tpSorting) return;
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
@@ -1141,7 +1407,18 @@
       render();
       markReady();
     }).observe(list, { childList: true, subtree: true });
-    loadGroups();
+    roomToDragToTop(list);
+    if (!folderView) {
+      store.load();
+      dropIntoSections(list, store, function (row) { const name = row.querySelector('td.ct-name .appname'); return name ? name.textContent.trim() : ''; }, UNGROUPED, render);
+    } else if (window.jQuery) {
+      // FolderView's list is dragged by Unraid's own drag and drop too; it is left alone meanwhile.
+      window.jQuery(list).on('sortstart', function () { list.tpSorting = true; });
+      window.jQuery(list).on('sortstop', function () {
+        list.tpSorting = false;
+        setTimeout(render);
+      });
+    }
     render();
     markReady();
   }
@@ -1667,91 +1944,155 @@
     });
   }
 
-  // Dashboard, Docker tile: the containers A–Z. With FolderView the folders stay first (in the
-  // order set there), the containers of an open folder are A–Z as well, and a line sets the
-  // folders apart from the containers outside them. Without FolderView the theme's application
-  // groups (the Docker tab's "+ Group") are shown here too: a chip per group at the top that
-  // opens or closes a panel with its containers, open or closed as on the Docker tab (the state
-  // is shared), and the ungrouped containers below a line. The tile is redrawn by Unraid and by
-  // FolderView, so this runs again after each redraw (once per frame at most).
+  // Dashboard, Docker tile. With the theme's groups: see dashboardGroups. With FolderView's
+  // folders: the tile keeps FolderView's order, a line sets each folder apart from the
+  // containers after it, and each folder chip shows its apps' icons.
   function dashboardDockerOrder() {
     const view = document.getElementById('docker_view');
     if (!view) return;
-    const nameOf = function (chip) {
-      const inner = chip.querySelector('.inner');
-      const named = inner && inner.querySelector('.appname');
-      if (named) return named.textContent.trim();
-      return inner && inner.firstChild ? inner.firstChild.textContent.trim() : '';
-    };
-    const divider = element('div', 'tp-chip-divider');
-    divider.setAttribute('aria-hidden', 'true');
-    const folderView = folderViewActive();
-    // The running (or paused) apps among chips, for the icon strip of a group or folder.
-    const runningApps = function (chips) {
-      return chips.filter(function (chip) { return chip.classList.contains('started') || chip.classList.contains('paused'); }).map(function (chip) {
-        const image = chip.querySelector(':scope > span.hand img');
-        return { name: nameOf(chip), src: image && image.src, state: chip.classList.contains('paused') ? 'paused' : 'running' };
+    if (!folderViewActive()) {
+      dashboardGroups(view, 'docker');
+      return;
+    }
+    // A line between a folder and the containers right after it, wherever the folder is (the
+    // tile follows FolderView's order). Lines are only added or removed where that changed, so
+    // the tile's observer settles.
+    const dividers = function (cell) {
+      [...cell.querySelectorAll(':scope > .tp-chip-divider')].forEach(function (line) {
+        const before = line.previousElementSibling;
+        const after = line.nextElementSibling;
+        if (!(before && before.classList.contains('folder-showcase-outer') && after && after.matches('span.outer.apps'))) line.remove();
+      });
+      [...cell.querySelectorAll(':scope > span.outer.apps')].forEach(function (chip) {
+        const before = chip.previousElementSibling;
+        if (!before || !before.classList.contains('folder-showcase-outer')) return;
+        const line = element('div', 'tp-chip-divider');
+        line.setAttribute('aria-hidden', 'true');
+        chip.before(line);
       });
     };
+    const arrange = function () {
+      const first = view.querySelector('td > span.outer.apps, td > .folder-showcase-outer');
+      if (!first) return;
+      const cell = first.parentElement;
+      const folders = [...cell.children].filter(function (node) { return node.classList.contains('folder-showcase-outer'); });
+      folders.forEach(function (folder) {
+        // A closed folder keeps its containers' chips in its hidden store, an open one in its panel.
+        const inner = folder.querySelector(':scope > span.outer > .inner');
+        if (!inner) return;
+        let strip = inner.querySelector(':scope > .tp-group-apps');
+        if (!strip) {
+          strip = element('span', 'tp-group-apps');
+          inner.append(strip);
+        }
+        appStrip(strip, chipApps([...folder.querySelectorAll('.folder-storage > span.outer, .folder-showcase > span.outer')]), 4);
+      });
+      dividers(cell);
+      nameTooltips(cell);
+    };
+    let queued = false;
+    new MutationObserver(function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; arrange(); });
+    }).observe(view, { childList: true, subtree: true });
+    arrange();
+  }
 
-    // ---- Theme groups (stored by include/docker-groups.php, collapsed state per browser)
-    let groups = [];
-    const validGroups = function (list) {
-      return Array.isArray(list) ? list.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); }) : [];
-    };
-    const COLLAPSED_KEY = 'tft-docker-collapsed';
-    const UNGROUPED_KEY = '\u0000ungrouped'; // the Docker tab's key for its "Ungrouped" section
-    const readCollapsed = function () {
-      try { return JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]'); } catch (error) { return []; }
-    };
+  // Dashboard, Virtual Machines tile: the theme's VM groups (not while FolderView arranges it).
+  function dashboardVmGroups() {
+    const view = document.getElementById('vm_view');
+    if (view && !folderViewActive()) dashboardGroups(view, 'vm');
+  }
+
+  // A Dashboard chip's name: the container's name element, or the VM's name text.
+  function chipName(chip) {
+    const inner = chip.querySelector('.inner');
+    const named = inner && inner.querySelector('.appname');
+    if (named) return named.textContent.trim();
+    return inner && inner.firstChild ? inner.firstChild.textContent.trim() : '';
+  }
+
+  // Dashboard chips as apps for an icon strip; a click on an icon is a click on the chip's icon.
+  function chipApps(chips) {
+    return chips.map(function (chip) {
+      const hand = chip.querySelector(':scope > span.hand');
+      const image = hand && hand.querySelector('img');
+      const state = chip.classList.contains('paused') ? 'paused' : chip.classList.contains('started') ? 'running' : 'stopped';
+      return { name: chipName(chip), src: image && image.src, state: state, target: hand };
+    });
+  }
+
+  // Long names end in "…" (enhance.css); the whole name is the tooltip.
+  function nameTooltips(cell) {
+    cell.querySelectorAll('span.outer:not(.tp-group-chip) .inner').forEach(function (inner) {
+      const name = chipName(inner.parentElement);
+      if (name && inner.title !== name) inner.title = name;
+    });
+  }
+
+  // Dashboard, Docker or Virtual Machines tile: the theme's groups as chips that open and close a
+  // panel with their members, in the groups' order and then "Ungrouped" (only while there are
+  // groups, as on the tabs); the members in Unraid's order. Each group chip shows its members'
+  // icons, which open their menus. Open and closed is shared with the tab.
+  function dashboardGroups(view, type) {
+    const kind = type === 'vm' ? 'vms' : 'apps';
+    const noun = type === 'vm' ? 'VM' : 'container';
+    const collapsed = collapsedState(type === 'vm' ? 'tft-vm-collapsed' : 'tft-docker-collapsed');
+    const UNGROUPED_KEY = '\u0000ungrouped'; // the tabs' key for their "Ungrouped" section
+    const divider = element('div', 'tp-chip-divider');
+    divider.setAttribute('aria-hidden', 'true');
     const parts = new Map();
-    // key: the collapsed-state key shared with the Docker tab ('g:' + name, or the Docker tab's
-    // key for "Ungrouped").
-    const groupPart = function (group, key) {
+    // key: the collapsed-state key shared with the tab ('g:' + name, or UNGROUPED_KEY).
+    const groupPart = function (name, key) {
       if (parts.has(key)) return parts.get(key);
-      const chip = element('span', 'outer solid apps tp-group-chip');
+      const chip = element('span', 'outer solid ' + kind + ' tp-group-chip');
       chip.setAttribute('role', 'button');
       chip.tabIndex = 0;
       const icon = element('span', 'tp-group-chip-icon');
       icon.append(element('i', 'fa fa-folder-open'));
       const inner = element('span', 'inner');
-      inner.append(element('span', 'tp-group-chip-name', group.name), element('span', 'tp-group-chip-count'), element('span', 'tp-group-apps'));
+      inner.append(element('span', 'tp-group-chip-name', name), element('span', 'tp-group-chip-count'), element('span', 'tp-group-apps'));
       chip.append(icon, inner, element('i', 'fa fa-chevron-down tp-group-chip-caret'));
       const panel = element('div', 'tp-group-panel');
       const toggle = function () {
-        const collapsed = readCollapsed();
-        const next = collapsed.includes(key) ? collapsed.filter(function (entry) { return entry !== key; }) : collapsed.concat(key);
-        try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next)); } catch (error) { /* storage blocked */ }
+        collapsed.toggle(key);
         arrange();
       };
       chip.addEventListener('click', toggle);
       chip.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); }
+        if (event.target === chip && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggle(); }
       });
-      const part = { chip: chip, panel: panel, icon: icon.firstChild, count: inner.children[1], apps: inner.children[2] };
+      const part = { chip: chip, panel: panel, name: inner.firstChild, icon: icon.firstChild, count: inner.children[1], apps: inner.children[2] };
       parts.set(key, part);
       return part;
     };
 
-    const arrangeGroups = function (cell) {
-      const chips = [...cell.querySelectorAll(':scope > span.outer.apps:not(.tp-group-chip), :scope > .tp-group-panel > span.outer.apps')];
-      const byName = function (a, b) { return compareNames(nameOf(a), nameOf(b)); };
-      const collapsed = readCollapsed();
+    const arrange = function () {
+      const first = view.querySelector('td > span.outer.' + kind + ':not(.tp-group-chip), td > .tp-group-panel');
+      if (!first) return;
+      const cell = first.parentElement;
+      const chips = [...cell.querySelectorAll(':scope > span.outer.' + kind + ':not(.tp-group-chip), :scope > .tp-group-panel > span.outer.' + kind)];
       const placed = new Set();
       const wanted = [];
-      // The groups, then "Ungrouped" for the rest (only while there are groups, as on the Docker tab).
-      const sections = groups.map(function (group) {
-        const members = chips.filter(function (chip) { return !placed.has(chip) && group.containers.includes(nameOf(chip)); });
+      const sections = store.groups.map(function (group) {
+        const members = chips.filter(function (chip) { return !placed.has(chip) && group.containers.includes(chipName(chip)); });
         members.forEach(function (chip) { placed.add(chip); });
-        return { group: group, key: 'g:' + group.name, members: members };
+        return { name: group.name, key: 'g:' + group.name, members: members };
       });
       if (sections.some(function (section) { return section.members.length; })) {
-        sections.push({ group: { name: 'Ungrouped', containers: [] }, key: UNGROUPED_KEY, members: chips.filter(function (chip) { return !placed.has(chip); }) });
+        sections.push({ name: 'Ungrouped', key: UNGROUPED_KEY, members: chips.filter(function (chip) { return !placed.has(chip); }) });
       }
+      const keys = new Set(sections.map(function (section) { return section.key; }));
+      parts.forEach(function (part, key) {
+        if (keys.has(key)) return;
+        part.chip.remove();
+        part.panel.remove();
+        parts.delete(key);
+      });
       sections.forEach(function (section) {
-        const group = section.group;
-        const part = groupPart(group, section.key);
-        const members = section.members.sort(byName);
+        const part = groupPart(section.name, section.key);
+        const members = section.members;
         if (!members.length) {
           part.chip.remove();
           part.panel.remove();
@@ -1761,84 +2102,37 @@
         if (members.some(function (chip, index) { return part.panel.children[index] !== chip; }) || part.panel.children.length !== members.length) {
           part.panel.replaceChildren(...members);
         }
-        const isCollapsed = collapsed.includes(section.key);
+        const isCollapsed = collapsed.has(section.key);
         const running = members.filter(function (chip) { return chip.classList.contains('started'); }).length;
-        const count = members.length + (members.length === 1 ? ' container' : ' containers') + ' · ' + running + ' running';
+        const count = members.length + ' ' + noun + (members.length === 1 ? '' : 's') + ' · ' + running + ' running';
         if (part.count.textContent !== count) part.count.textContent = count;
-        appStrip(part.apps, runningApps(members), 4);
-        part.chip.title = group.name + ': ' + count;
+        appStrip(part.apps, chipApps(members), 4);
+        part.chip.title = section.name + ': ' + count;
         part.chip.setAttribute('aria-expanded', String(!isCollapsed));
         part.chip.classList.toggle('tp-collapsed', isCollapsed);
         part.icon.className = 'fa ' + (isCollapsed ? 'fa-folder' : 'fa-folder-open');
         part.panel.hidden = isCollapsed;
         wanted.push(part.chip, part.panel);
       });
-      const loose = chips.filter(function (chip) { return !placed.has(chip); }).sort(byName);
+      const loose = chips.filter(function (chip) { return !placed.has(chip); });
       if (wanted.length && loose.length) wanted.push(divider);
       else divider.remove();
       wanted.push(...loose);
       wanted.forEach(function (node, index) {
         if (cell.children[index] !== node) cell.insertBefore(node, cell.children[index] || null);
       });
+      nameTooltips(cell);
     };
-
-    const arrange = function () {
-      const first = view.querySelector('td > span.outer.apps, td > .folder-showcase-outer, td > .tp-group-panel');
-      if (!first) return;
-      const cell = first.parentElement;
-      if (!folderView) {
-        arrangeGroups(cell);
-      } else {
-        const folders = [...cell.children].filter(function (node) { return node.classList.contains('folder-showcase-outer'); });
-        folders.forEach(function (folder) {
-          const showcase = folder.querySelector('.folder-showcase');
-          if (showcase) sortChildren(showcase, nameOf, [...showcase.children].filter(function (node) { return node.matches('span.outer'); }));
-          // The folder chip shows its running apps; a closed folder keeps their chips in its
-          // hidden store, an open one in its panel.
-          const inner = folder.querySelector(':scope > span.outer > .inner');
-          if (!inner) return;
-          let strip = inner.querySelector(':scope > .tp-group-apps');
-          if (!strip) {
-            strip = element('span', 'tp-group-apps');
-            inner.append(strip);
-          }
-          const members = [...folder.querySelectorAll('.folder-storage > span.outer, .folder-showcase > span.outer')].sort(function (a, b) { return compareNames(nameOf(a), nameOf(b)); });
-          appStrip(strip, runningApps(members), 4);
-        });
-        const loose = [...cell.children].filter(function (node) { return node.matches('span.outer.apps'); });
-        sortChildren(cell, nameOf, loose);
-        const firstLoose = [...cell.children].find(function (node) { return node.matches('span.outer.apps'); });
-        if (folders.length && firstLoose) {
-          if (divider.nextElementSibling !== firstLoose) cell.insertBefore(divider, firstLoose);
-        } else if (divider.isConnected) {
-          divider.remove();
-        }
-      }
-      // Long names end in "…" (enhance.css); the whole name is the tooltip.
-      cell.querySelectorAll('span.outer:not(.tp-group-chip) .inner').forEach(function (inner) {
-        const name = nameOf(inner.parentElement);
-        if (name && inner.title !== name) inner.title = name;
-      });
-    };
+    const store = groupStore(type, arrange);
     let queued = false;
     new MutationObserver(function () {
       if (queued) return;
       queued = true;
       requestAnimationFrame(function () { queued = false; arrange(); });
     }).observe(view, { childList: true, subtree: true });
-
-    // Normally the page carries the groups (AuroraTheme.page); otherwise they are fetched.
-    if (!folderView && Array.isArray(window.auroraDockerGroups)) {
-      groups = validGroups(window.auroraDockerGroups);
-    } else if (!folderView && PLUGIN_BASE) {
-      fetch(PLUGIN_BASE + '/include/docker-groups.php', { credentials: 'same-origin' })
-        .then(function (response) { return response.json(); })
-        .then(function (data) { groups = validGroups(data.groups); arrange(); })
-        .catch(function (error) { console.error('Aurora Theme groups:', error); });
-    }
+    store.load();
     arrange();
   }
-
 
   // Dashboard, Virtual Machines Usage tile (VM Manager settings, "Show VM usage"): Unraid puts a
   // running VM's icon, name and its five readings (guest and host CPU, memory, disk, network) in
@@ -2695,6 +2989,178 @@
   // VMs: Unraid opens a VM's details (disks, interfaces, snapshots) when its name is clicked,
   // which is easy to miss. Each VM gets a chevron button in front of its icon that does the same,
   // and turns while the details are open. Unraid remembers which VMs are open.
+  // VMs tab: the theme's groups for VMs, as on the Docker tab: collapsible sections in the
+  // groups' order and then "Ungrouped", the VMs in Unraid's order, each section with its VMs'
+  // icons and start / stop for all of them; "+ Group" above the list and a folder button on each
+  // VM. Not while FolderView arranges the list.
+  function vmGroups() {
+    const list = document.getElementById('kvm_list');
+    const table = document.getElementById('kvm_table');
+    if (!list || !table || folderViewActive()) return;
+    const anchor = table.closest('.TableContainer') || table;
+    const UNGROUPED = '\u0000ungrouped';
+    const collapsed = collapsedState('tft-vm-collapsed');
+    const headers = new Map();
+    const store = groupStore('vm', render, function () { saveUnraidOrder('vm', list); });
+
+    const toolbar = element('div', 'tp-toolbar tp-vm-toolbar');
+    const tools = element('div', 'tp-tools');
+    const newGroupButton = element('button', 'tp-tab', '+ Group');
+    newGroupButton.type = 'button';
+    newGroupButton.title = 'Create a group of VMs';
+    newGroupButton.setAttribute('aria-selected', 'true');
+    newGroupButton.addEventListener('click', function () {
+      store.create().then(function (group) { if (group) store.save(); });
+    });
+    tools.append(newGroupButton);
+    toolbar.append(tools);
+
+    const nameOf = function (row) {
+      const link = row.querySelector('td.vm-name .inner > a');
+      return link ? link.textContent.trim() : '';
+    };
+    function describe(row) {
+      const cell = row.querySelector('td.vm-name');
+      const trigger = cell.querySelector('span.hand[id^="vm-"]');
+      return {
+        row: row,
+        name: nameOf(row),
+        uuid: trigger ? trigger.id.slice(3) : '',
+        trigger: trigger,
+        running: Boolean(cell.querySelector('i.started')),
+        paused: Boolean(cell.querySelector('i.paused')),
+      };
+    }
+    // A VM's row and the rows under it (its details), up to the next VM or section.
+    function rowsOf(item) {
+      const rows = [item.row];
+      for (let next = item.row.nextElementSibling; next && !next.hasAttribute('parent-id') && !next.classList.contains('tp-group'); next = next.nextElementSibling) rows.push(next);
+      return rows;
+    }
+
+    // Starts or stops several VMs one after another, then lets Unraid reload the list once.
+    function runAll(action, items) {
+      const jq = window.jQuery;
+      if (!jq || !items.length) return;
+      jq('div.spinner.fixed').show('slow');
+      let chain = Promise.resolve();
+      items.forEach(function (item) {
+        chain = chain.then(function () {
+          return new Promise(function (resolve) { jq.post('/plugins/dynamix.vm.manager/include/VMajax.php', { action: action, uuid: item.uuid }).always(resolve); });
+        });
+      });
+      chain.then(function () {
+        if (typeof window.loadlist === 'function') window.loadlist();
+        else jq('div.spinner.fixed').hide('slow');
+      });
+    }
+
+    // An actions column at the end of the table, as on the Docker tab: start, or stop and
+    // restart (resume when paused), the VM's group, and Unraid's full menu (the VM's icon menu,
+    // opened next to the button). The detail rows under a VM span the new column too.
+    const headRow = table.querySelector('thead tr');
+    if (headRow && !headRow.querySelector('.tp-vm-actions')) headRow.append(element('th', 'tp-vm-actions'));
+    function decorate(item) {
+      if (item.row.querySelector(':scope > td.tp-vm-actions')) return;
+      const dispatch = function (action) {
+        return function () {
+          if (typeof window.ajaxVMDispatch === 'function') window.ajaxVMDispatch({ action: action, uuid: item.uuid }, 'loadlist');
+        };
+      };
+      const actions = element('div', 'tp-actions');
+      if (item.paused) actions.append(iconButton('play', 'Resume ' + item.name, dispatch('domain-resume'), 'tp-primary'));
+      else if (item.running) actions.append(iconButton('refresh', 'Restart ' + item.name, dispatch('domain-restart')), iconButton('stop', 'Stop ' + item.name, dispatch('domain-stop'), 'tp-danger'));
+      else actions.append(iconButton('play', 'Start ' + item.name, dispatch('domain-start'), 'tp-primary'));
+      actions.append(iconButton('folder-o', 'Group for ' + item.name, function (event) {
+        event.stopPropagation();
+        store.openMenu(event.currentTarget, item.name);
+      }));
+      actions.append(iconButton('ellipsis-h', 'More actions for ' + item.name, function (event) {
+        event.stopPropagation();
+        if (item.trigger) openMenuFrom(item.trigger, event.currentTarget);
+      }));
+      const cell = element('td', 'tp-vm-actions');
+      cell.append(actions);
+      item.row.append(cell);
+    }
+
+    function headerFor(key, group) {
+      if (headers.has(key)) return headers.get(key);
+      const row = sectionHeader(store, group, {
+        noun: 'VM',
+        onToggle: function () {
+          collapsed.toggle(key);
+          render();
+        },
+        start: function (items) { runAll('domain-start', items); },
+        stop: function (items) { runAll('domain-stop', items); },
+      });
+      headers.set(key, row);
+      return row;
+    }
+
+    function render() {
+      if (list.tpSorting) return;
+      const items = [...list.querySelectorAll(':scope > tr[parent-id]')].map(describe).filter(function (item) { return item.name; });
+      if (!items.length) return;
+      if (!toolbar.isConnected) anchor.before(toolbar);
+      list.querySelectorAll(':scope > tr:not([parent-id]):not(.tp-group) > td[colspan="8"]').forEach(function (cell) { cell.colSpan = 9; });
+      items.forEach(decorate);
+      const sections = store.groups.map(function (group) {
+        return { key: 'g:' + group.name, group: group, title: group.name, items: items.filter(function (item) { return group.containers.includes(item.name); }) };
+      });
+      if (sections.length) {
+        const rest = items.filter(function (item) { return !store.of(item.name); });
+        if (rest.length) sections.push({ key: UNGROUPED, group: null, title: 'Ungrouped', items: rest });
+      }
+      const wanted = new Set(sections.map(function (section) { return section.key; }));
+      headers.forEach(function (row, key) {
+        if (!wanted.has(key)) {
+          row.remove();
+          headers.delete(key);
+        }
+      });
+      if (!sections.length) {
+        list.querySelectorAll(':scope > tr.tp-filtered-out').forEach(function (row) { row.classList.remove('tp-filtered-out'); });
+        return;
+      }
+      // Each VM's rows are collected before anything moves.
+      const order = [];
+      sections.forEach(function (section, index) {
+        const header = headerFor(section.key, section.group);
+        header.tpItems = section.items;
+        header.tpKey = section.key;
+        section.index = index;
+        section.collapsed = collapsed.has(section.key);
+        updateSectionHeader(header, section, {
+          noun: 'VM',
+          groupCount: store.groups.length,
+          app: function (item) {
+            const image = item.trigger && item.trigger.querySelector('img');
+            return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : item.running ? 'running' : 'stopped', target: item.trigger };
+          },
+        });
+        order.push(header);
+        section.items.forEach(function (item) {
+          rowsOf(item).forEach(function (row) {
+            row.classList.toggle('tp-filtered-out', section.collapsed);
+            order.push(row);
+          });
+        });
+      });
+      order.forEach(function (node, index) {
+        if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
+      });
+    }
+
+    // Unraid replaces the rows on every refresh; they are grouped again before they are painted.
+    new MutationObserver(render).observe(list, { childList: true });
+    dropIntoSections(list, store, nameOf, UNGROUPED, render);
+    roomToDragToTop(list);
+    store.load();
+    render();
+  }
+
   function vmDetails() {
     const list = document.getElementById('kvm_list');
     if (!list || typeof window.toggle_id !== 'function') return;
@@ -2722,7 +3188,7 @@
         if (outer) outer.before(button);
         else cell.prepend(button);
         // The details are this row and the rows after it, up to the next VM.
-        for (let next = details; next && !next.hasAttribute('parent-id'); next = next.nextElementSibling) next.classList.add('tp-vm-details');
+        for (let next = details; next && !next.hasAttribute('parent-id') && !next.classList.contains('tp-group'); next = next.nextElementSibling) next.classList.add('tp-vm-details');
 
         snapshotTools(row, details);
 
@@ -3259,7 +3725,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, docker, dockerPorts, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardDockerOrder, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
