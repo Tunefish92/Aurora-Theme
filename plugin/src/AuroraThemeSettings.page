@@ -43,6 +43,16 @@ document.getElementById('tft-accent').addEventListener('input', function () {
 });
 </script>
 
+_(Fonts)_:
+: <select name="font">
+  <?=mk_option($aurora['font'] ?? 'aurora', "aurora", _("Aurora: Inter and Space Grotesk"))?>
+  <?=mk_option($aurora['font'] ?? 'aurora', "unraid", _("Unraid default: Clear Sans"))?>
+  </select>
+
+> **Aurora** uses Inter for text and Space Grotesk for headings, bundled with the plugin. **Unraid
+> default** keeps Unraid's own fonts, Clear Sans for text and headings and Bitstream for code, with
+> everything else of the theme. The login page always uses the Aurora fonts.
+
 _(Navigation layout)_:
 : <select name="layout">
   <?=mk_option($aurora['layout'], "top", _("Top bar (Unraid default)"))?>

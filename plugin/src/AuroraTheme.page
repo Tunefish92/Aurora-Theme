@@ -66,6 +66,26 @@ if (preg_match('/^[0-9a-f]{6}$/', $auroraAccent)):
 .unapi:not(#tp-none):not(#tp-none) { <?= implode(' ', $auroraScale) ?> }
 </style>
 <?php endif; ?>
+<?php if (($aurora['font'] ?? 'aurora') === 'unraid'): ?>
+<?php
+// Fonts from the plugin's settings, "Unraid default": theme.css points Unraid's font names
+// (clear-sans, bitstream) at Inter; these later rules point them back at Unraid's own files, and
+// the theme's text and headings use Clear Sans.
+$auroraFonts = [];
+foreach (['clear-sans', 'bitstream'] as $auroraFamily) {
+    foreach (['normal' => '', 'bold' => '-bold'] as $auroraWeight => $auroraWeightFile) {
+        foreach (['normal' => '', 'italic' => '-italic'] as $auroraStyle => $auroraStyleFile) {
+            $auroraFonts[] = "@font-face { font-family: $auroraFamily; font-weight: $auroraWeight; font-style: $auroraStyle; src: url('/webGui/styles/$auroraFamily$auroraWeightFile$auroraStyleFile.woff') format('woff'); }";
+        }
+    }
+}
+?>
+<style id="aurora-fonts">
+<?= implode("\n", $auroraFonts) ?>
+
+:root:root:root { --tp-font-body: clear-sans, system-ui, -apple-system, "Segoe UI", sans-serif; --tp-font-heading: var(--tp-font-body); }
+</style>
+<?php endif; ?>
 <script>
 // Theme credit at the end of the footer.
 document.addEventListener('DOMContentLoaded', function () {
