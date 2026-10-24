@@ -40,7 +40,7 @@ function withAurora(html, surface, aurora) {
             + '<script defer src="/plugins/Aurora-Theme/scripts/enhance.js"></script></head>');
 }
 
-// One page load. page: { url, ready(count), inspect(), prepare(html) }; aurora: as above or null.
+// One page load. page: { url, ready(count), inspect(), prepare(html), sameLists }; aurora: as above or null.
 async function measureOnce(browser, page, count, aurora) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const tab = await context.newPage();
@@ -103,8 +103,10 @@ export async function comparePage(browser, page, count, aurora, label, compare) 
     if (alone.ready === null) problems.push('the plugin alone never got ready (fixture out of date?)');
     if (withTheme.ready === null) problems.push('the folders never appeared with Aurora');
     else if (alone.ready !== null) {
-        if (withTheme.folders !== alone.folders) problems.push(`${withTheme.folders} folders instead of ${alone.folders}`);
-        if (withTheme.rows !== alone.rows) problems.push(`${withTheme.rows} rows or chips instead of ${alone.rows}`);
+        // page.sameLists false: Aurora draws the lists itself (its own view), so folders and rows
+        // are checked by compare() instead.
+        if (page.sameLists !== false && withTheme.folders !== alone.folders) problems.push(`${withTheme.folders} folders instead of ${alone.folders}`);
+        if (page.sameLists !== false && withTheme.rows !== alone.rows) problems.push(`${withTheme.rows} rows or chips instead of ${alone.rows}`);
         if (withTheme.aurora) problems.push(`${withTheme.aurora} theme elements where the plugin owns the list`);
         if (withTheme.steady > Math.max(alone.steady * 1.3, alone.steady + 150)) problems.push('the page stays busier than with the plugin alone');
         if (withTheme.settling > alone.settling * 2 + 300) problems.push('the page takes much longer to settle');

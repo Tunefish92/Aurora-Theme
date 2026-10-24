@@ -1,0 +1,66 @@
+name: FolderView compatibility
+
+# Runs Aurora against the real FolderView Plus and FolderView3 pages (plugin/test/*_compat.mjs):
+# on changes to the theme or the checks, every Monday against both plugins' newest code (so a
+# change on their side shows up without a change here), and on demand.
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'unraid-tapeory.css'
+      - 'plugin/src/**'
+      - 'plugin/test/**'
+      - '.github/workflows/folderview-compat.yml'
+  pull_request:
+    paths:
+      - 'unraid-tapeory.css'
+      - 'plugin/src/**'
+      - 'plugin/test/**'
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: [fvplus, fv3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Playwright with Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.1
+          npx playwright install --with-deps chromium
+
+      - name: FolderView Plus, newest code
+        if: matrix.plugin == 'fvplus'
+        run: |
+          git clone --depth 1 https://github.com/alexphillips-dev/FolderView-Plus.git "$RUNNER_TEMP/fvp"
+          (cd "$RUNNER_TEMP/fvp" && npm install --no-save --no-package-lock jquery@3.7.1)
+          echo "FolderView Plus $(git -C "$RUNNER_TEMP/fvp" log -1 --format='%h %cs %s')"
+
+      - name: FolderView3, newest code
+        if: matrix.plugin == 'fv3'
+        run: |
+          git clone --depth 1 https://github.com/chodeus/folder.view3.git "$RUNNER_TEMP/fv3"
+          (cd "$RUNNER_TEMP/fv3" && npm install --no-save --no-package-lock jquery@3.7.1)
+          echo "FolderView3 $(git -C "$RUNNER_TEMP/fv3" log -1 --format='%h %cs %s')"
+
+      - name: Check FolderView Plus
+        if: matrix.plugin == 'fvplus'
+        run: FVP="$RUNNER_TEMP/fvp" node plugin/test/fvplus_compat.mjs
+
+      - name: Check FolderView3
+        if: matrix.plugin == 'fv3'
+        run: FV3="$RUNNER_TEMP/fv3" node plugin/test/fv3_compat.mjs
