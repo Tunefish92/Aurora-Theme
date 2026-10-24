@@ -823,6 +823,16 @@
         line-height: 1.5;
     }
 
+    /* Docker start delay ("wait"): Unraid makes it 2.6rem wide for a bare field, which leaves
+       no room for the number once it is boxed. Aurora's compact list sizes it itself; this is
+       for the other views, such as FolderView3's (issue #21). */
+    #docker_containers input.wait {
+        width: 4.6rem;
+        margin: 0 0 0 0.6rem;
+        padding: 0.3rem 0.6rem;
+        text-align: center;
+    }
+
     /* ======================================================================
        Dropdowns (every <select> and Unraid's multi-select lists)
        Roomier than Unraid's, with a drawn chevron instead of its two-triangle arrow.
