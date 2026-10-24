@@ -43,8 +43,17 @@
   // then keeps FolderView out of the list).
   function folderViewActive() {
     const view = window.auroraDockerView;
+    if (folderViewPlus()) return true;
     if (view && view.mode === 'aurora') return false;
     return Boolean(document.querySelector('script[src*="/folder.view"]'));
+  }
+
+  // FolderView Plus (folderview.plus) owns its lists outright: the theme leaves its folders, rows
+  // and chips alone (no view switch, no clicks taken over, nothing moved or rewritten) and keeps
+  // to colours and layout. AuroraTheme.page tells when it is installed; its scripts tell too.
+  function folderViewPlus() {
+    const view = window.auroraDockerView;
+    return Boolean((view && view.plus) || document.querySelector('script[src*="/plugins/folderview.plus/"]'));
   }
 
   // A group's apps (containers or VMs) as small icons: running and paused ones first with a
@@ -839,7 +848,7 @@
   // FolderView's folders, for the Docker and VMs tabs alike. Stored on the server for every
   // browser (include/docker-view.php); the page reloads to apply it. Null without FolderView.
   function folderViewSwitch() {
-    if (!(window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE)) return null;
+    if (!(window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE) || folderViewPlus()) return null;
     const viewSwitch = element('div', 'tp-segment tp-view-switch');
     viewSwitch.setAttribute('role', 'group');
     viewSwitch.setAttribute('aria-label', 'List view');
@@ -921,6 +930,8 @@
     // columns, groups, filters or search (they would pull containers out of their folders), only
     // the summary above the table.
     const folderView = folderViewActive();
+    // FolderView Plus: its rows are only read (the summary above the table), never written.
+    const plus = folderViewPlus();
 
     // Compact view: Unraid's ten columns in the order its table prints them. The view is only
     // offered while the table still has exactly these, so a changed Unraid release falls back to
@@ -1293,16 +1304,19 @@
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
-      formatCpu(rows);
-      // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
-      // an update gets the orange dot on its icon.
-      rows.forEach(function (item) {
-        const name = item.row.querySelector('td.ct-name .appname');
-        if (name && name.title !== item.name) name.title = item.name;
-        item.row.classList.toggle('tp-update', item.update);
-      });
+      if (!plus) {
+        formatCpu(rows);
+        // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
+        // an update gets the orange dot on its icon.
+        rows.forEach(function (item) {
+          const name = item.row.querySelector('td.ct-name .appname');
+          if (name && name.title !== item.name) name.title = item.name;
+          item.row.classList.toggle('tp-update', item.update);
+        });
+      }
+      // FolderView Plus keeps its own order and folder styling.
       if (folderView) {
-        arrangeFolders();
+        if (!plus) arrangeFolders();
       } else {
         rows.forEach(function (item) { decorate(item.row); });
         layoutGroups(rows);
@@ -1361,7 +1375,8 @@
     // FolderView: a click anywhere on a folder's row opens or closes it, its name included
     // (FolderView only does that with the arrow button). Its icon keeps FolderView's menu (Edit,
     // Start, ...), and the preview icons, buttons and switches keep doing their own thing.
-    if (folderView) {
+    // FolderView Plus handles clicks on its folders itself.
+    if (folderView && !plus) {
       list.addEventListener('click', function (event) {
         const row = event.target.closest('tr.folder');
         if (!row || row.parentElement !== list || event.button !== 0) return;
@@ -1408,7 +1423,7 @@
       render();
       markReady();
     }).observe(list, { childList: true, subtree: true });
-    roomToDragToTop(list);
+    if (!plus) roomToDragToTop(list);
     if (!folderView) {
       store.load();
       dropIntoSections(list, store, function (row) { const name = row.querySelector('td.ct-name .appname'); return name ? name.textContent.trim() : ''; }, UNGROUPED, render);
@@ -1607,6 +1622,9 @@
     if (!view) return;
     const mark = function () {
       view.querySelectorAll('span.outer.apps').forEach(function (chip) {
+        // A closed FolderView folder keeps its containers' chips in a hidden store; they are
+        // FolderView's and stay as they are.
+        if (chip.closest('.folder-storage')) return;
         const update = chipUpdate(chip);
         if (chip.classList.contains('tp-update') !== update) chip.classList.toggle('tp-update', update);
         // The tooltip is only taken away again if it is ours.
@@ -1757,7 +1775,9 @@
 
     // FolderView folder: a click opens or closes it in place (FolderView's own expandFolderDocker);
     // its menu (Stop all, Edit, ...) moves to the right click or a long press.
+    // FolderView Plus handles clicks on its folders itself.
     const folderId = function (chip) {
+      if (folderViewPlus()) return '';
       const hand = chip.matches('[class*="folder-docker"]') && chip.querySelector(':scope > span.hand[id^="folder-id-"]');
       return hand ? hand.id.slice('folder-id-'.length) : '';
     };
@@ -1976,6 +1996,8 @@
       dashboardGroups(view, 'docker');
       return;
     }
+    // FolderView Plus lays out its folders on the tile itself.
+    if (folderViewPlus()) return;
     // A line between a folder and the containers right after it, wherever the folder is (the
     // tile follows FolderView's order). Lines are only added or removed where that changed, so
     // the tile's observer settles.
@@ -3213,7 +3235,9 @@
 
     function decorate() {
       list.querySelectorAll('tr[parent-id]').forEach(function (row) {
-        if (row.dataset.tpExpand) return;
+        // A FolderView folder row looks like a VM's (parent-id and a details row) but is not one,
+        // and the rows in a closed folder's store are FolderView's.
+        if (row.dataset.tpExpand || row.classList.contains('folder') || row.closest('.folder-storage')) return;
         const id = 'name-' + row.getAttribute('parent-id');
         const details = document.getElementById(id);
         const cell = row.querySelector('td.vm-name');
