@@ -462,7 +462,11 @@
         font-family: var(--tp-font-heading);
     }
 
-    ::selection {
+    /* Not matched inside the Docker and VM lists: there Chrome would compute a selection style
+       for every cell each time FolderView rebuilds a row, which doubled its restyle work. The
+       lists still get the colour, by highlight inheritance, in browsers that have it. */
+    &::selection,
+    & :not(:is(#docker_list, #kvm_list) *)::selection {
         color: var(--tp-primary-text);
         background-color: var(--tp-primary);
     }
@@ -5600,7 +5604,10 @@
             color: var(--tp-header-text);
         }
 
-        /* Server controls in one row on the right. */
+        /* Server controls in one row on the right. Unraid's profile has two divs, its server
+           status and then the name and buttons; "div ~ div" is the second. :last-of-type would
+           pick the same one, but as an ancestor in these selectors it makes Chrome restyle
+           every cell of a table whose rows change (FolderView3 does that while it measures). */
         #UserProfile {
             flex-direction: row;
             align-items: center;
@@ -5632,12 +5639,12 @@
             background: var(--tp-gradient);
         }
 
-        #UserProfile > div:last-of-type {
+        #UserProfile > div ~ div {
             height: auto;
             gap: 0.8rem;
         }
 
-        #UserProfile > div:last-of-type > div:first-child {
+        #UserProfile > div ~ div > div:first-child {
             display: grid;
             grid-template-columns: auto auto;
             align-items: center;
@@ -5645,7 +5652,7 @@
             margin-right: 0.4rem;
         }
 
-        #UserProfile > div:last-of-type > div:first-child::before {
+        #UserProfile > div ~ div > div:first-child::before {
             display: grid;
             grid-row: 1 / span 2;
             place-items: center;
@@ -5659,7 +5666,7 @@
             content: "\f233";
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
             grid-row: 2;
             grid-column: 2;
             color: var(--tp-header-muted);
@@ -5668,11 +5675,11 @@
             text-align: left;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(2) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(2) {
             display: none !important;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
             grid-row: 1;
             grid-column: 2;
             color: var(--tp-header-text);
@@ -5680,7 +5687,7 @@
             letter-spacing: -0.01em;
         }
 
-        #UserProfile > div:last-of-type > span[role="button"] {
+        #UserProfile > div ~ div > span[role="button"] {
             justify-content: center;
             width: 3.6rem;
             height: 3.6rem;
@@ -5693,13 +5700,13 @@
             transition: border-color 0.3s, color 0.3s;
         }
 
-        #UserProfile > div:last-of-type > span[role="button"]:hover,
-        #UserProfile > div:last-of-type > span[role="button"][data-state="open"] {
+        #UserProfile > div ~ div > span[role="button"]:hover,
+        #UserProfile > div ~ div > span[role="button"][data-state="open"] {
             border-color: var(--tp-primary);
             color: var(--tp-primary-ii);
         }
 
-        #UserProfile > div:last-of-type > span[role="button"] svg[data-slot="icon"]:first-child {
+        #UserProfile > div ~ div > span[role="button"] svg[data-slot="icon"]:first-child {
             width: 1.8rem;
             height: 1.8rem;
             color: inherit;
@@ -5906,7 +5913,7 @@
 
         /* Below 900px the quick actions move to a row of their own under the tabs. */
         @media (max-width: 899px) {
-            #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+            #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
                 display: none !important;
             }
 
@@ -5940,13 +5947,13 @@
                 padding-right: 1.6rem;
             }
 
-            #UserProfile > div:last-of-type > div:first-child::before {
+            #UserProfile > div ~ div > div:first-child::before {
                 display: none;
             }
 
             /* Unraid places the server controls over the header's right end, so a long server
                name would run into the version and update notice. */
-            #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+            #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
                 display: block;
                 max-width: 12rem;
                 overflow: hidden;
@@ -5981,7 +5988,7 @@
 
         /* Small phones: only the notification and menu buttons stay on the right. */
         @media (max-width: 479px) {
-            #UserProfile > div:last-of-type > div:first-child {
+            #UserProfile > div ~ div > div:first-child {
                 display: none;
             }
         }
