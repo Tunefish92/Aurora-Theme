@@ -714,7 +714,7 @@
       const body = new URLSearchParams({ theme: theme, step: step, csrf_token: window.csrf_token || '' });
       return fetch(PLUGIN_BASE + '/include/theme.php', { method: 'POST', credentials: 'same-origin', body: body })
         .then(function (response) {
-          return response.json().catch(function () { return { error: 'status ' + response.status }; });
+          return response.json().catch(function () { return { error: 'unexpected answer from the server, status ' + response.status }; });
         })
         .then(function (data) {
           if (data.error) throw new Error(data.error);
@@ -1615,8 +1615,10 @@
         else if (hand && !update && hand.title === 'Update available') hand.removeAttribute('title');
       });
     };
+    // Not debounced: marked before the next paint, so a stopped container with an update that
+    // Unraid has just hidden (enhance.css shows it again) does not flicker.
     mark();
-    new MutationObserver(debounce(mark)).observe(view, { childList: true, subtree: true });
+    new MutationObserver(mark).observe(view, { childList: true, subtree: true });
   }
 
   // Dashboard, Docker tile: a click on a container opens a dialog with its state and everything

@@ -73,14 +73,6 @@ function aurora_write_cfg(array $cfg): bool
     return true;
 }
 
-/** Number of keys, counting each section's keys. */
-function aurora_count_keys(array $cfg): int
-{
-    $count = 0;
-    foreach ($cfg as $value) $count += is_array($value) ? count($value) : 1;
-    return $count;
-}
-
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
@@ -123,14 +115,32 @@ if ($restored === 0 && ($cfg['display']['theme'] ?? null) === $theme) {
     exit;
 }
 
-$before = aurora_count_keys($cfg) + (isset($cfg['display']['theme']) ? 0 : 1);
 $cfg['display']['theme'] = $theme;
 if (!aurora_write_cfg($cfg)) aurora_fail(500, 'could not write dynamix.cfg');
 
-// Read back: the file must hold everything just written.
-$check = aurora_read_cfg();
-if ($check === null || aurora_count_keys($check) < $before || ($check['display']['theme'] ?? null) !== $theme) {
-    aurora_fail(500, 'dynamix.cfg did not read back as written');
+// Read back: the file must hold everything just written. If another writer took keys away in
+// the meantime, they are put back (keeping what that writer changed) and the file is checked
+// again, a few times at most.
+for ($attempt = 0; ; $attempt++) {
+    $check = aurora_read_cfg();
+    if ($check === null) aurora_fail(500, 'dynamix.cfg could not be read back');
+    $missing = 0;
+    foreach ($cfg as $name => $value) {
+        if (!is_array($value)) {
+            if (!array_key_exists($name, $check)) { $check[$name] = $value; $missing++; }
+            continue;
+        }
+        if (!isset($check[$name]) || !is_array($check[$name])) $check[$name] = [];
+        foreach ($value as $key => $item) {
+            if (!array_key_exists($key, $check[$name])) { $check[$name][$key] = $item; $missing++; }
+        }
+    }
+    if (!$missing && ($check['display']['theme'] ?? null) === $theme) break;
+    if ($attempt >= 3) aurora_fail(500, 'dynamix.cfg did not read back as written');
+    $restored += $missing;
+    $check['display']['theme'] = $theme;
+    if (!aurora_write_cfg($check)) aurora_fail(500, 'could not write dynamix.cfg');
+    $cfg = $check;
 }
 if ($restored) error_log("Aurora Theme: put back $restored dynamix.cfg settings lost while the theme changed");
 echo json_encode(['theme' => $theme, 'restored' => $restored]);
