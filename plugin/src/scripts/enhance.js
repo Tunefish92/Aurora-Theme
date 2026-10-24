@@ -832,6 +832,11 @@
       strip.id = id;
       strip.setAttribute('aria-label', label);
     }
+    // Only redrawn when a value changed: the callers run on every change of the lists and
+    // tiles, and other scripts watching the page (FolderView Plus) react to each redraw.
+    const signature = JSON.stringify(items);
+    if (strip.tpSignature === signature) return strip;
+    strip.tpSignature = signature;
     strip.replaceChildren(...items.map(function (item) {
       const cell = element('div', 'tp-summary-item');
       const value = element('div', 'tp-summary-value' + (item.tone ? ' tp-' + item.tone : ''));
@@ -922,6 +927,10 @@
     const table = document.getElementById('docker_containers');
     const list = document.getElementById('docker_list');
     if (!table || !list) return;
+    // FolderView Plus has the Docker tab to itself, toolbar and counts included. It also watches
+    // the whole page, so even the theme's summary above the table, redrawn on each change of the
+    // list, kept it busy (the tab hung). The tab is left alone entirely.
+    if (folderViewPlus()) return;
     const anchor = table.closest('.TableContainer') || table;
     const filters = [['all', 'All'], ['running', 'Running'], ['stopped', 'Stopped'], ['updates', 'Updates']];
     let activeFilter = 'all';
@@ -930,8 +939,6 @@
     // columns, groups, filters or search (they would pull containers out of their folders), only
     // the summary above the table.
     const folderView = folderViewActive();
-    // FolderView Plus: its rows are only read (the summary above the table), never written.
-    const plus = folderViewPlus();
 
     // Compact view: Unraid's ten columns in the order its table prints them. The view is only
     // offered while the table still has exactly these, so a changed Unraid release falls back to
@@ -1304,19 +1311,16 @@
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
-      if (!plus) {
-        formatCpu(rows);
-        // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
-        // an update gets the orange dot on its icon.
-        rows.forEach(function (item) {
-          const name = item.row.querySelector('td.ct-name .appname');
-          if (name && name.title !== item.name) name.title = item.name;
-          item.row.classList.toggle('tp-update', item.update);
-        });
-      }
-      // FolderView Plus keeps its own order and folder styling.
+      formatCpu(rows);
+      // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
+      // an update gets the orange dot on its icon.
+      rows.forEach(function (item) {
+        const name = item.row.querySelector('td.ct-name .appname');
+        if (name && name.title !== item.name) name.title = item.name;
+        item.row.classList.toggle('tp-update', item.update);
+      });
       if (folderView) {
-        if (!plus) arrangeFolders();
+        arrangeFolders();
       } else {
         rows.forEach(function (item) { decorate(item.row); });
         layoutGroups(rows);
@@ -1375,8 +1379,7 @@
     // FolderView: a click anywhere on a folder's row opens or closes it, its name included
     // (FolderView only does that with the arrow button). Its icon keeps FolderView's menu (Edit,
     // Start, ...), and the preview icons, buttons and switches keep doing their own thing.
-    // FolderView Plus handles clicks on its folders itself.
-    if (folderView && !plus) {
+    if (folderView) {
       list.addEventListener('click', function (event) {
         const row = event.target.closest('tr.folder');
         if (!row || row.parentElement !== list || event.button !== 0) return;
@@ -1423,7 +1426,7 @@
       render();
       markReady();
     }).observe(list, { childList: true, subtree: true });
-    if (!plus) roomToDragToTop(list);
+    roomToDragToTop(list);
     if (!folderView) {
       store.load();
       dropIntoSections(list, store, function (row) { const name = row.querySelector('td.ct-name .appname'); return name ? name.textContent.trim() : ''; }, UNGROUPED, render);
@@ -1619,7 +1622,8 @@
   // running or not (issue #24). Unraid redraws the tile's chips on each refresh.
   function dashboardUpdates() {
     const view = document.getElementById('docker_view');
-    if (!view) return;
+    // FolderView Plus marks updates on its own tile.
+    if (!view || folderViewPlus()) return;
     const mark = function () {
       view.querySelectorAll('span.outer.apps').forEach(function (chip) {
         // A closed FolderView folder keeps its containers' chips in a hidden store; they are
@@ -1643,7 +1647,8 @@
   // Unraid's small context menu offers, as large buttons. The buttons call Unraid's own functions.
   function dashboardContainers() {
     const view = document.getElementById('docker_view');
-    if (!view) return;
+    // FolderView Plus handles clicks on its tile itself; Unraid's own menu stays.
+    if (!view || folderViewPlus()) return;
     const safeUrl = function (url) { return /^https?:\/\//i.test(url || '') ? url : ''; };
 
     function open(chip) {
@@ -1775,9 +1780,7 @@
 
     // FolderView folder: a click opens or closes it in place (FolderView's own expandFolderDocker);
     // its menu (Stop all, Edit, ...) moves to the right click or a long press.
-    // FolderView Plus handles clicks on its folders itself.
     const folderId = function (chip) {
-      if (folderViewPlus()) return '';
       const hand = chip.matches('[class*="folder-docker"]') && chip.querySelector(':scope > span.hand[id^="folder-id-"]');
       return hand ? hand.id.slice('folder-id-'.length) : '';
     };

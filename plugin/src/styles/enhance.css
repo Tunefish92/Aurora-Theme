@@ -281,7 +281,7 @@
 
 /* ---- Docker list: hidden until it is grouped, so it never flashes in Unraid's plain order.
    If the script does not get to it, the list appears by itself after two seconds. */
-.tp-enhance #docker_list:not(.tp-ready) {
+.tp-enhance:not(.tp-fvplus) #docker_list:not(.tp-ready) {
     visibility: hidden;
     animation: tp-docker-reveal 0s linear 2s forwards;
 }
