@@ -242,8 +242,9 @@
     text-align: left;
 }
 
-/* ---- Container and VM state as a pill */
-.tp-enhance .inner > span.state {
+/* ---- Container and VM state as a pill. Not with FolderView Plus (tp-fvplus): its lists keep
+   their own status, which the pill made too wide for its folder cells. */
+.tp-enhance:where(:not(.tp-fvplus)) .inner > span.state {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
@@ -255,7 +256,7 @@
     background-color: var(--tp-neutral-bg, var(--mild-background-color));
 }
 
-.tp-enhance .inner > span.state:before {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > span.state:before {
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -263,19 +264,19 @@
     content: "";
 }
 
-.tp-enhance .inner > i.started ~ span.state {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.started ~ span.state {
     color: var(--tp-success-text, var(--green-800));
     background-color: var(--tp-success-bg, var(--green-100));
 }
 
-.tp-enhance .inner > i.paused ~ span.state {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.paused ~ span.state {
     color: var(--tp-warn-text, var(--orange-300));
 }
 
 /* The pill's dot replaces the play / stop icon; the spinner shown while a state changes stays. */
-.tp-enhance .inner > i.started:has(~ span.state),
-.tp-enhance .inner > i.stopped:has(~ span.state),
-.tp-enhance .inner > i.paused:has(~ span.state) {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.started:has(~ span.state),
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.stopped:has(~ span.state),
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.paused:has(~ span.state) {
     display: none;
 }
 
@@ -1070,7 +1071,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    table.dashboard span.outer.solid img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid img.img {
         width: 3rem;
         height: 3rem;
     }
@@ -1084,7 +1085,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
 }
 
 /* Long names on the tile's chips end in "…" (FolderView folders and VMs have them as text). */
-table.dashboard span.outer.solid .inner {
+table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

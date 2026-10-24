@@ -35,7 +35,31 @@ re-checked automatically every week against both plugins' newest code (section 6
 Measured with the plugins' real, unmodified scripts and styles on a synthetic Unraid host (section
 6.1), Chromium, Aurora from `dev`:
 
-RESULTS_TABLE
+Times: folders drawn (ready), then browser blocked in the 8 s "settling" window and the next 8 s
+"steady" window. Plugin alone → with Aurora.
+
+**FolderView Plus** (newest code, 2026.10.22.06)
+
+| Page | 90 containers / 24 VMs | 300 containers / 60 VMs | Result |
+|---|---|---|---|
+| Docker | ready 0.8 → 0.9 s, steady 0 → 0 ms | ready 2.9 → 3.5 s, steady 506 → 526 ms | pass |
+| Dashboard | ready 0.36 → 0.43 s, 0 ms | ready 0.78 → 0.69 s, 0 ms | pass |
+| VMs | ready 0.30 → 0.45 s, 0 ms | ready 0.33 → 0.52 s, steady 0 ms | pass |
+| Settings | ready 0.86 → 1.03 s, 0 ms | ready 0.93 → 1.01 s, settling 220 → 307 ms, steady 0 ms | pass |
+
+**FolderView3** (newest code, main of 2026-10-24)
+
+| Page, mode | 90 containers / 24 VMs | 300 containers / 60 VMs | Result |
+|---|---|---|---|
+| Docker, FolderView mode | ready 0.35 → 0.58 s, settling 0 → 147 ms, steady 0 ms | ready 1.1 → 1.5 s, settling 391 → 617 ms, steady 0 ms | pass |
+| Dashboard, FolderView mode | ready 0.23 → 0.30 s, 0 ms | ready 0.48 → 0.60 s, 0 ms | pass |
+| VMs, FolderView mode | ready 0.18 → 0.23 s, 0 ms | ready 0.20 → 0.26 s, 0 ms | pass |
+| Docker, Aurora's view | ready 0.36 → 0.33 s, 0 ms | ready 1.1 → 0.44 s (FolderView3's folder building no longer runs) | pass |
+| Dashboard, Aurora's view | ready 0.19 → 0.22 s, 0 ms | ready 0.43 → 0.25 s, 0 ms | pass |
+| VMs, Aurora's view | ready 0.14 → 0.17 s, 0 ms | ready 0.22 → 0.21 s, 0 ms | pass |
+
+Also checked with Unraid's own stylesheets (`UNRAID_WEBGUI`), Black and White: all pages pass.
+GitHub Actions ran both checks on GitHub's machines: green.
 
 Fixed on the way (all on `dev`):
 
@@ -50,6 +74,10 @@ Fixed on the way (all on `dev`):
 - Aurora's Dashboard grid overrode Plus's own Dashboard layouts; it now steps aside for them.
 - Plus's and FolderView3's VM folder rows got Aurora's VM expand chevron and snapshot buttons.
 - FolderView3's start-delay field was too narrow (#21).
+- With Plus, Aurora's card styling of the Dashboard chips made Plus's chips wider (the last one
+  ran under Plus's tile buttons) and hid Plus's folder summary ("6/9 Running"); Aurora's status
+  pills made Plus's "12/18 Running" too wide for its folder cell. Both now step aside for Plus's
+  own Dashboard layouts and lists (found in the visual review, 6.3).
 
 Open: the hang reported with Plus on a real server is not reproduced on the synthetic host
 (section 5, P1).
@@ -80,8 +108,8 @@ each one is covered by a check.
 | `enhance.js`, `docker()` | not at all with Plus; FolderView mode: summary, switch, folder-row clicks, tints | both | both checks |
 | `enhance.js`, `dashboardContainers()`, `dashboardUpdates()`, `dashboardDockerOrder()` | dialog, update dots, dividers and app icons; none with Plus; never in `.folder-storage` | both | both checks, Dashboard |
 | `enhance.js`, `vmDetails()`, `vmGroups()`, `vmViewSwitch()` | VM chevrons (never on folder rows or stored rows), groups only without a folder plugin | both | both checks, VMs |
-| `enhance.css` | FolderView3 tints under `:where(:root:not(.tp-fvplus))`, folder-id fix under `.tp-fvplus`, `.tp-docker-loading` | both | checks + screenshots |
-| `unraid-tapeory.css` | Dashboard grid steps aside for Plus's layouts (`data-fv-dashboard-layout`), FolderView3 settings page styles (`fv3-*`) | both | checks + screenshots |
+| `enhance.css` | FolderView3 tints under `:where(:root:not(.tp-fvplus))`, folder-id fix under `.tp-fvplus`, status pills not in Plus's lists (`.tp-enhance:where(:not(.tp-fvplus))`), chip sizes not in Plus's Dashboard layouts, `.tp-docker-loading` | both | checks + screenshots |
+| `unraid-tapeory.css` | Dashboard grid and chip card look step aside for Plus's layouts (`data-fv-dashboard-layout` other than `legacy`), FolderView3 settings page styles (`fv3-*`) | both | checks + screenshots |
 | page-wide CSS rules | no `:has()` on bare `div` / `td` / `tr`; page-specific rules under `tp-on-<page>` | all pages | `fvplus_compat.mjs` timings |
 
 ## 5. Work packages
@@ -107,10 +135,12 @@ use it and keep the current code only as a fallback for older FolderView3 versio
 *Done when* Aurora view works through the supported opt-out and the fallback is covered by the
 check against the last FolderView3 release without it.
 
-**P3 – Visual review in both themes.** Screenshots of every page of both plugins with Aurora,
-Black and White, desktop and phone width, compared side by side with the plugin alone. Fix what
-is cut off, overlapping or unreadable; keep the screenshots as the reference.
-*Done when* the list of visual issues is empty and each fix is in a screenshot.
+**P3 – Visual review in both themes.** The checks save every page alone and with Aurora, with
+Unraid's own stylesheets, Black and White (`SCREENSHOTS`, CI artifact). First review done: Plus's
+Dashboard chips and status pills fixed (section 2); FolderView3 looks right in both views.
+Still to add: phone width (390 px), and a side-by-side page that shows alone / with Aurora next to
+each other for quicker review.
+*Done when* the phone width is in the screenshots and the list of visual issues is empty.
 
 **P4 – Plus's settings page and FolderView3's settings page.** Aurora styles FolderView3's
 settings page (`fv3-*` rules); Plus's settings page only gets Aurora's general styles. Both load
@@ -140,14 +170,14 @@ Aurora's page enhancements.
 
 | File | What |
 |---|---|
-| `compat_lib.mjs` | loads a page alone and with Aurora (as `AuroraTheme.page` adds it), measures ready time, settling and steady blocking, runs the page's inspection, compares, reports |
+| `compat_lib.mjs` | loads a page alone and with Aurora (as `AuroraTheme.page` adds it), measures ready time, settling and steady blocking, runs the page's inspection, compares, reports; options `UNRAID_WEBGUI` (Unraid's own stylesheets), `THEME` (black / white), `SCREENSHOTS` (directory), `QUICK=1` (small scenario, one run) |
 | `fvplus_host.mjs`, `fvplus_compat.mjs` | FolderView Plus: Docker page from Plus's own benchmark fixture, Dashboard and VMs pages built from Plus's `.page` files on a synthetic Unraid host, Plus's settings page; 90 and 300 containers |
 | `fv3_host.mjs`, `fv3_compat.mjs` | FolderView3: Docker, Dashboard and VMs pages built from FolderView3's `.page` files on a synthetic Unraid host; FolderView mode and Aurora view; 90 and 300 containers |
 
 The hosts use Unraid's own list markup (`DockerContainers.php`, `DashboardApps.php`,
 `VMMachines.php`), Unraid's `loadlist()` / `listview()` behaviour, Unraid's live values (every
-container's CPU and memory every second) and Unraid's root font size. The plugins run
-unmodified. Run locally:
+container's CPU and memory every second) and, with `UNRAID_WEBGUI`, Unraid's own stylesheets in
+Unraid's order. The plugins run unmodified. Run locally:
 
 ```sh
 git clone --depth 1 https://github.com/alexphillips-dev/FolderView-Plus.git /tmp/fvp
@@ -157,6 +187,10 @@ FVP=/tmp/fvp node plugin/test/fvplus_compat.mjs
 git clone --depth 1 https://github.com/chodeus/folder.view3.git /tmp/fv3
 (cd /tmp/fv3 && npm install --no-save --no-package-lock jquery@3.7.1)
 FV3=/tmp/fv3 node plugin/test/fv3_compat.mjs
+
+# optional: Unraid's stylesheets, White theme, screenshots
+git clone --depth 1 https://github.com/unraid/webgui.git /tmp/webgui
+UNRAID_WEBGUI=/tmp/webgui THEME=white SCREENSHOTS=/tmp/shots FVP=/tmp/fvp node plugin/test/fvplus_compat.mjs
 ```
 
 Limits: the hosts model the parts of Unraid the plugins and Aurora use, not all of Unraid; server
@@ -166,14 +200,17 @@ time (Docker answering slowly, a large `docker ps`) is not modelled. That is wha
 
 `.github/workflows/folderview-compat.yml` runs both checks on every push to `dev` / `main` that
 touches the theme or the checks, on pull requests, on demand, and **every Monday against both
-plugins' newest code**, so a change on their side is noticed within a week even when Aurora did
-not change. A red run is handled before anything else is released.
+plugins' newest code** and Unraid's newest stylesheets, so a change on their side is noticed
+within a week even when Aurora did not change. Each run checks Black fully and White quickly and
+keeps the screenshots for 30 days. A red run is handled before anything else is released.
 
 ### 6.3 Visual review
 
-Screenshots per plugin, page, mode (FolderView3), theme (Black, White) and width (1440 px,
-390 px), with and without Aurora, from the same synthetic hosts. Reviewed on every change to the
-FolderView styling and before each release that touches it.
+Screenshots per plugin, page, mode (FolderView3) and theme (Black, White), with and without
+Aurora, with Unraid's own stylesheets, from the same checks (locally with `SCREENSHOTS`, in CI as
+the `screenshots-fvplus` / `screenshots-fv3` artifacts). Reviewed on every change to the
+FolderView styling and before each release that touches it. Look for: text cut off or
+overlapping, information of the plugin hidden, controls covered, unreadable colours.
 
 ### 6.4 Real servers
 

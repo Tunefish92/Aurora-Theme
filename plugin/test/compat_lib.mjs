@@ -34,6 +34,9 @@ const auroraFiles = {
 //   SCREENSHOTS    a directory: each page is saved alone and with Aurora, for the visual review.
 //   QUICK          1: the small scenario only, one run each way (for screenshots and a first look).
 export const quick = process.env.QUICK === '1';
+//   PAGES, SIZES   only these pages (docker,dashboard,...) / scenarios (90,300), to look into one case.
+export const onlyPages = name => !process.env.PAGES || process.env.PAGES.split(',').includes(name);
+export const onlySizes = list => (quick ? list.slice(0, 1) : list).filter(scenario => !process.env.SIZES || process.env.SIZES.split(',').includes(String(scenario.members)));
 const webgui = process.env.UNRAID_WEBGUI ? path.join(process.env.UNRAID_WEBGUI, 'emhttp') : '';
 const theme = process.env.THEME === 'white' ? 'white' : 'black';
 const screenshots = process.env.SCREENSHOTS || '';

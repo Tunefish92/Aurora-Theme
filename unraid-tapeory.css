@@ -1578,7 +1578,7 @@
         padding-bottom: 0.8rem;
     }
 
-    table.dashboard span.outer.solid {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid {
         display: flex;
         align-items: center;
         gap: 0.8rem;
@@ -1592,29 +1592,29 @@
         transition: border-color 0.2s, transform 0.35s var(--tp-ease);
     }
 
-    table.dashboard span.outer.solid:hover {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid:hover {
         border-color: var(--tp-primary);
         transform: translateY(-1px);
     }
 
-    table.dashboard span.outer.solid span.inner {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid span.inner {
         width: auto;
         min-width: 0;
     }
 
     /* Long container names are cut with an ellipsis rather than wrapped. */
-    table.dashboard span.outer.solid .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > span:first-child {
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    table.dashboard span.outer.solid img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid img.img {
         border-radius: 10px;
     }
 
-    table.dashboard span.outer.solid .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > span:first-child {
         font-family: var(--tp-font-heading);
         font-weight: 600;
     }
@@ -1658,20 +1658,23 @@
         gap: 1.6rem 1rem;
     }
 
+    /* The chips' card look below steps aside where FolderView Plus lays out the tile in one of its
+       own layouts (as the grid above); :where() keeps the rules' weight as it was. */
+
     /* Docker and VM tiles: no "started" / "stopped" text. A running app shows a glowing green
        dot on its icon; a stopped one is greyed out with a grey dot. */
-    table.dashboard span.outer.solid .inner > br,
-    table.dashboard span.outer.solid .inner > i,
-    table.dashboard span.outer.solid .inner > .state {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > br,
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > i,
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > .state {
         display: none;
     }
 
-    table.dashboard span.outer.solid > span.hand {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid > span.hand {
         position: relative;
         flex: none;
     }
 
-    table.dashboard span.outer.solid > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid > span.hand:after {
         position: absolute;
         right: -0.3rem;
         bottom: -0.3rem;
@@ -1683,26 +1686,26 @@
         content: "";
     }
 
-    table.dashboard span.outer.solid.started > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.started > span.hand:after {
         background-color: #22c55e;
         box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
     }
 
-    table.dashboard span.outer.solid.paused > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.paused > span.hand:after {
         background-color: #f59e0b;
     }
 
-    table.dashboard span.outer.solid.stopped img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped img.img {
         opacity: 0.45;
         filter: grayscale(1);
     }
 
-    table.dashboard span.outer.solid.stopped .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped .inner > span:first-child {
         color: var(--tp-muted);
         font-weight: 500;
     }
 
-    table.dashboard span.outer.solid.stopped:hover img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped:hover img.img {
         opacity: 0.8;
         filter: none;
     }

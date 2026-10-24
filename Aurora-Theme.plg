@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.24.2253"
+        version="2026.10.25.0030"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.24.2253
+###2026.10.25.0030
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -6852,7 +6852,9 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
         name: appName ? appName.textContent.trim() : '',
         id: trigger ? trigger.id : '',
         collapsed: false,
-        text: row.textContent.toLowerCase(),
+        // Read only when searched or filtered (Aurora's view): the whole row's text is costly to
+        // read again on every change of a long list.
+        get text() { return row.textContent.toLowerCase(); },
         running: Boolean(name.querySelector('i.started')),
         paused: Boolean(name.querySelector('i.paused')),
         // "update ready" (and "rebuild ready") carry a flash icon; "not available" (no update
@@ -6977,10 +6979,14 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     // the list never shows ungrouped. render() only moves or writes what changed, so its own
     // changes settle after one more pass. The list is shown once it is laid out (see
     // #docker_list.tp-ready in enhance.css, which also reveals it by itself after two seconds).
-    new MutationObserver(function () {
+    // With FolderView, which builds its folders in many small steps and has nothing for the
+    // theme to group, render() waits until the list has been still for a moment (debounce):
+    // running it on every step made a list of 300 containers settle half a second later.
+    const update = function () {
       render();
       markReady();
-    }).observe(list, { childList: true, subtree: true });
+    };
+    new MutationObserver(folderView ? debounce(update) : update).observe(list, { childList: true, subtree: true });
     roomToDragToTop(list);
     if (!folderView) {
       store.load();
@@ -9931,8 +9937,9 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
     text-align: left;
 }
 
-/* ---- Container and VM state as a pill */
-.tp-enhance .inner > span.state {
+/* ---- Container and VM state as a pill. Not with FolderView Plus (tp-fvplus): its lists keep
+   their own status, which the pill made too wide for its folder cells. */
+.tp-enhance:where(:not(.tp-fvplus)) .inner > span.state {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
@@ -9944,7 +9951,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
     background-color: var(--tp-neutral-bg, var(--mild-background-color));
 }
 
-.tp-enhance .inner > span.state:before {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > span.state:before {
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -9952,19 +9959,19 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
     content: "";
 }
 
-.tp-enhance .inner > i.started ~ span.state {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.started ~ span.state {
     color: var(--tp-success-text, var(--green-800));
     background-color: var(--tp-success-bg, var(--green-100));
 }
 
-.tp-enhance .inner > i.paused ~ span.state {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.paused ~ span.state {
     color: var(--tp-warn-text, var(--orange-300));
 }
 
 /* The pill's dot replaces the play / stop icon; the spinner shown while a state changes stays. */
-.tp-enhance .inner > i.started:has(~ span.state),
-.tp-enhance .inner > i.stopped:has(~ span.state),
-.tp-enhance .inner > i.paused:has(~ span.state) {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.started:has(~ span.state),
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.stopped:has(~ span.state),
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.paused:has(~ span.state) {
     display: none;
 }
 
@@ -10759,7 +10766,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    table.dashboard span.outer.solid img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid img.img {
         width: 3rem;
         height: 3rem;
     }
@@ -10773,7 +10780,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
 }
 
 /* Long names on the tile's chips end in "…" (FolderView folders and VMs have them as text). */
-table.dashboard span.outer.solid .inner {
+table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -16806,7 +16813,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         padding-bottom: 0.8rem;
     }
 
-    table.dashboard span.outer.solid {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid {
         display: flex;
         align-items: center;
         gap: 0.8rem;
@@ -16820,29 +16827,29 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         transition: border-color 0.2s, transform 0.35s var(--tp-ease);
     }
 
-    table.dashboard span.outer.solid:hover {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid:hover {
         border-color: var(--tp-primary);
         transform: translateY(-1px);
     }
 
-    table.dashboard span.outer.solid span.inner {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid span.inner {
         width: auto;
         min-width: 0;
     }
 
     /* Long container names are cut with an ellipsis rather than wrapped. */
-    table.dashboard span.outer.solid .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > span:first-child {
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    table.dashboard span.outer.solid img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid img.img {
         border-radius: 10px;
     }
 
-    table.dashboard span.outer.solid .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > span:first-child {
         font-family: var(--tp-font-heading);
         font-weight: 600;
     }
@@ -16886,20 +16893,23 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         gap: 1.6rem 1rem;
     }
 
+    /* The chips' card look below steps aside where FolderView Plus lays out the tile in one of its
+       own layouts (as the grid above); :where() keeps the rules' weight as it was. */
+
     /* Docker and VM tiles: no "started" / "stopped" text. A running app shows a glowing green
        dot on its icon; a stopped one is greyed out with a grey dot. */
-    table.dashboard span.outer.solid .inner > br,
-    table.dashboard span.outer.solid .inner > i,
-    table.dashboard span.outer.solid .inner > .state {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > br,
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > i,
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid .inner > .state {
         display: none;
     }
 
-    table.dashboard span.outer.solid > span.hand {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid > span.hand {
         position: relative;
         flex: none;
     }
 
-    table.dashboard span.outer.solid > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid > span.hand:after {
         position: absolute;
         right: -0.3rem;
         bottom: -0.3rem;
@@ -16911,26 +16921,26 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         content: "";
     }
 
-    table.dashboard span.outer.solid.started > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.started > span.hand:after {
         background-color: #22c55e;
         box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
     }
 
-    table.dashboard span.outer.solid.paused > span.hand:after {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.paused > span.hand:after {
         background-color: #f59e0b;
     }
 
-    table.dashboard span.outer.solid.stopped img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped img.img {
         opacity: 0.45;
         filter: grayscale(1);
     }
 
-    table.dashboard span.outer.solid.stopped .inner > span:first-child {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped .inner > span:first-child {
         color: var(--tp-muted);
         font-weight: 500;
     }
 
-    table.dashboard span.outer.solid.stopped:hover img.img {
+    table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid.stopped:hover img.img {
         opacity: 0.8;
         filter: none;
     }
@@ -21270,7 +21280,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.24.2253 is installed."
+echo "Aurora-Theme 2026.10.25.0030 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

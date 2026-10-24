@@ -1297,7 +1297,9 @@
         name: appName ? appName.textContent.trim() : '',
         id: trigger ? trigger.id : '',
         collapsed: false,
-        text: row.textContent.toLowerCase(),
+        // Read only when searched or filtered (Aurora's view): the whole row's text is costly to
+        // read again on every change of a long list.
+        get text() { return row.textContent.toLowerCase(); },
         running: Boolean(name.querySelector('i.started')),
         paused: Boolean(name.querySelector('i.paused')),
         // "update ready" (and "rebuild ready") carry a flash icon; "not available" (no update
@@ -1422,10 +1424,14 @@
     // the list never shows ungrouped. render() only moves or writes what changed, so its own
     // changes settle after one more pass. The list is shown once it is laid out (see
     // #docker_list.tp-ready in enhance.css, which also reveals it by itself after two seconds).
-    new MutationObserver(function () {
+    // With FolderView, which builds its folders in many small steps and has nothing for the
+    // theme to group, render() waits until the list has been still for a moment (debounce):
+    // running it on every step made a list of 300 containers settle half a second later.
+    const update = function () {
       render();
       markReady();
-    }).observe(list, { childList: true, subtree: true });
+    };
+    new MutationObserver(folderView ? debounce(update) : update).observe(list, { childList: true, subtree: true });
     roomToDragToTop(list);
     if (!folderView) {
       store.load();
