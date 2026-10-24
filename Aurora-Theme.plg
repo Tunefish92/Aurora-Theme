@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.24.1554"
+        version="2026.10.24.1559"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.24.1554
+###2026.10.24.1559
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -248,7 +248,9 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     // replacing listview / loadlist: with it there is no switch, its folders always draw the
     // Docker and VMs tabs and the Dashboard, and the theme keeps to colours and layout
     // (tp-fvplus). See its docs/THEME_API_CONTRACT.md, "Layout Ownership for Theme Integrations".
-    $auroraFolderViewPlus = is_dir('/usr/local/emhttp/plugins/folderview.plus');
+    // Plus does not run beside FolderView3 or FolderView2 (it shows a conflict notice instead),
+    // so then the older plugin draws the lists and is treated as such.
+    $auroraFolderViewPlus = is_dir('/usr/local/emhttp/plugins/folderview.plus') && !is_dir('/usr/local/emhttp/plugins/folder.view3') && !is_dir('/usr/local/emhttp/plugins/folder.view2');
     $auroraFolderView = $auroraFolderViewPlus || is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
     $auroraDockerView = !$auroraFolderViewPlus && ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
     if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
@@ -8783,7 +8785,9 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
     function decorate() {
       list.querySelectorAll('tr[parent-id]').forEach(function (row) {
-        if (row.dataset.tpExpand) return;
+        // A FolderView folder row looks like a VM's (parent-id and a details row) but is not one,
+        // and the rows in a closed folder's store are FolderView's.
+        if (row.dataset.tpExpand || row.classList.contains('folder') || row.closest('.folder-storage')) return;
         const id = 'name-' + row.getAttribute('parent-id');
         const details = document.getElementById(id);
         const cell = row.querySelector('td.vm-name');
@@ -10605,8 +10609,9 @@ a.tp-webui .fa {
 /* Dashboard, Docker tile with FolderView: folder chips tinted with an accent border; an open
    folder's containers in a panel across the tile under it; a line before the containers
    outside the folders (dashboardDockerOrder() in enhance.js). FolderView Plus lays out and
-   colours its folders itself; an open one only gets the tile's full width. */
-.tp-fvplus table.dashboard .folder-showcase-outer[expanded="true"] {
+   colours its folders itself; in its "legacy" layout, which keeps the theme's grid, an open one
+   gets the tile's full width. */
+.tp-fvplus table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) .folder-showcase-outer[expanded="true"] {
     grid-column: 1 / -1;
 }
 
@@ -10723,7 +10728,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
 /* Phones: two chips per row on the Docker and VM tiles (one per row made a long tile with
    many containers); the names end in "…" sooner. */
 @media (max-width: 480px) {
-    table.dashboard > tbody:is(#docker_view, #vm_view) > tr.updated > td,
+    table.dashboard > tbody:is(#docker_view, #vm_view):not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr.updated > td,
     table.dashboard .tp-group-panel,
     :where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase:not(:empty) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -16766,8 +16771,10 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         background-color: transparent;
     }
 
-    /* Docker and VM tiles: the apps sit in an even grid of small cards */
-    table.dashboard > tbody > tr > td:has(> span.outer.solid) {
+    /* Docker and VM tiles: the apps sit in an even grid of small cards. Not when FolderView
+       Plus lays out the tile in one of its own layouts (all but "legacy", which keeps the
+       host's), whose grid it sets itself. */
+    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr > td:has(> span.outer.solid) {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
         gap: 0.6rem;
@@ -21234,7 +21241,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.24.1554 is installed."
+echo "Aurora-Theme 2026.10.24.1559 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

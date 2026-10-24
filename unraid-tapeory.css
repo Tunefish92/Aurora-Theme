@@ -1568,8 +1568,10 @@
         background-color: transparent;
     }
 
-    /* Docker and VM tiles: the apps sit in an even grid of small cards */
-    table.dashboard > tbody > tr > td:has(> span.outer.solid) {
+    /* Docker and VM tiles: the apps sit in an even grid of small cards. Not when FolderView
+       Plus lays out the tile in one of its own layouts (all but "legacy", which keeps the
+       host's), whose grid it sets itself. */
+    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr > td:has(> span.outer.solid) {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
         gap: 0.6rem;

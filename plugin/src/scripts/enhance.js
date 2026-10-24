@@ -3235,7 +3235,9 @@
 
     function decorate() {
       list.querySelectorAll('tr[parent-id]').forEach(function (row) {
-        if (row.dataset.tpExpand) return;
+        // A FolderView folder row looks like a VM's (parent-id and a details row) but is not one,
+        // and the rows in a closed folder's store are FolderView's.
+        if (row.dataset.tpExpand || row.classList.contains('folder') || row.closest('.folder-storage')) return;
         const id = 'name-' + row.getAttribute('parent-id');
         const details = document.getElementById(id);
         const cell = row.querySelector('td.vm-name');

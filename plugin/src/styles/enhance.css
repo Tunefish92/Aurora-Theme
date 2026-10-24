@@ -945,8 +945,9 @@ a.tp-webui .fa {
 /* Dashboard, Docker tile with FolderView: folder chips tinted with an accent border; an open
    folder's containers in a panel across the tile under it; a line before the containers
    outside the folders (dashboardDockerOrder() in enhance.js). FolderView Plus lays out and
-   colours its folders itself; an open one only gets the tile's full width. */
-.tp-fvplus table.dashboard .folder-showcase-outer[expanded="true"] {
+   colours its folders itself; in its "legacy" layout, which keeps the theme's grid, an open one
+   gets the tile's full width. */
+.tp-fvplus table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) .folder-showcase-outer[expanded="true"] {
     grid-column: 1 / -1;
 }
 
@@ -1063,7 +1064,7 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
 /* Phones: two chips per row on the Docker and VM tiles (one per row made a long tile with
    many containers); the names end in "…" sooner. */
 @media (max-width: 480px) {
-    table.dashboard > tbody:is(#docker_view, #vm_view) > tr.updated > td,
+    table.dashboard > tbody:is(#docker_view, #vm_view):not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr.updated > td,
     table.dashboard .tp-group-panel,
     :where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase:not(:empty) {
         grid-template-columns: repeat(2, minmax(0, 1fr));

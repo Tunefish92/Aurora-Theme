@@ -189,7 +189,9 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     // replacing listview / loadlist: with it there is no switch, its folders always draw the
     // Docker and VMs tabs and the Dashboard, and the theme keeps to colours and layout
     // (tp-fvplus). See its docs/THEME_API_CONTRACT.md, "Layout Ownership for Theme Integrations".
-    $auroraFolderViewPlus = is_dir('/usr/local/emhttp/plugins/folderview.plus');
+    // Plus does not run beside FolderView3 or FolderView2 (it shows a conflict notice instead),
+    // so then the older plugin draws the lists and is treated as such.
+    $auroraFolderViewPlus = is_dir('/usr/local/emhttp/plugins/folderview.plus') && !is_dir('/usr/local/emhttp/plugins/folder.view3') && !is_dir('/usr/local/emhttp/plugins/folder.view2');
     $auroraFolderView = $auroraFolderViewPlus || is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
     $auroraDockerView = !$auroraFolderViewPlus && ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
     if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
