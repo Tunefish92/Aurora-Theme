@@ -185,11 +185,17 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     // loadlist_original, and as soon as it does, they are put back (after its script has run,
     // before Unraid draws the list). FolderView's own "hide the list until the folders are
     // built" is lifted at once.
-    $auroraFolderView = is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
-    $auroraDockerView = ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
+    // FolderView Plus (folderview.plus, issue #23) asks themes to leave its lists to it, without
+    // replacing listview / loadlist: with it there is no switch, its folders always draw the
+    // Docker and VMs tabs and the Dashboard, and the theme keeps to colours and layout
+    // (tp-fvplus). See its docs/THEME_API_CONTRACT.md, "Layout Ownership for Theme Integrations".
+    $auroraFolderViewPlus = is_dir('/usr/local/emhttp/plugins/folderview.plus');
+    $auroraFolderView = $auroraFolderViewPlus || is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
+    $auroraDockerView = !$auroraFolderViewPlus && ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
+    if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
 ?>
 <?php if ($auroraFolderView): ?>
-<script>window.auroraDockerView = { folderView: true, mode: <?= json_encode($auroraDockerView) ?> };</script>
+<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?> };</script>
 <?php if ($auroraDockerView === 'aurora'): ?>
 <script>
 (function () {

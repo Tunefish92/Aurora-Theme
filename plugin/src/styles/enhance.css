@@ -887,11 +887,18 @@ a.tp-webui .fa {
 
 /* ---- Docker with FolderView: folders on a tinted band with an accent edge, an open folder's
    containers on a lighter band of the same colour and indented, and space before the
-   containers outside any folder (arrangeFolders() in enhance.js puts them in that order). */
+   containers outside any folder (arrangeFolders() in enhance.js puts them in that order).
+   FolderView Plus (tp-fvplus) colours its folders itself, so the bands are FolderView3's only. */
 /* Theme filters and search are hidden while FolderView arranges the list. */
 .tp-toolbar .tp-tabs[hidden],
 .tp-toolbar .tp-search[hidden] {
     display: none;
+}
+
+/* FolderView Plus: a folder's name cell also holds its internal id ("folder-<id>") in an
+   .appname, which Plus hides; the long-name rule above would show it again (issue #23). */
+.tp-fvplus #docker_list tr.folder td.ct-name .folder-inner > .appname {
+    display: none !important;
 }
 
 /* Preview icons of a closed folder: long names end in "…" too. */
@@ -904,11 +911,11 @@ a.tp-webui .fa {
     vertical-align: bottom;
 }
 
-#docker_list > tr.folder > td {
+:where(:root:not(.tp-fvplus)) #docker_list > tr.folder > td {
     background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 8%, transparent);
 }
 
-#docker_list > tr.folder > td:first-child {
+:where(:root:not(.tp-fvplus)) #docker_list > tr.folder > td:first-child {
     box-shadow: inset 3px 0 0 var(--tp-primary, var(--brand-orange));
 }
 
@@ -922,28 +929,33 @@ a.tp-webui .fa {
     vertical-align: bottom;
 }
 
-#docker_list > tr.folder-element > td {
+:where(:root:not(.tp-fvplus)) #docker_list > tr.folder-element > td {
     background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 4%, transparent);
 }
 
-#docker_list > tr.folder-element > td:first-child {
+:where(:root:not(.tp-fvplus)) #docker_list > tr.folder-element > td:first-child {
     padding-left: 2.6rem !important;
     box-shadow: inset 3px 0 0 color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 45%, transparent);
 }
 
-#docker_list > tr.tp-after-folders > td {
+:where(:root:not(.tp-fvplus)) #docker_list > tr.tp-after-folders > td {
     border-top: 1.6rem solid var(--tp-elevated, var(--background-color)) !important;
 }
 
 /* Dashboard, Docker tile with FolderView: folder chips tinted with an accent border; an open
    folder's containers in a panel across the tile under it; a line before the containers
-   outside the folders (dashboardDockerOrder() in enhance.js). */
-table.dashboard span.outer.solid[class*="folder-docker"] {
+   outside the folders (dashboardDockerOrder() in enhance.js). FolderView Plus lays out and
+   colours its folders itself; an open one only gets the tile's full width. */
+.tp-fvplus table.dashboard .folder-showcase-outer[expanded="true"] {
+    grid-column: 1 / -1;
+}
+
+:where(:root:not(.tp-fvplus)) table.dashboard span.outer.solid[class*="folder-docker"] {
     border-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 45%, transparent);
     background-color: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 10%, var(--tp-subtle, transparent));
 }
 
-table.dashboard .folder-showcase:not(:empty) {
+:where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase:not(:empty) {
     display: grid;
     grid-column: 1 / -1;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
@@ -1030,21 +1042,21 @@ table.dashboard .tp-group-panel[hidden] {
 /* An open group or FolderView folder reads as one card: its chip becomes a header across the
    tile with the panel joined below it; closed ones stay chips side by side. */
 table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed),
-table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid {
+:where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid {
     grid-column: 1 / -1;
     border-bottom-color: transparent;
     border-radius: 12px 12px 0 0;
 }
 
 table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed) + .tp-group-panel,
-table.dashboard .folder-showcase-outer[expanded="true"] > .folder-showcase {
+:where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase-outer[expanded="true"] > .folder-showcase {
     margin-top: -0.6rem;
     border-top: 0;
     border-radius: 0 0 12px 12px;
 }
 
 table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed):hover,
-table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid:hover {
+:where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid:hover {
     transform: none;
 }
 
@@ -1053,7 +1065,7 @@ table.dashboard .folder-showcase-outer[expanded="true"] > span.outer.solid:hover
 @media (max-width: 480px) {
     table.dashboard > tbody:is(#docker_view, #vm_view) > tr.updated > td,
     table.dashboard .tp-group-panel,
-    table.dashboard .folder-showcase:not(:empty) {
+    :where(:root:not(.tp-fvplus)) table.dashboard .folder-showcase:not(:empty) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -1286,8 +1298,9 @@ table.dashboard span.outer.solid.tp-update > span.hand {
 }
 
 /* The Docker tile's "started only" switch hides stopped containers (inline display: none); one
-   with an update stays, so its dot is seen. Not in a closed FolderView folder's store. */
-#docker_view span.outer.solid.apps.stopped.tp-update[style*="display: none"]:not(.folder-storage *) {
+   with an update stays, so its dot is seen. Not in a closed FolderView folder's store, and not
+   with FolderView Plus, which decides what its tile shows. */
+:where(:root:not(.tp-fvplus)) #docker_view span.outer.solid.apps.stopped.tp-update[style*="display: none"]:not(.folder-storage *) {
     display: flex !important;
 }
 
@@ -1389,8 +1402,9 @@ nav.tabs > .tp-segment.tp-title-switch {
     display: none !important;
 }
 
-/* FolderView in the Docker tab: the whole folder row opens and closes it. */
-#docker_list > tr.folder {
+/* FolderView in the Docker tab: the whole folder row opens and closes it (not FolderView Plus,
+   which handles clicks on its folders itself). */
+:where(:root:not(.tp-fvplus)) #docker_list > tr.folder {
     cursor: pointer;
 }
 
