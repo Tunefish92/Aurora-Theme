@@ -59,7 +59,8 @@ Times: folders drawn (ready), then browser blocked in the 8 s "settling" window 
 | VMs, Aurora's view | ready 0.23 → 0.22 s, 0 ms | ready 0.22 → 0.24 s, 0 ms | pass |
 
 Also checked with Unraid's own stylesheets (`UNRAID_WEBGUI`), Black and White: all pages pass.
-GitHub Actions ran both checks on GitHub's machines: green.
+GitHub Actions ran both checks on GitHub's machines, with Unraid's stylesheets, Black and White:
+green since 476eeb8 (the two runs before it caught the FolderView3 restyle cost fixed there).
 
 Fixed on the way (all on `dev`):
 
