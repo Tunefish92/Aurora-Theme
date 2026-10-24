@@ -1285,6 +1285,12 @@ table.dashboard span.outer.solid.tp-update > span.hand {
     position: relative;
 }
 
+/* The Docker tile's "started only" switch hides stopped containers (inline display: none); one
+   with an update stays, so its dot is seen. Not in a closed FolderView folder's store. */
+#docker_view span.outer.solid.apps.stopped.tp-update[style*="display: none"]:not(.folder-storage *) {
+    display: flex !important;
+}
+
 table.dashboard span.outer.solid.tp-update > span.hand::before {
     border-color: var(--tp-subtle);
 }

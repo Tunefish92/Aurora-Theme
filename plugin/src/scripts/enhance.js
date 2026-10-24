@@ -52,10 +52,11 @@
   // The first `max` of them are shown and "+n" for the rest; each icon's tooltip is the app's
   // name. An app with a target (the element whose click opens its menu) opens that menu when
   // its icon is clicked. The strip is only rebuilt when the apps or their states change.
-  //   apps: [{ name, src, state: 'running' | 'paused' | 'stopped', target }]
+  //   apps: [{ name, src, state: 'running' | 'paused' | 'stopped', update, target }]
   const STRIP_ORDER = { running: 0, paused: 1, stopped: 2 };
   function appStrip(strip, list, max) {
-    const apps = list.slice().sort(function (a, b) { return STRIP_ORDER[a.state] - STRIP_ORDER[b.state]; });
+    // Apps with an update first, so the limit never hides their dot; then running, paused, stopped.
+    const apps = list.slice().sort(function (a, b) { return (b.update ? 1 : 0) - (a.update ? 1 : 0) || STRIP_ORDER[a.state] - STRIP_ORDER[b.state]; });
     // The targets are replaced on every call: Unraid rebuilds its rows and chips on refresh.
     strip.tpTargets = new Map(apps.map(function (app) { return [app.name, app.target]; }));
     if (!strip.tpBound) {
