@@ -12,6 +12,10 @@ if (($aurora['layout'] ?? 'top') == 'sidebar') $auroraClasses[] = 'tp-sidebar';
 if (($aurora['enhance'] ?? 'yes') == 'yes') $auroraClasses[] = 'tp-enhance';
 // Display Settings, "Favorites enabled" set to No also turns off the theme's starred cards.
 if (($display['favorites'] ?? 'yes') == 'no') $auroraClasses[] = 'tp-no-favourites';
+// The page, from the first part of the address ("/Apps/..." gives tp-on-apps), so rules that
+// only matter on one page can be limited to it; the browser then skips them everywhere else.
+$auroraPage = strtolower(preg_replace('/[^A-Za-z0-9-]/', '', explode('/', trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'))[0]));
+if ($auroraPage !== '') $auroraClasses[] = 'tp-on-' . $auroraPage;
 
 // Emergency switch: opening any page with ?aurora=off stops the plugin from loading anything
 // in this browser (remembered in a cookie) until a page is opened with ?aurora=on.

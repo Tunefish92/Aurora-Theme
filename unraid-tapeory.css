@@ -4692,7 +4692,9 @@
         background: color-mix(in srgb, #f97316 10%, var(--tp-elevated));
     }
 
-    div:has(> .tp-ca-badge, > [class*=CardBackground]:not(.favCardBackground)) > .ca_holder .homespotlightIconArea {
+    /* Apps page only (tp-on-apps): a :has() on every div is checked again on each change of any
+       page, which made busy pages (FolderView Plus's Docker list) slow. */
+    &.tp-on-apps div:has(> .tp-ca-badge, > [class*=CardBackground]:not(.favCardBackground)) > .ca_holder .homespotlightIconArea {
         top: 4.8rem;
     }
 
@@ -4735,7 +4737,7 @@
        pills in the card's top right corner, each in its own colour with an icon. CA places the
        ribbon beside the card in the card's wrapper, so the pill is positioned in the wrapper
        (the card has a 1rem right margin there). */
-    div:has(> .ca_holder) {
+    &.tp-on-apps div:has(> .ca_holder) {
         position: relative;
     }
 
@@ -4762,7 +4764,9 @@
         transition: transform 0.35s var(--tp-ease);
     }
 
-    div:has(> .ca_holder:hover) > [class*=CardBackground]:not(.favCardBackground) {
+    /* The pill ignores the pointer, so its wrapper is hovered exactly while the card is; no
+       :has(... :hover), which made the browser recheck the page on every pointer move. */
+    &.tp-on-apps div:hover > [class*=CardBackground]:not(.favCardBackground) {
         transform: translateY(-3px);
     }
 

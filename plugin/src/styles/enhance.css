@@ -1928,7 +1928,7 @@ tbody.tp-gpu .tile-header-left .tile-header-main {
 
 /* The name keeps at least half the row; a long value (bus receive and transmit) wraps on the
    right instead of pushing the name out. */
-tbody.tp-gpu > tr > td:has(> span.w36) {
+tbody.tp-gpu > tr > td.tp-gpu-w36 {
     display: grid;
     grid-template-columns: minmax(50%, 1fr) minmax(0, auto);
     align-items: center;
@@ -1977,7 +1977,7 @@ tbody.tp-gpu > tr > td > span:is(.w26, .w44) span {
 }
 
 /* One value with a bar: the value beside the name, the bar under both. */
-tbody.tp-gpu > tr > td > span.w44:has(> .usage-disk) {
+tbody.tp-gpu > tr > td > span.w44.tp-gpu-bar {
     display: contents;
 }
 
@@ -2007,11 +2007,11 @@ tbody.tp-gpu > tr > td > span:is(.w26, .w44) .usage-disk.sys > span:first-child 
 
 /* Two values (NVIDIA and AMD rows such as "Load - Memory"): the name on top, the two values,
    each with its bar, side by side under it. */
-tbody.tp-gpu > tr > td:has(> span.w26) {
+tbody.tp-gpu > tr > td.tp-gpu-w26 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-tbody.tp-gpu > tr > td:has(> span.w26) > span.w36 {
+tbody.tp-gpu > tr > td.tp-gpu-w26 > span.w36 {
     grid-column: 1 / -1;
 }
 
@@ -2025,14 +2025,14 @@ tbody.tp-gpu > tr > td > span.w26 {
 
 /* PCI bus (NVIDIA, AMD): "PCIe Gen (Max)" and "Lanes (Max)" are plain spans; both go on the
    right, one under the other, styled like the other values. */
-tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) {
+tbody.tp-gpu > tr > td.tp-gpu-w36 > span:not(.w36, .w26, .w44) {
     grid-column: 2;
     color: var(--tp-muted, var(--alt-text-color));
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
 
-tbody.tp-gpu > tr > td:has(> span.w36) > span:not(.w36, .w26, .w44) span {
+tbody.tp-gpu > tr > td.tp-gpu-w36 > span:not(.w36, .w26, .w44) span {
     color: var(--tp-text, var(--text-color));
     font-weight: 600;
 }

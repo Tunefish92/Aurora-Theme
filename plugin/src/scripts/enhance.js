@@ -1978,6 +1978,23 @@
         if (header) header.classList.add('tp-gpu-moved');
       }
 
+      // Cells by what they hold, for enhance.css: a label (span.w36), a reading with a label
+      // (span.w26) and a usage bar (span.w44 with .usage-disk). Classes rather than :has()
+      // in the stylesheet: a :has() rule on every td is checked again on each change of any
+      // page, which slowed down busy pages (FolderView Plus's Docker list). Marked again if the
+      // plugin adds rows.
+      const markCells = function () {
+        tile.querySelectorAll(':scope > tr > td').forEach(function (cell) {
+          cell.classList.toggle('tp-gpu-w36', Boolean(cell.querySelector(':scope > span.w36')));
+          cell.classList.toggle('tp-gpu-w26', Boolean(cell.querySelector(':scope > span.w26')));
+        });
+        tile.querySelectorAll(':scope > tr > td > span.w44').forEach(function (span) {
+          span.classList.toggle('tp-gpu-bar', Boolean(span.querySelector(':scope > .usage-disk')));
+        });
+      };
+      markCells();
+      new MutationObserver(markCells).observe(tile, { childList: true });
+
       // A clock of 0 means the GPU is idle: an Intel GPU with nothing to do stops its clock
       // (power saving). It reads "idle" instead (enhance.css). The plugin rewrites the value
       // every few seconds, so it is watched and only marked, not replaced.
