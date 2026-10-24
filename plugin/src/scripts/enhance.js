@@ -690,9 +690,11 @@
 
   // Top right: a sun / moon switch between the Black and White Dynamix themes. The choice is a
   // server setting, saved in two places so it holds on every page and in every browser:
-  //   1. dynamix.cfg, through /update.php with the same form Display Settings submits;
+  //   1. dynamix.cfg, through include/theme.php, which changes only the theme key;
   //   2. the Unraid API's own copy (customization.setTheme), when the API is running, because
   //      the API can otherwise write its older value back.
+  // The API rewrites dynamix.cfg itself a moment later, so theme.php is asked once more to check
+  // that nothing went missing in between and to put back anything that did (issue #22).
   // The page reloads once the server has answered. Other Dynamix themes do not show the switch.
   function themeSwitch() {
     const root = document.documentElement;
@@ -706,46 +708,33 @@
     button.setAttribute('aria-label', button.title);
     button.append(element('i', 'fa ' + (dark ? 'fa-moon-o' : 'fa-sun-o')));
 
-    // Saves through a hidden form and frame, exactly like Display Settings.
-    function saveConfig(theme) {
-      return new Promise(function (resolve, reject) {
-        const name = 'tp-theme-frame-' + Date.now();
-        const frame = element('iframe');
-        frame.name = name;
-        frame.hidden = true;
-        const form = element('form');
-        form.method = 'POST';
-        form.action = '/update.php';
-        form.target = name;
-        form.hidden = true;
-        Object.entries({ '#file': 'dynamix/dynamix.cfg', '#section': 'display', theme: theme, csrf_token: window.csrf_token || '' }).forEach(function (pair) {
-          const input = element('input');
-          input.type = 'hidden';
-          input.name = pair[0];
-          input.value = pair[1];
-          form.append(input);
+    // step "save" changes the theme; step "verify" puts back keys lost since "save".
+    function saveConfig(theme, step) {
+      const body = new URLSearchParams({ theme: theme, step: step, csrf_token: window.csrf_token || '' });
+      return fetch(PLUGIN_BASE + '/include/theme.php', { method: 'POST', credentials: 'same-origin', body: body })
+        .then(function (response) {
+          return response.json().catch(function () { return { error: 'status ' + response.status }; });
+        })
+        .then(function (data) {
+          if (data.error) throw new Error(data.error);
+          if (data.restored) console.warn('Aurora Theme: put back ' + data.restored + ' dynamix.cfg settings lost while the theme changed');
         });
-        const timer = setTimeout(function () { reject(new Error('no answer from /update.php')); }, 15000);
-        frame.addEventListener('load', function () {
-          clearTimeout(timer);
-          let text = '';
-          try { text = frame.contentDocument ? frame.contentDocument.body.textContent : ''; } catch (error) { text = ''; }
-          if (/csrf_token/.test(text)) reject(new Error(text.trim()));
-          else resolve();
-        });
-        document.body.append(frame, form);
-        form.submit();
-      });
     }
 
     // The Unraid API keeps a copy of the theme; it is told too when it is reachable.
     function saveApi(theme) {
-      if (!window.apolloClient || !window.gql) return Promise.resolve();
+      if (!window.apolloClient || !window.gql) return Promise.resolve(false);
       const mutation = window.gql('mutation setTheme($theme: ThemeName!) { customization { setTheme(theme: $theme) { name } } }');
-      const call = window.apolloClient.mutate({ mutation: mutation, variables: { theme: theme } }).catch(function (error) {
+      const call = window.apolloClient.mutate({ mutation: mutation, variables: { theme: theme } }).then(function () { return true; }, function (error) {
         console.warn('Aurora Theme: the Unraid API did not take the theme', error);
+        return true;
       });
-      return Promise.race([call, new Promise(function (resolve) { setTimeout(resolve, 4000); })]);
+      return Promise.race([call, new Promise(function (resolve) { setTimeout(function () { resolve(true); }, 4000); })]);
+    }
+
+    // Gives the API time to write its copy of dynamix.cfg before it is checked.
+    function settle(apiCalled) {
+      return new Promise(function (resolve) { setTimeout(resolve, apiCalled ? 1500 : 0); });
     }
 
     let busy = false;
@@ -758,8 +747,10 @@
       button.classList.toggle('tp-dark', !dark);
       button.classList.add('tp-busy');
       button.setAttribute('aria-busy', 'true');
-      saveConfig(next)
+      saveConfig(next, 'save')
         .then(function () { return saveApi(next); })
+        .then(settle)
+        .then(function () { return saveConfig(next, 'verify'); })
         .then(function () { location.reload(); })
         .catch(function (error) {
           console.error('Aurora Theme:', error);
