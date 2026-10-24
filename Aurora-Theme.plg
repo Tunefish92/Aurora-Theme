@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.24.1458"
+        version="2026.10.24.1500"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.24.1458
+###2026.10.24.1500
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -6279,7 +6279,14 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
       saveConfig(next, 'save')
         .then(function () { return saveApi(next); })
         .then(settle)
-        .then(function () { return saveConfig(next, 'verify'); })
+        .then(function () {
+          // The theme is saved by now: a failed check gets its own message, then the page
+          // reloads with the new theme all the same.
+          return saveConfig(next, 'verify').catch(function (error) {
+            console.error('Aurora Theme:', error);
+            return modal({ title: 'Theme changed, settings not confirmed', message: ['The theme was changed, but Aurora could not confirm that your other settings in dynamix.cfg are intact (' + error.message + ').', 'Please check Settings > Display Settings and your notification and parity settings.'], confirmLabel: 'OK', hideCancel: true });
+          });
+        })
         .then(function () { location.reload(); })
         .catch(function (error) {
           console.error('Aurora Theme:', error);
@@ -21078,7 +21085,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.24.1458 is installed."
+echo "Aurora-Theme 2026.10.24.1500 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

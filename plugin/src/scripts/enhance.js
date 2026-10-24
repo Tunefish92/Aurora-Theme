@@ -750,7 +750,14 @@
       saveConfig(next, 'save')
         .then(function () { return saveApi(next); })
         .then(settle)
-        .then(function () { return saveConfig(next, 'verify'); })
+        .then(function () {
+          // The theme is saved by now: a failed check gets its own message, then the page
+          // reloads with the new theme all the same.
+          return saveConfig(next, 'verify').catch(function (error) {
+            console.error('Aurora Theme:', error);
+            return modal({ title: 'Theme changed, settings not confirmed', message: ['The theme was changed, but Aurora could not confirm that your other settings in dynamix.cfg are intact (' + error.message + ').', 'Please check Settings > Display Settings and your notification and parity settings.'], confirmLabel: 'OK', hideCancel: true });
+          });
+        })
         .then(function () { location.reload(); })
         .catch(function (error) {
           console.error('Aurora Theme:', error);
