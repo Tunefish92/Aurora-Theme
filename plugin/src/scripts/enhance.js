@@ -63,13 +63,13 @@
       strip.addEventListener('click', openFromStrip);
       strip.addEventListener('keydown', openFromStrip);
     }
-    const signature = apps.map(function (app) { return app.name + ':' + app.state + (app.target ? '' : ':-'); }).join('|');
+    const signature = apps.map(function (app) { return app.name + ':' + app.state + (app.update ? ':u' : '') + (app.target ? '' : ':-'); }).join('|');
     if (strip.dataset.apps === signature) return;
     strip.dataset.apps = signature;
     const shown = apps.slice(0, max).map(function (app) {
-      const item = element('span', 'tp-app-icon tp-app-' + app.state);
+      const item = element('span', 'tp-app-icon tp-app-' + app.state + (app.update ? ' tp-app-update' : ''));
       item.dataset.name = app.name;
-      item.title = app.name + (app.state === 'running' ? '' : ' (' + app.state + ')');
+      item.title = app.name + (app.state === 'running' ? '' : ' (' + app.state + ')') + (app.update ? ', update available' : '');
       if (app.target) {
         item.setAttribute('role', 'button');
         item.tabIndex = 0;
@@ -1172,7 +1172,7 @@
           app: function (item) {
             const image = item.row.querySelector('td.ct-name img.img');
             const trigger = item.row.querySelector('td.ct-name span.hand[id]');
-            return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : item.running ? 'running' : 'stopped', target: trigger };
+            return { name: item.name, src: image && image.src, state: item.paused ? 'paused' : item.running ? 'running' : 'stopped', update: item.update, target: trigger };
           },
         });
         const load = sectionLoad(section.items);
@@ -1293,10 +1293,12 @@
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
       formatCpu(rows);
-      // Long names end in "…" (enhance.css); the whole name is the tooltip.
+      // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
+      // an update gets the orange dot on its icon.
       rows.forEach(function (item) {
         const name = item.row.querySelector('td.ct-name .appname');
         if (name && name.title !== item.name) name.title = item.name;
+        item.row.classList.toggle('tp-update', item.update);
       });
       if (folderView) {
         arrangeFolders();
@@ -1595,6 +1597,25 @@
       poll();
       timer = setInterval(poll, 1500);
     }, 4000);
+  }
+
+  // Dashboard, Docker tile: an orange dot on the icon of every container with an update ready,
+  // running or not (issue #24). Unraid redraws the tile's chips on each refresh.
+  function dashboardUpdates() {
+    const view = document.getElementById('docker_view');
+    if (!view) return;
+    const mark = function () {
+      view.querySelectorAll('span.outer.apps').forEach(function (chip) {
+        const update = chipUpdate(chip);
+        if (chip.classList.contains('tp-update') !== update) chip.classList.toggle('tp-update', update);
+        // The tooltip is only taken away again if it is ours.
+        const hand = chip.querySelector(':scope > span.hand');
+        if (hand && update && !hand.title) hand.title = 'Update available';
+        else if (hand && !update && hand.title === 'Update available') hand.removeAttribute('title');
+      });
+    };
+    mark();
+    new MutationObserver(debounce(mark)).observe(view, { childList: true, subtree: true });
   }
 
   // Dashboard, Docker tile: a click on a container opens a dialog with its state and everything
@@ -2011,13 +2032,20 @@
     return inner && inner.firstChild ? inner.firstChild.textContent.trim() : '';
   }
 
+  // Whether a Dashboard container chip has an image update ready (the "update" argument of its
+  // icon's addDockerContainerContext call is 1). VM chips have none.
+  function chipUpdate(chip) {
+    const trigger = chip.querySelector(':scope > span.hand[onclick*="addDockerContainerContext"]');
+    return Boolean(trigger) && contextArguments(trigger)[5] === '1';
+  }
+
   // Dashboard chips as apps for an icon strip; a click on an icon is a click on the chip's icon.
   function chipApps(chips) {
     return chips.map(function (chip) {
       const hand = chip.querySelector(':scope > span.hand');
       const image = hand && hand.querySelector('img');
       const state = chip.classList.contains('paused') ? 'paused' : chip.classList.contains('started') ? 'running' : 'stopped';
-      return { name: chipName(chip), src: image && image.src, state: state, target: hand };
+      return { name: chipName(chip), src: image && image.src, state: state, update: chipUpdate(chip), target: hand };
     });
   }
 
@@ -3740,7 +3768,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
