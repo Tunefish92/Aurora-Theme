@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.25.0030"
+        version="2026.10.25.0120"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.25.0030
+###2026.10.25.0120
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -13942,7 +13942,8 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
         }
 
         /* ---- Top right: uptime chip, server identity, notification and menu buttons.
-           This is Unraid's profile component; only its own elements are restyled. */
+           This is Unraid's profile component; only its own elements are restyled. Its second
+           div is "div ~ div", not :last-of-type, which makes Chrome restyle whole tables. */
         #UserProfile {
             flex-direction: row;
             align-items: center;
@@ -13974,12 +13975,12 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             background: var(--tp-gradient, var(--brand-orange));
         }
 
-        #UserProfile > div:last-of-type {
+        #UserProfile > div ~ div {
             gap: 0.8rem;
         }
 
         /* Server identity: icon tile, name on top, description underneath */
-        #UserProfile > div:last-of-type > div:first-child {
+        #UserProfile > div ~ div > div:first-child {
             display: grid;
             grid-template-columns: auto auto;
             align-items: center;
@@ -13987,7 +13988,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             margin-right: 0.6rem;
         }
 
-        #UserProfile > div:last-of-type > div:first-child:before {
+        #UserProfile > div ~ div > div:first-child:before {
             display: grid;
             grid-row: 1 / span 2;
             place-items: center;
@@ -14001,7 +14002,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             content: "\f233";
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
             grid-row: 2;
             grid-column: 2;
             color: var(--tp-muted, var(--alt-text-color));
@@ -14010,11 +14011,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             text-align: left;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(2) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(2) {
             display: none !important;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
             grid-row: 1;
             grid-column: 2;
             font: 600 1.4rem/1.3 var(--tp-font-heading, inherit);
@@ -14022,7 +14023,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
         }
 
         /* Notification bell and menu as round buttons */
-        #UserProfile > div:last-of-type > span[role="button"] {
+        #UserProfile > div ~ div > span[role="button"] {
             justify-content: center;
             width: 3.6rem;
             height: 3.6rem;
@@ -14035,14 +14036,14 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/layout-sidebar.css <<'AURORA
             transition: border-color 0.35s, color 0.35s, transform 0.35s;
         }
 
-        #UserProfile > div:last-of-type > span[role="button"]:hover,
-        #UserProfile > div:last-of-type > span[role="button"][data-state="open"] {
+        #UserProfile > div ~ div > span[role="button"]:hover,
+        #UserProfile > div ~ div > span[role="button"][data-state="open"] {
             border-color: var(--tp-primary, var(--brand-orange));
             color: var(--tp-primary, var(--brand-orange));
             transform: translateY(-1px);
         }
 
-        #UserProfile > div:last-of-type > span[role="button"] svg[data-slot="icon"]:first-child {
+        #UserProfile > div ~ div > span[role="button"] svg[data-slot="icon"]:first-child {
             width: 1.8rem;
             height: 1.8rem;
             color: inherit;
@@ -15697,7 +15698,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         font-family: var(--tp-font-heading);
     }
 
-    ::selection {
+    /* Not matched inside the Docker and VM lists: there Chrome would compute a selection style
+       for every cell each time FolderView rebuilds a row, which doubled its restyle work. The
+       lists still get the colour, by highlight inheritance, in browsers that have it. */
+    &::selection,
+    & :not(:is(#docker_list, #kvm_list) *)::selection {
         color: var(--tp-primary-text);
         background-color: var(--tp-primary);
     }
@@ -20835,7 +20840,10 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             color: var(--tp-header-text);
         }
 
-        /* Server controls in one row on the right. */
+        /* Server controls in one row on the right. Unraid's profile has two divs, its server
+           status and then the name and buttons; "div ~ div" is the second. :last-of-type would
+           pick the same one, but as an ancestor in these selectors it makes Chrome restyle
+           every cell of a table whose rows change (FolderView3 does that while it measures). */
         #UserProfile {
             flex-direction: row;
             align-items: center;
@@ -20867,12 +20875,12 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             background: var(--tp-gradient);
         }
 
-        #UserProfile > div:last-of-type {
+        #UserProfile > div ~ div {
             height: auto;
             gap: 0.8rem;
         }
 
-        #UserProfile > div:last-of-type > div:first-child {
+        #UserProfile > div ~ div > div:first-child {
             display: grid;
             grid-template-columns: auto auto;
             align-items: center;
@@ -20880,7 +20888,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             margin-right: 0.4rem;
         }
 
-        #UserProfile > div:last-of-type > div:first-child::before {
+        #UserProfile > div ~ div > div:first-child::before {
             display: grid;
             grid-row: 1 / span 2;
             place-items: center;
@@ -20894,7 +20902,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             content: "\f233";
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
             grid-row: 2;
             grid-column: 2;
             color: var(--tp-header-muted);
@@ -20903,11 +20911,11 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             text-align: left;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(2) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(2) {
             display: none !important;
         }
 
-        #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+        #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
             grid-row: 1;
             grid-column: 2;
             color: var(--tp-header-text);
@@ -20915,7 +20923,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             letter-spacing: -0.01em;
         }
 
-        #UserProfile > div:last-of-type > span[role="button"] {
+        #UserProfile > div ~ div > span[role="button"] {
             justify-content: center;
             width: 3.6rem;
             height: 3.6rem;
@@ -20928,13 +20936,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             transition: border-color 0.3s, color 0.3s;
         }
 
-        #UserProfile > div:last-of-type > span[role="button"]:hover,
-        #UserProfile > div:last-of-type > span[role="button"][data-state="open"] {
+        #UserProfile > div ~ div > span[role="button"]:hover,
+        #UserProfile > div ~ div > span[role="button"][data-state="open"] {
             border-color: var(--tp-primary);
             color: var(--tp-primary-ii);
         }
 
-        #UserProfile > div:last-of-type > span[role="button"] svg[data-slot="icon"]:first-child {
+        #UserProfile > div ~ div > span[role="button"] svg[data-slot="icon"]:first-child {
             width: 1.8rem;
             height: 1.8rem;
             color: inherit;
@@ -21141,7 +21149,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
         /* Below 900px the quick actions move to a row of their own under the tabs. */
         @media (max-width: 899px) {
-            #UserProfile > div:last-of-type > div:first-child > span:nth-child(1) {
+            #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
                 display: none !important;
             }
 
@@ -21175,13 +21183,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
                 padding-right: 1.6rem;
             }
 
-            #UserProfile > div:last-of-type > div:first-child::before {
+            #UserProfile > div ~ div > div:first-child::before {
                 display: none;
             }
 
             /* Unraid places the server controls over the header's right end, so a long server
                name would run into the version and update notice. */
-            #UserProfile > div:last-of-type > div:first-child > span:nth-child(3) {
+            #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
                 display: block;
                 max-width: 12rem;
                 overflow: hidden;
@@ -21216,7 +21224,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
         /* Small phones: only the notification and menu buttons stay on the right. */
         @media (max-width: 479px) {
-            #UserProfile > div:last-of-type > div:first-child {
+            #UserProfile > div ~ div > div:first-child {
                 display: none;
             }
         }
@@ -21280,7 +21288,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.25.0030 is installed."
+echo "Aurora-Theme 2026.10.25.0120 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

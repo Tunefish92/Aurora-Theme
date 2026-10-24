@@ -47,16 +47,16 @@ Times: folders drawn (ready), then browser blocked in the 8 s "settling" window 
 | VMs | ready 0.30 → 0.45 s, 0 ms | ready 0.33 → 0.52 s, steady 0 ms | pass |
 | Settings | ready 0.86 → 1.03 s, 0 ms | ready 0.93 → 1.01 s, settling 220 → 307 ms, steady 0 ms | pass |
 
-**FolderView3** (newest code, main of 2026-10-24)
+**FolderView3** (newest code, main of 2026-10-24; with Unraid's own stylesheets, Black)
 
 | Page, mode | 90 containers / 24 VMs | 300 containers / 60 VMs | Result |
 |---|---|---|---|
-| Docker, FolderView mode | ready 0.35 → 0.58 s, settling 0 → 147 ms, steady 0 ms | ready 1.1 → 1.5 s, settling 391 → 617 ms, steady 0 ms | pass |
-| Dashboard, FolderView mode | ready 0.23 → 0.30 s, 0 ms | ready 0.48 → 0.60 s, 0 ms | pass |
-| VMs, FolderView mode | ready 0.18 → 0.23 s, 0 ms | ready 0.20 → 0.26 s, 0 ms | pass |
-| Docker, Aurora's view | ready 0.36 → 0.33 s, 0 ms | ready 1.1 → 0.44 s (FolderView3's folder building no longer runs) | pass |
-| Dashboard, Aurora's view | ready 0.19 → 0.22 s, 0 ms | ready 0.43 → 0.25 s, 0 ms | pass |
-| VMs, Aurora's view | ready 0.14 → 0.17 s, 0 ms | ready 0.22 → 0.21 s, 0 ms | pass |
+| Docker, FolderView mode | ready 0.39 → 0.43 s, settling 52 → 198 ms, steady 0 ms | ready 1.25 → 1.27 s, settling 406 → 651 ms, steady 0 ms | pass |
+| Dashboard, FolderView mode | ready 0.28 → 0.37 s, 0 ms | ready 0.54 → 0.57 s, 0 ms | pass |
+| VMs, FolderView mode | ready 0.22 → 0.23 s, 0 ms | ready 0.23 → 0.28 s, 0 ms | pass |
+| Docker, Aurora's view | ready 0.36 → 0.31 s, 0 ms | ready 1.07 → 0.41 s, settling 426 → 0 ms (FolderView3's folder building no longer runs) | pass |
+| Dashboard, Aurora's view | ready 0.30 → 0.24 s, 0 ms | ready 0.52 → 0.37 s, 0 ms | pass |
+| VMs, Aurora's view | ready 0.23 → 0.22 s, 0 ms | ready 0.22 → 0.24 s, 0 ms | pass |
 
 Also checked with Unraid's own stylesheets (`UNRAID_WEBGUI`), Black and White: all pages pass.
 GitHub Actions ran both checks on GitHub's machines: green.
@@ -74,6 +74,13 @@ Fixed on the way (all on `dev`):
 - Aurora's Dashboard grid overrode Plus's own Dashboard layouts; it now steps aside for them.
 - Plus's and FolderView3's VM folder rows got Aurora's VM expand chevron and snapshot buttons.
 - FolderView3's start-delay field was too narrow (#21).
+- FolderView3 measures its column widths by moving each folder's rows into the table and back.
+  With Aurora every move restyled about 1,600 elements instead of about 200: the Docker page in
+  FolderView mode stayed busy 0.8 s instead of 0.2 s after its folders appeared (300 containers,
+  CI with Unraid's stylesheets). Causes, found by bisecting the stylesheet by restyled elements:
+  `:last-of-type` as an ancestor in the top bar's and sidebar's `#UserProfile` rules (now
+  `div ~ div`, the same element in Unraid's profile), and the page-wide `::selection` rule (no
+  longer matched inside the Docker and VM lists; Chrome passes the colour down to them).
 - With Plus, Aurora's card styling of the Dashboard chips made Plus's chips wider (the last one
   ran under Plus's tile buttons) and hid Plus's folder summary ("6/9 Running"); Aurora's status
   pills made Plus's "12/18 Running" too wide for its folder cell. Both now step aside for Plus's
@@ -110,7 +117,7 @@ each one is covered by a check.
 | `enhance.js`, `vmDetails()`, `vmGroups()`, `vmViewSwitch()` | VM chevrons (never on folder rows or stored rows), groups only without a folder plugin | both | both checks, VMs |
 | `enhance.css` | FolderView3 tints under `:where(:root:not(.tp-fvplus))`, folder-id fix under `.tp-fvplus`, status pills not in Plus's lists (`.tp-enhance:where(:not(.tp-fvplus))`), chip sizes not in Plus's Dashboard layouts, `.tp-docker-loading` | both | checks + screenshots |
 | `unraid-tapeory.css` | Dashboard grid and chip card look step aside for Plus's layouts (`data-fv-dashboard-layout` other than `legacy`), FolderView3 settings page styles (`fv3-*`) | both | checks + screenshots |
-| page-wide CSS rules | no `:has()` on bare `div` / `td` / `tr`; page-specific rules under `tp-on-<page>` | all pages | `fvplus_compat.mjs` timings |
+| page-wide CSS rules | no `:has()` on bare `div` / `td` / `tr`; no `:last-of-type`, `:nth-*` or `*-of-type` in an ancestor part of a selector whose last part is a bare tag; no `::selection` inside `#docker_list` / `#kvm_list`; page-specific rules under `tp-on-<page>` | all pages | both checks' timings |
 
 ## 5. Work packages
 
@@ -152,10 +159,14 @@ both settings pages to the screenshot review.
 for the steady and settling windows; Firefox's `:has()` and style recalculation differ.
 *Done when* both checks pass in Firefox too.
 
-**P6 – Remaining startup cost with Plus.** With 300 containers Aurora's styles add about 0.7 to
-1 s once, while the page builds (no lasting cost). Find the next expensive rules the same way as
-before (bisecting the stylesheets with the check's timings) and trim them.
-*Done when* the difference is under 0.5 s at 300 containers.
+**P6 – Remaining startup cost.** With 300 containers Aurora's styles add about 0.7 to 1 s once
+with Plus while the page builds, and about 0.25 s of busy time with FolderView3's width
+measuring (no lasting cost in either). Find the next expensive rules the same way as before:
+bisect the stylesheets by the number of elements each restyle touches (Chrome's trace,
+`UpdateLayoutTree` `elementCount`), which is more exact than timings, and trim them. Add a check
+that the per-restyle element count with Aurora stays within 1.5 times the plugin's own.
+*Done when* the difference is under 0.5 s at 300 containers and the element-count check is in
+both checks.
 
 **P7 – Coordinate with both maintainers.** Share the checks (they run against the plugins' own
 newest code), tell the FolderView Plus maintainer that Aurora now follows the theme contract so
