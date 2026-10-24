@@ -245,6 +245,11 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
+<?php if (in_array('tp-no-favourites', $auroraClasses)): ?>
+<?php // Unraid shows its Favorites tab whenever /boot/config/favorites.cfg holds pages, even
+      // with favourites switched off (issue #25); the theme hides it then. ?>
+<style>#menu .nav-item:has(> a[href="/Favorites"]) { display: none !important; }</style>
+<?php endif; ?>
 <?php if (is_file("$auroraCustomDir/custom.css")): ?>
 <style id="aurora-custom-css">
 <?= str_ireplace('</style', '<\/style', file_get_contents("$auroraCustomDir/custom.css")) ?>
