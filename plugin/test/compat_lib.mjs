@@ -26,11 +26,49 @@ const auroraFiles = {
     'scripts/enhance.js': path.join(repo, 'plugin/src/scripts/enhance.js'),
 };
 
-// What AuroraTheme.page adds to every page (Black theme, page enhancements on): the root
-// classes, the stylesheets, window.auroraDockerView when a FolderView plugin is installed, and
-// enhance.js. aurora: { classes: [...], dockerView: {...} | null, head: '...' }.
+// Options from the environment:
+//   UNRAID_WEBGUI  a checkout of https://github.com/unraid/webgui: the pages then get Unraid's own
+//                  stylesheets in Unraid's order (and the page's sheet), as on a server; without
+//                  it only Unraid's root font size is set.
+//   THEME          black (default) or white, Unraid's Dynamix theme.
+//   SCREENSHOTS    a directory: each page is saved alone and with Aurora, for the visual review.
+//   QUICK          1: the small scenario only, one run each way (for screenshots and a first look).
+export const quick = process.env.QUICK === '1';
+const webgui = process.env.UNRAID_WEBGUI ? path.join(process.env.UNRAID_WEBGUI, 'emhttp') : '';
+const theme = process.env.THEME === 'white' ? 'white' : 'black';
+const screenshots = process.env.SCREENSHOTS || '';
+if (screenshots) fs.mkdirSync(screenshots, { recursive: true });
+const unraidSheets = ['default-fonts', 'default-cases', 'font-awesome', 'context.standalone', 'jquery.sweetalert', 'jquery.ui',
+    'default-color-palette', 'default-base', 'default-dynamix'].map(name => `/webGui/styles/${name}.css`)
+    .concat(`/webGui/styles/themes/${theme}.css`, '/webGui/styles/jquery.switchbutton.css');
+const pageSheets = { docker: '/plugins/dynamix.docker.manager/sheets/DockerContainers.css', vms: '/plugins/dynamix.vm.manager/sheets/VMMachines.css', dashboard: '/plugins/dynamix/sheets/DashStats.css' };
+
+// Unraid's part of the page: its stylesheets and theme class, or only its root font size.
+function withUnraid(html, surface) {
+    if (!webgui) return html.replace('<head>', '<head><style>html { font-size: 62.5%; }</style>').replace(/<html[^>]*>/, '<html>');
+    const sheets = unraidSheets.concat(pageSheets[surface] || []).map(href => `<link type="text/css" rel="stylesheet" href="${href}">`).join('');
+    return html
+        .replace(/<style>body\s*\{[^<]*<\/style>/g, '')
+        .replace(/<html[^>]*>/, `<html class="Theme--${theme} Theme--nav-top">`)
+        .replace('<head>', '<head>' + sheets);
+}
+
+// Serves Unraid's stylesheets, fonts and images from the webgui checkout; everything else
+// (Unraid's includes, which the hosts answer) is passed on.
+async function routeUnraid(tab) {
+    if (!webgui) return;
+    await tab.route(/\/(webGui|plugins\/dynamix[^/]*)\/[^?#]*\.(css|woff2?|ttf|eot|svg|png|gif|jpe?g)(\?|#|$)/, route => {
+        const pathname = new URL(route.request().url()).pathname;
+        const file = pathname.startsWith('/webGui/') ? path.join(webgui, 'plugins/dynamix', pathname.slice('/webGui/'.length)) : path.join(webgui, pathname);
+        return fs.existsSync(file) && fs.statSync(file).isFile() ? route.fulfill({ path: file }) : route.fallback();
+    });
+}
+
+// What AuroraTheme.page adds to every page (page enhancements on): the root classes, the
+// stylesheets, window.auroraDockerView when a FolderView plugin is installed, and enhance.js.
+// aurora: { classes: [...], dockerView: {...} | null, head: '...' }.
 function withAurora(html, surface, aurora) {
-    const classes = ['Theme--black', 'tp-enhance', `tp-on-${surface}`, ...(aurora.classes || [])].join(' ');
+    const classes = [`Theme--${theme}`, 'Theme--nav-top', 'tp-enhance', `tp-on-${surface}`, ...(aurora.classes || [])].join(' ');
     return html
         .replace(/<html[^>]*>/, `<html class="${classes}">`)
         .replace('</head>', '<link rel="stylesheet" href="/plugins/Aurora-Theme/styles/theme.css">'
@@ -54,12 +92,13 @@ async function measureOnce(browser, page, count, aurora) {
         const file = auroraFiles[new URL(route.request().url()).pathname.replace('/plugins/Aurora-Theme/', '')];
         return file ? route.fulfill({ path: file }) : route.fulfill({ status: 404, body: '' });
     });
+    await routeUnraid(tab);
     await tab.route(page.url, async route => {
         const response = await route.fetch();
-        // Unraid's base stylesheet sets the root size that Aurora's (and Unraid's) rem sizes use.
-        let html = (await response.text()).replace('<head>', '<head><style>html { font-size: 62.5%; }</style>');
+        let html = await response.text();
         if (page.prepare) html = page.prepare(html);
-        html = aurora ? withAurora(html, page.name, aurora) : html.replace(/<html[^>]*>/, '<html>');
+        html = withUnraid(html, page.name);
+        if (aurora) html = withAurora(html, page.name, aurora);
         await route.fulfill({ response, body: html, headers: { ...response.headers(), 'content-type': 'text/html' } });
     });
     const start = Date.now();
@@ -80,6 +119,7 @@ async function measureOnce(browser, page, count, aurora) {
     const settling = await blockedFor();
     const steady = await blockedFor();
     const result = { ready, errors, settling, steady, ...await tab.evaluate(page.inspect) };
+    if (screenshots && page.shot) await tab.screenshot({ path: path.join(screenshots, `${page.shot}-${aurora ? 'aurora' : 'alone'}-${theme}.png`) });
     if (page.after) result.extra = await tab.evaluate(page.after);
     await context.close();
     return result;
@@ -89,9 +129,10 @@ async function measureOnce(browser, page, count, aurora) {
 // expect: compare(alone, aurora) => extra problems, for checks particular to the plugin.
 export async function comparePage(browser, page, count, aurora, label, compare) {
     const runs = { alone: [], aurora: [] };
-    for (let run = 0; run < 2; run++) {
-        runs.alone.push(await measureOnce(browser, page, count, null));
-        runs.aurora.push(await measureOnce(browser, page, count, aurora));
+    for (let run = 0; run < (quick ? 1 : 2); run++) {
+        const shot = run === 0 ? page.shot : undefined;
+        runs.alone.push(await measureOnce(browser, { ...page, shot }, count, null));
+        runs.aurora.push(await measureOnce(browser, { ...page, shot }, count, aurora));
     }
     const best = list => list.filter(item => item.ready !== null).sort((a, b) => (a.settling + a.steady) - (b.settling + b.steady))[0] || list[0];
     const alone = best(runs.alone);

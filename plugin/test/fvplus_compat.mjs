@@ -11,7 +11,7 @@
 // Needs Playwright with Chromium. Exits with 1 on any failure. Uses fixture code from FolderView
 // Plus's tests, which may change with its releases.
 import { createPlusHost } from './fvplus_host.mjs';
-import { comparePage, loadPlaywright, requireCheckout } from './compat_lib.mjs';
+import { comparePage, loadPlaywright, quick, requireCheckout } from './compat_lib.mjs';
 
 const fvp = requireCheckout('FVP', 'scripts/lib/production-perf-fixture.mjs', 'Set FVP to a FolderView Plus checkout (see the top of this file).');
 
@@ -72,12 +72,12 @@ const scenarios = [
 ];
 const browser = await loadPlaywright(fvp).chromium.launch();
 let failed = false;
-for (const scenario of scenarios) {
+for (const scenario of quick ? scenarios.slice(0, 1) : scenarios) {
     const host = await createPlusHost(fvp, scenario);
     const count = { docker: scenario.folders, vm: scenario.vmFolders };
     for (const [name, page] of Object.entries(pages)) {
         const label = `FolderView Plus ${name}: ${scenario.members} containers in ${scenario.folders} folders, ${scenario.vms} VMs in ${scenario.vmFolders} folders`;
-        const problems = await comparePage(browser, { ...page, name, url: `${host.origin}/${name}` }, count, aurora, label);
+        const problems = await comparePage(browser, { ...page, name, url: `${host.origin}/${name}`, shot: `fvplus-${name}-${scenario.members}` }, count, aurora, label);
         if (problems.length) failed = true;
     }
     host.server.close();

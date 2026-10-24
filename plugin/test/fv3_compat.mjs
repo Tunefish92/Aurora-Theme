@@ -15,7 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createFv3Host } from './fv3_host.mjs';
-import { comparePage, loadPlaywright, repo, requireCheckout } from './compat_lib.mjs';
+import { comparePage, loadPlaywright, quick, repo, requireCheckout } from './compat_lib.mjs';
 
 const fv3 = requireCheckout('FV3', 'src/folder.view3/usr/local/emhttp/plugins/folder.view3/scripts/docker.js', 'Set FV3 to a FolderView3 checkout (see the top of this file).');
 
@@ -119,13 +119,13 @@ const scenarios = [
 ];
 const browser = await loadPlaywright(fv3).chromium.launch();
 let failed = false;
-for (const scenario of scenarios) {
+for (const scenario of quick ? scenarios.slice(0, 1) : scenarios) {
     const host = await createFv3Host(fv3, scenario);
     const count = { docker: scenario.folders, vm: scenario.vmFolders, members: scenario.members, vms: scenario.vms };
     for (const [mode, aurora] of Object.entries(modes)) {
         for (const [name, page] of Object.entries(pages)) {
             const label = `FolderView3 ${name}, ${mode === 'aurora' ? "Aurora's view" : 'FolderView mode'}: ${scenario.members} containers in ${scenario.folders} folders, ${scenario.vms} VMs in ${scenario.vmFolders} folders`;
-            const problems = await comparePage(browser, { ...page, name, url: `${host.origin}/${name}`, sameLists: mode !== 'aurora' }, count, aurora(scenario), label, expectations[mode][name]);
+            const problems = await comparePage(browser, { ...page, name, url: `${host.origin}/${name}`, sameLists: mode !== 'aurora', shot: `fv3-${name}-${mode}-${scenario.members}` }, count, aurora(scenario), label, expectations[mode][name]);
             if (problems.length) failed = true;
         }
     }

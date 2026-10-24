@@ -43,6 +43,10 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.64.1
           npx playwright install --with-deps chromium
 
+      # Unraid's own stylesheets, so the pages look and lay out as on a server.
+      - name: Unraid webgui, newest code
+        run: git clone --depth 1 https://github.com/unraid/webgui.git "$RUNNER_TEMP/webgui"
+
       - name: FolderView Plus, newest code
         if: matrix.plugin == 'fvplus'
         run: |
@@ -59,8 +63,30 @@ jobs:
 
       - name: Check FolderView Plus
         if: matrix.plugin == 'fvplus'
-        run: FVP="$RUNNER_TEMP/fvp" node plugin/test/fvplus_compat.mjs
+        env:
+          FVP: ${{ runner.temp }}/fvp
+          UNRAID_WEBGUI: ${{ runner.temp }}/webgui
+          SCREENSHOTS: ${{ runner.temp }}/screenshots
+        run: |
+          node plugin/test/fvplus_compat.mjs
+          QUICK=1 THEME=white node plugin/test/fvplus_compat.mjs
 
       - name: Check FolderView3
         if: matrix.plugin == 'fv3'
-        run: FV3="$RUNNER_TEMP/fv3" node plugin/test/fv3_compat.mjs
+        env:
+          FV3: ${{ runner.temp }}/fv3
+          UNRAID_WEBGUI: ${{ runner.temp }}/webgui
+          SCREENSHOTS: ${{ runner.temp }}/screenshots
+        run: |
+          node plugin/test/fv3_compat.mjs
+          QUICK=1 THEME=white node plugin/test/fv3_compat.mjs
+
+      # Every page alone and with Aurora, Black and White, for the visual review.
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.plugin }}
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+          retention-days: 30
