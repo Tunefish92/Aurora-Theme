@@ -2385,8 +2385,13 @@
   function helpButton() {
     const items = [...document.querySelectorAll('.nav-item.HelpButton')];
     if (!items.length) return;
+    let marked;
+    // Runs after every change of the page (a list rebuilt every few seconds): it only touches
+    // the button when the answer changes.
     const mark = function () {
       const none = !document.querySelector('.inline_help');
+      if (none === marked) return;
+      marked = none;
       items.forEach(function (item) {
         const link = item.querySelector('a');
         item.classList.toggle('tp-help-none', none);
@@ -2397,7 +2402,11 @@
       });
     };
     mark();
-    new MutationObserver(debounce(mark)).observe(document.getElementById('displaybox') || document.body, { childList: true, subtree: true });
+    // Lists rebuilt inside a table (Docker, VMs, live values) never add or remove help.
+    const later = debounce(mark);
+    new MutationObserver(function (records) {
+      if (records.some(function (record) { return !(record.target.closest && record.target.closest('table')); })) later();
+    }).observe(document.getElementById('displaybox') || document.body, { childList: true, subtree: true });
   }
 
   // Tools pages: their help text is given a clearer structure. Paragraphs written all in

@@ -99,10 +99,9 @@ tablet and wide windows, the Docker, VMs and Dashboard pages (every Dashboard la
 plugins' settings pages and folder editor, and the clicks: open and close folders, expand all,
 menus, previews, start and stop, sort, autostart, waits.
 
-The last full run before the fixes below (Unraid 7.3): 86 of 110 cases as without Aurora. Every
-case that differed was re-run after the fixes, one by one, and passes, apart from FolderView3's
-style cost below; the remaining differences had been the checks' own (requests to Aurora's own
-endpoints, controls cut off by the same amount alone and with Aurora).
+Full run on Unraid 7.3 with every fix below: 109 of 110 cases as without Aurora. The one left,
+FolderView3 with Docker busy (its list rebuilt every 5 s), came from Aurora's help button
+re-checking the whole page after every rebuild; fixed, it passes in five runs out of five.
 
 Sorting and the start order, compared by the files saved on the server (Unraid's container and VM
 order, autostart list and waits, the plugins' order, folder and start-order files), identical
@@ -139,6 +138,9 @@ Found and fixed (all on `dev`):
 - Plus: Aurora's "to top / to end" arrows covered Plus's Tools button at the end of the Docker
   list (they now sit in the footer); its Dashboard chips stacked their name under the icon and
   ran under Plus's quick buttons.
+- Aurora's help button looked for help boxes in the whole page after every change, also each
+  list rebuild; it now skips changes inside tables and only touches the button when the answer
+  changes (FolderView3 with Docker busy: Aurora's script time 64 → 14 ms per 15 s).
 
 Measured, not Aurora's to fix:
 
