@@ -162,6 +162,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - An orange dot on a container's icon when an update is ready, running or not: on the Dashboard, in group and folder icons and in the Docker tab's compact list. A stopped container with an update stays on the Dashboard when stopped containers are hidden.
 - FolderView Plus support: with it installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout (no view switch).
 - After an update, the next page shows "Aurora Theme updated" with the new version and its release notes; automatic updates also show an Unraid notification. Automatic updates are checked weekly by default.
+- Docker and VMs tabs with FolderView3 or FolderView Plus: a "beta" note in the top bar; their support still has compatibility issues and is being worked on.
 - Faster on busy pages: style rules that the browser checked again on every change of any page (Community Applications cards, GPU tile) are limited to their page or replaced.
 </CHANGES>
 

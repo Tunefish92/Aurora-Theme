@@ -199,9 +199,11 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     $auroraFolderView = $auroraFolderViewPlus || is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2') || is_dir('/usr/local/emhttp/plugins/folder.view');
     $auroraDockerView = !$auroraFolderViewPlus && ($aurora['dockerview'] ?? 'folderview') === 'aurora' ? 'aurora' : 'folderview';
     if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
+    // The plugin that draws the folders, by name, for the beta notice on the Docker and VMs tabs.
+    $auroraFolderViewName = $auroraFolderViewPlus ? 'FolderView Plus' : (is_dir('/usr/local/emhttp/plugins/folder.view3') ? 'FolderView3' : (is_dir('/usr/local/emhttp/plugins/folder.view2') ? 'FolderView2' : 'FolderView'));
 ?>
 <?php if ($auroraFolderView): ?>
-<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?> };</script>
+<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?>, name: <?= json_encode($auroraFolderViewName) ?> };</script>
 <?php if ($auroraDockerView === 'aurora'): ?>
 <script>
 (function () {

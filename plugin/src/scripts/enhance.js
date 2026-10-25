@@ -825,6 +825,37 @@
     box.prepend(heading);
   }
 
+  // Docker and VMs tabs with a folder plugin (FolderView3, FolderView Plus): a "beta" chip in the
+  // top bar (next to the page heading where the top bar has no breadcrumb: top layout, narrow
+  // windows). A click explains that their support is not finished yet.
+  function folderViewBeta(info) {
+    const view = window.auroraDockerView;
+    if (!(view && view.folderView) || info.subPage || !['Docker', 'VMs'].includes(info.tab)) return;
+    const name = view.name || 'FolderView';
+    const chip = function () {
+      const button = element('button', 'tp-fv-beta');
+      button.type = 'button';
+      button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
+      button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+      button.addEventListener('click', function () {
+        modal({
+          title: name + ' support is in beta',
+          message: [
+            'Aurora works with FolderView3 and FolderView Plus, but their support is still in beta: some pages and settings can still show compatibility issues.',
+            'I am working on full support. If something looks wrong, please report it on GitHub (Settings > User Utilities > Aurora Theme has a form for it).',
+          ],
+          confirmLabel: 'OK',
+          hideCancel: true,
+        });
+      });
+      return button;
+    };
+    const crumb = document.querySelector('#header .tp-crumb');
+    if (crumb && !crumb.querySelector('.tp-fv-beta')) crumb.append(chip());
+    const heading = document.querySelector('#displaybox .tp-heading-text');
+    if (heading && !heading.querySelector('.tp-fv-beta')) heading.append(chip());
+  }
+
   function summaryStrip(id, label, items) {
     let strip = document.getElementById(id);
     if (!strip) {
@@ -3855,7 +3886,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { folderViewBeta(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

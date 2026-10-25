@@ -112,6 +112,54 @@
     background-color: var(--tp-warn-bg, var(--mild-background-color));
 }
 
+/* Docker and VMs tabs with FolderView3 or FolderView Plus: their support is in beta (enhance.js,
+   folderViewBeta()). In the top bar, or under the page heading where there is none. */
+button.tp-fv-beta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.3rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--tp-warn-text, #f59e0b) 35%, transparent);
+    border-radius: 999px;
+    color: var(--tp-warn-text, var(--orange-300, #f59e0b));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    background: var(--tp-warn-bg, transparent);
+    box-shadow: none;
+    cursor: pointer;
+}
+
+button.tp-fv-beta:hover {
+    border-color: var(--tp-warn-text, #f59e0b);
+    color: var(--tp-warn-text, #f59e0b);
+    background: var(--tp-warn-bg, transparent);
+    transform: none;
+}
+
+.tp-heading-text > .tp-fv-beta {
+    margin-top: 0.9rem;
+}
+
+@media (min-width: 1024px) {
+    :root.tp-sidebar .tp-heading-text > .tp-fv-beta {
+        display: none;
+    }
+}
+
+/* A narrow top bar keeps room for the profile: "Beta" only, the name is in the tooltip. */
+@media (max-width: 1199px) {
+    .tp-crumb .tp-fv-beta-name {
+        display: none;
+    }
+
+    .tp-crumb .tp-fv-beta-name + span {
+        text-transform: capitalize;
+    }
+}
+
 /* The top bar pieces only make sense in the sidebar layout, where the header is slim. */
 :root:not(.tp-sidebar) .tp-crumb,
 .tp-server {
