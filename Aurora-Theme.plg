@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.26.0029"
+        version="2026.10.26.0033"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.26.0029
+###2026.10.26.0033
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -35,7 +35,7 @@
 - An orange dot on a container's icon when an update is ready, running or not: on the Dashboard, in group and folder icons and in the Docker tab's compact list. A stopped container with an update stays on the Dashboard when stopped containers are hidden.
 - FolderView Plus support: with it installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout (no view switch).
 - After an update, the next page shows "Aurora Theme updated" with the new version and its release notes; automatic updates also show an Unraid notification. Automatic updates are checked weekly by default.
-- Docker and VMs tabs with FolderView3 or FolderView Plus: a "beta" note in the top bar; their support still has compatibility issues and is being worked on.
+- Docker and VMs tabs with FolderView3 or FolderView Plus: a "beta" note in the top bar; their support still has compatibility issues and is being worked on. With both installed, a warning that this is not supported (also on the Dashboard and the Plugins page).
 - Faster on busy pages: style rules that the browser checked again on every change of any page (Community Applications cards, GPU tile) are limited to their page or replaced.
 </CHANGES>
 
@@ -60,10 +60,10 @@ if [ -e /boot/config/plugins/$OLD.plg ] || [ -d /usr/local/emhttp/plugins/$OLD ]
   echo "Settings moved over from $OLD, which has been removed."
 fi
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.26.0029" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.26.0033" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.26.0029" "$(date +%s)" > /boot/config/plugins/Aurora-Theme/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.26.0033" "$(date +%s)" > /boot/config/plugins/Aurora-Theme/updated.json
 fi
 cat > /usr/local/emhttp/plugins/Aurora-Theme/AuroraTheme.page <<'AURORA_THEME_EOF'
 Menu="Buttons"
@@ -238,6 +238,14 @@ try {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php
+// Plugins page: FolderView Plus beside FolderView3 or FolderView2 is not supported. The warning
+// of the Docker and VMs tabs (folderViewBeta() in enhance.js) shows here too, where it is fixed.
+if (rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/') === '/Plugins' && is_dir('/usr/local/emhttp/plugins/folderview.plus')
+    && (is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2'))):
+?>
+<script>window.auroraFolderViewConflict = <?= json_encode(is_dir('/usr/local/emhttp/plugins/folder.view3') ? 'FolderView3' : 'FolderView2') ?>;</script>
+<?php endif; ?>
+<?php
 // Docker and VMs tabs and Dashboard: the saved groups go straight into the page, so the
 // containers and VMs can be shown grouped right away instead of waiting for a separate request.
 if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'), ['/Docker', '/VMs', '/Dashboard'], true)):
@@ -269,9 +277,12 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
     // The plugin that draws the folders, by name, for the beta notice on the Docker and VMs tabs.
     $auroraFolderViewName = $auroraFolderViewPlus ? 'FolderView Plus' : (is_dir('/usr/local/emhttp/plugins/folder.view3') ? 'FolderView3' : (is_dir('/usr/local/emhttp/plugins/folder.view2') ? 'FolderView2' : 'FolderView'));
+    // FolderView Plus beside FolderView3 or FolderView2 is not supported (Plus pauses its folders,
+    // "safe mode", and asks to remove the other one): a warning instead of the beta notice.
+    $auroraFolderViewBoth = is_dir('/usr/local/emhttp/plugins/folderview.plus') && !$auroraFolderViewPlus;
 ?>
 <?php if ($auroraFolderView): ?>
-<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?>, name: <?= json_encode($auroraFolderViewName) ?> };</script>
+<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?>, name: <?= json_encode($auroraFolderViewName) ?>, both: <?= $auroraFolderViewBoth ? 'true' : 'false' ?> };</script>
 <?php if ($auroraDockerView === 'aurora'): ?>
 <script>
 (function () {
@@ -6466,16 +6477,40 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
   // Docker and VMs tabs with a folder plugin (FolderView3, FolderView Plus): a "beta" chip in the
   // top bar (next to the page heading where the top bar has no breadcrumb: top layout, narrow
   // windows). A click explains that their support is not finished yet.
+  // With FolderView Plus and FolderView3 (or FolderView2) installed together, a warning instead,
+  // also on the Dashboard and the Plugins page: Plus does not support it (it pauses its folders,
+  // "safe mode", and asks to remove the other plugin), and Aurora then follows FolderView3.
   function folderViewBeta(info) {
-    const view = window.auroraDockerView;
-    if (!(view && view.folderView) || info.subPage || !['Docker', 'VMs'].includes(info.tab)) return;
+    const view = window.auroraDockerView || (window.auroraFolderViewConflict ? { folderView: true, both: true, name: window.auroraFolderViewConflict } : null);
+    if (!(view && view.folderView) || info.subPage) return;
+    const both = Boolean(view.both);
+    if (!(both ? ['Docker', 'VMs', 'Dashboard', 'Plugins'] : ['Docker', 'VMs']).includes(info.tab)) return;
     const name = view.name || 'FolderView';
     const chip = function () {
-      const button = element('button', 'tp-fv-beta');
+      const button = element('button', 'tp-fv-beta' + (both ? ' tp-fv-conflict' : ''));
       button.type = 'button';
-      button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
-      button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+      if (both) {
+        button.title = name + ' and FolderView Plus are both installed. This is not supported. Click for details.';
+        button.append(element('i', 'fa fa-exclamation-triangle'), element('span', 'tp-fv-beta-name', name + ' + Plus · '), element('span', '', 'not supported'));
+      } else {
+        button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
+        button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+      }
       button.addEventListener('click', function () {
+        if (both) {
+          modal({
+            title: name + ' and FolderView Plus are both installed',
+            message: [
+              'Running both folder plugins at the same time is not supported. FolderView Plus says so itself: while ' + name + ' is installed it pauses its own folders ("safe mode") and asks to remove the other plugin.',
+              'Aurora then follows ' + name + '. Keep the one you want to use and remove the other under Plugins.',
+            ],
+            confirmLabel: 'Open Plugins',
+            cancelLabel: 'Close',
+          }).then(function (open) {
+            if (open) location.href = '/Plugins';
+          });
+          return;
+        }
         modal({
           title: name + ' support is in beta',
           message: [
@@ -10137,6 +10172,21 @@ button.tp-fv-beta:hover {
     color: var(--tp-warn-text, #f59e0b);
     background: var(--tp-warn-bg, transparent);
     transform: none;
+}
+
+/* FolderView Plus and FolderView3 installed together: not supported. */
+button.tp-fv-beta.tp-fv-conflict,
+button.tp-fv-beta.tp-fv-conflict:hover {
+    color: var(--tp-danger, var(--red-600, #ef4444));
+    background: var(--tp-danger-soft, transparent);
+}
+
+button.tp-fv-beta.tp-fv-conflict {
+    border-color: color-mix(in srgb, var(--tp-danger, #ef4444) 40%, transparent);
+}
+
+button.tp-fv-beta.tp-fv-conflict:hover {
+    border-color: var(--tp-danger, #ef4444);
 }
 
 .tp-heading-text > .tp-fv-beta {
@@ -21993,7 +22043,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.26.0029 is installed."
+echo "Aurora-Theme 2026.10.26.0033 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

@@ -170,6 +170,14 @@ try {
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/enhance.css') ?>">
 <script defer src="<?php autov('/plugins/Aurora-Theme/scripts/enhance.js') ?>"></script>
 <?php
+// Plugins page: FolderView Plus beside FolderView3 or FolderView2 is not supported. The warning
+// of the Docker and VMs tabs (folderViewBeta() in enhance.js) shows here too, where it is fixed.
+if (rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/') === '/Plugins' && is_dir('/usr/local/emhttp/plugins/folderview.plus')
+    && (is_dir('/usr/local/emhttp/plugins/folder.view3') || is_dir('/usr/local/emhttp/plugins/folder.view2'))):
+?>
+<script>window.auroraFolderViewConflict = <?= json_encode(is_dir('/usr/local/emhttp/plugins/folder.view3') ? 'FolderView3' : 'FolderView2') ?>;</script>
+<?php endif; ?>
+<?php
 // Docker and VMs tabs and Dashboard: the saved groups go straight into the page, so the
 // containers and VMs can be shown grouped right away instead of waiting for a separate request.
 if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'), ['/Docker', '/VMs', '/Dashboard'], true)):
@@ -201,9 +209,12 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
     if ($auroraFolderViewPlus) $auroraClasses[] = 'tp-fvplus';
     // The plugin that draws the folders, by name, for the beta notice on the Docker and VMs tabs.
     $auroraFolderViewName = $auroraFolderViewPlus ? 'FolderView Plus' : (is_dir('/usr/local/emhttp/plugins/folder.view3') ? 'FolderView3' : (is_dir('/usr/local/emhttp/plugins/folder.view2') ? 'FolderView2' : 'FolderView'));
+    // FolderView Plus beside FolderView3 or FolderView2 is not supported (Plus pauses its folders,
+    // "safe mode", and asks to remove the other one): a warning instead of the beta notice.
+    $auroraFolderViewBoth = is_dir('/usr/local/emhttp/plugins/folderview.plus') && !$auroraFolderViewPlus;
 ?>
 <?php if ($auroraFolderView): ?>
-<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?>, name: <?= json_encode($auroraFolderViewName) ?> };</script>
+<script>window.auroraDockerView = { folderView: true, plus: <?= $auroraFolderViewPlus ? 'true' : 'false' ?>, mode: <?= json_encode($auroraDockerView) ?>, name: <?= json_encode($auroraFolderViewName) ?>, both: <?= $auroraFolderViewBoth ? 'true' : 'false' ?> };</script>
 <?php if ($auroraDockerView === 'aurora'): ?>
 <script>
 (function () {

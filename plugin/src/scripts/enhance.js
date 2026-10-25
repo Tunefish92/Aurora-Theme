@@ -828,16 +828,40 @@
   // Docker and VMs tabs with a folder plugin (FolderView3, FolderView Plus): a "beta" chip in the
   // top bar (next to the page heading where the top bar has no breadcrumb: top layout, narrow
   // windows). A click explains that their support is not finished yet.
+  // With FolderView Plus and FolderView3 (or FolderView2) installed together, a warning instead,
+  // also on the Dashboard and the Plugins page: Plus does not support it (it pauses its folders,
+  // "safe mode", and asks to remove the other plugin), and Aurora then follows FolderView3.
   function folderViewBeta(info) {
-    const view = window.auroraDockerView;
-    if (!(view && view.folderView) || info.subPage || !['Docker', 'VMs'].includes(info.tab)) return;
+    const view = window.auroraDockerView || (window.auroraFolderViewConflict ? { folderView: true, both: true, name: window.auroraFolderViewConflict } : null);
+    if (!(view && view.folderView) || info.subPage) return;
+    const both = Boolean(view.both);
+    if (!(both ? ['Docker', 'VMs', 'Dashboard', 'Plugins'] : ['Docker', 'VMs']).includes(info.tab)) return;
     const name = view.name || 'FolderView';
     const chip = function () {
-      const button = element('button', 'tp-fv-beta');
+      const button = element('button', 'tp-fv-beta' + (both ? ' tp-fv-conflict' : ''));
       button.type = 'button';
-      button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
-      button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+      if (both) {
+        button.title = name + ' and FolderView Plus are both installed. This is not supported. Click for details.';
+        button.append(element('i', 'fa fa-exclamation-triangle'), element('span', 'tp-fv-beta-name', name + ' + Plus · '), element('span', '', 'not supported'));
+      } else {
+        button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
+        button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+      }
       button.addEventListener('click', function () {
+        if (both) {
+          modal({
+            title: name + ' and FolderView Plus are both installed',
+            message: [
+              'Running both folder plugins at the same time is not supported. FolderView Plus says so itself: while ' + name + ' is installed it pauses its own folders ("safe mode") and asks to remove the other plugin.',
+              'Aurora then follows ' + name + '. Keep the one you want to use and remove the other under Plugins.',
+            ],
+            confirmLabel: 'Open Plugins',
+            cancelLabel: 'Close',
+          }).then(function (open) {
+            if (open) location.href = '/Plugins';
+          });
+          return;
+        }
         modal({
           title: name + ' support is in beta',
           message: [

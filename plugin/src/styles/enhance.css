@@ -139,6 +139,21 @@ button.tp-fv-beta:hover {
     transform: none;
 }
 
+/* FolderView Plus and FolderView3 installed together: not supported. */
+button.tp-fv-beta.tp-fv-conflict,
+button.tp-fv-beta.tp-fv-conflict:hover {
+    color: var(--tp-danger, var(--red-600, #ef4444));
+    background: var(--tp-danger-soft, transparent);
+}
+
+button.tp-fv-beta.tp-fv-conflict {
+    border-color: color-mix(in srgb, var(--tp-danger, #ef4444) 40%, transparent);
+}
+
+button.tp-fv-beta.tp-fv-conflict:hover {
+    border-color: var(--tp-danger, #ef4444);
+}
+
 .tp-heading-text > .tp-fv-beta {
     margin-top: 0.9rem;
 }
