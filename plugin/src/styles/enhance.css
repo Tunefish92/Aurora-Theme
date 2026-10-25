@@ -913,6 +913,15 @@ a.tp-webui .fa {
     display: none !important;
 }
 
+/* FolderView Plus: next to a wide preview a folder's name box is narrow, and its status
+   ("7/7 stopped") ran past it, cut off mid-letter. It ends in "…" there, in the same room. */
+.tp-fvplus :is(#docker_list, #kvm_list) tr.folder .folder-inner > .folder-state {
+    max-width: calc(100% - 1.8rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
 /* Preview icons of a closed folder: long names end in "…" too. */
 #docker_list > tr.folder .folder-preview .appname {
     display: inline-block;

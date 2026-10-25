@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.25.1430"
+        version="2026.10.25.1439"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.25.1430
+###2026.10.25.1439
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -10644,6 +10644,15 @@ a.tp-webui .fa {
    .appname, which Plus hides; the long-name rule above would show it again (issue #23). */
 .tp-fvplus #docker_list tr.folder td.ct-name .folder-inner > .appname {
     display: none !important;
+}
+
+/* FolderView Plus: next to a wide preview a folder's name box is narrow, and its status
+   ("7/7 stopped") ran past it, cut off mid-letter. It ends in "…" there, in the same room. */
+.tp-fvplus :is(#docker_list, #kvm_list) tr.folder .folder-inner > .folder-state {
+    max-width: calc(100% - 1.8rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
 }
 
 /* Preview icons of a closed folder: long names end in "…" too. */
@@ -21400,7 +21409,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.25.1430 is installed."
+echo "Aurora-Theme 2026.10.25.1439 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

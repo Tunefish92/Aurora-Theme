@@ -137,7 +137,9 @@ Found and fixed (all on `dev`):
   "…").
 - Plus: Aurora's "to top / to end" arrows covered Plus's Tools button at the end of the Docker
   list (they now sit in the footer); its Dashboard chips stacked their name under the icon and
-  ran under Plus's quick buttons.
+  ran under Plus's quick buttons; next to a wide preview its folder status ("7/7 stopped") ran
+  past Plus's narrow name box, cut off mid-letter (Plus's layout, Aurora's font made it more
+  likely), and now ends in "…" in the same room.
 - Aurora's help button looked for help boxes in the whole page after every change, also each
   list rebuild; it now skips changes inside tables and only touches the button when the answer
   changes (FolderView3 with Docker busy: Aurora's script time 64 → 14 ms per 15 s).
