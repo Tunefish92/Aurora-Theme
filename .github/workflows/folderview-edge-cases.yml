@@ -1,0 +1,70 @@
+name: FolderView edge cases
+
+# Runs plugin/test/unraid-sim: Unraid's real webGui with FolderView Plus or FolderView3, every
+# case with Aurora off and on (settings, folder and container counts, clicks, sorting, autostart,
+# VMs, Dashboard, settings pages). On changes to the theme or the checks, every Monday against
+# the newest code of Unraid 7.3 and both plugins, and on demand.
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'unraid-tapeory.css'
+      - 'plugin/src/**'
+      - 'plugin/test/unraid-sim/**'
+      - '.github/workflows/folderview-edge-cases.yml'
+  pull_request:
+    paths:
+      - 'unraid-tapeory.css'
+      - 'plugin/src/**'
+      - 'plugin/test/unraid-sim/**'
+  schedule:
+    - cron: '37 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Playwright with Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.64.1
+          npx playwright install --with-deps chromium
+
+      - name: PHP
+        run: php --version && php -m | grep -E '^(curl|dom|mbstring|xml)$'
+
+      - name: Unraid webgui 7.3, FolderView Plus and FolderView3, newest code
+        run: |
+          git clone --depth 1 -b 7.3 https://github.com/unraid/webgui.git "$RUNNER_TEMP/webgui"
+          git clone --depth 1 https://github.com/alexphillips-dev/FolderView-Plus.git "$RUNNER_TEMP/fvp"
+          git clone --depth 1 https://github.com/chodeus/folder.view3.git "$RUNNER_TEMP/fv3"
+          for repo in webgui fvp fv3; do echo "$repo $(git -C "$RUNNER_TEMP/$repo" log -1 --format='%h %cs %s')"; done
+
+      - name: Edge cases
+        run: >
+          sudo -E env "PATH=$PATH" plugin/test/unraid-sim/run.sh
+          --webgui "$RUNNER_TEMP/webgui" --fvp "$RUNNER_TEMP/fvp" --fv3 "$RUNNER_TEMP/fv3"
+          --shard ${{ matrix.shard }}/4 --shots "$RUNNER_TEMP/shots"
+
+      - name: Screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-cases-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shots
+          if-no-files-found: ignore
+          retention-days: 30

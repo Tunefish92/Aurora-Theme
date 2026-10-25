@@ -579,6 +579,14 @@
         letter-spacing: 0.05em;
     }
 
+    /* A heading wider than its column ends in "…" instead of running into the next one: next to
+       the sidebar FolderView3's narrower Docker columns had "Volume Mappings (App to Host)"
+       over "Autostart". (Wrapping instead changed how FolderView3 sizes the columns.) */
+    #docker_containers > thead > tr > th {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     table.unraid thead tr:first-child > td {
         color: var(--tp-muted);
     }
@@ -1325,6 +1333,18 @@
         white-space: normal;
     }
 
+    /* The apps' chips stay on one line, as in Unraid: in FolderView Plus's own layouts a
+       container's name went under its icon. */
+    table.dashboard > tbody > tr > td span.outer.solid {
+        white-space: nowrap;
+    }
+
+    /* FolderView Plus keeps room at the right of its tile for its buttons (quick rail); the
+       padding above took it away and the chips ran under them. */
+    table.dashboard > tbody > tr > td.fv-dashboard-has-visible-quick-rail {
+        padding-right: var(--fvplus-dashboard-quick-rail-gutter, 2rem);
+    }
+
     /* Column headings of the lists (disks, shares) stay on one line. */
     table.dashboard > tbody > tr.header > td {
         white-space: nowrap;
@@ -1574,12 +1594,19 @@
 
     /* Docker and VM tiles: the apps sit in an even grid of small cards. Not when FolderView
        Plus lays out the tile in one of its own layouts (all but "legacy", which keeps the
-       host's), whose grid it sets itself. */
-    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr > td:has(> span.outer.solid) {
+       host's), whose grid it sets itself. The apps' row is the one Unraid marks "updated"
+       ("useupdated" for VM usage); FolderView3 and Plus keep it. Asked with td:has() instead,
+       every table cell of the page was checked again whenever a list was rebuilt. */
+    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr:is(.updated, .useupdated) > td {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
         gap: 0.6rem;
         padding-bottom: 0.8rem;
+    }
+
+    /* "No containers" and the like span the whole tile. */
+    table.dashboard > tbody > tr:is(.updated, .useupdated) > td > :is(#no_apps, #no_vms, #no_usagevms) {
+        grid-column: 1 / -1;
     }
 
     table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid {
@@ -2409,34 +2436,36 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* Empty bays fade back; bays with a drive take the colour of its state. */
-    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) {
+    /* Empty bays fade back; bays with a drive take the colour of its state (the colours of the
+       bay's orbs, listed by enhance.js in data-tp-orbs; without page enhancements the bays keep
+       the plugin's look). */
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="grey"] {
         opacity: 0.55;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) .flex-container-end b {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="grey"] .flex-container-end b {
         color: var(--tp-muted);
         font-weight: 500;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.green-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="green"] {
         border-color: var(--tp-success-text);
         background: color-mix(in srgb, var(--tp-success-bg) 70%, var(--tp-subtle)) !important;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.yellow-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="yellow"] {
         border-color: var(--tp-warn-text);
         background: color-mix(in srgb, var(--tp-warn-bg) 80%, var(--tp-subtle)) !important;
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-warn-text) 18%, transparent);
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.red-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="red"] {
         border-color: var(--tp-danger);
         background: color-mix(in srgb, var(--tp-danger-soft) 100%, var(--tp-subtle)) !important;
         box-shadow: 0 0 0 3px var(--tp-danger-soft);
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.blue-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="blue"] {
         border-color: var(--tp-primary);
         background: color-mix(in srgb, var(--tp-primary-soft) 100%, var(--tp-subtle)) !important;
     }
@@ -3249,9 +3278,12 @@
             border-top: 0;
         }
 
-        /* Section rows such as "Port eth0 Information". */
+        /* Section rows such as "Port eth0 Information": a bold first cell; enhance.js marks
+           its row (tp-section-row) for the cells after it. Asked with "[style*=…] ~ td"
+           instead, every style change on any page re-checked the cells after the changed
+           element (FolderView Plus's Docker list, rebuilt every 5 s while Docker is busy). */
         & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]),
-        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]) ~ td {
+        & > tbody > tr.tp-section-row > td {
             padding-top: 1.2rem;
             color: var(--tp-primary);
             font: 600 1.3rem var(--tp-font-heading);
@@ -3776,6 +3808,29 @@
         bottom: 12.2rem !important;
     }
 
+    /* While the footer is fixed to the window, the two sit side by side at its right end: over
+       the page they covered whatever ended at its right edge (FolderView Plus's Tools button at
+       the end of the Docker list). The footer keeps that end free for them. */
+    @media (min-width: 768px) {
+        a:is(.move_to_end, .back_to_top) {
+            right: 1.6rem !important;
+            bottom: 0.6rem !important;
+            z-index: 10001;
+            width: 3.2rem;
+            height: 3.2rem;
+            box-shadow: none;
+        }
+
+        a.back_to_top {
+            right: 5.4rem !important;
+            bottom: 0.6rem !important;
+        }
+
+        #footer {
+            padding-right: 10rem;
+        }
+    }
+
     /* Settings > Notifications: each group's name ("Notices", "Alerts") on its own line above
        its Browser / Email / Agents boxes. Inline, a short name pulled the boxes up beside it
        and the row no longer lined up with the others. */
@@ -4148,13 +4203,16 @@
 
     /* Add / Edit VM is built from tables, with 1px or 5px cell padding depending on the
        section and the labels at the top of tall cells. Same 16px rhythm as the other forms;
-       labels sit on the middle of the first field line. */
-    #displaybox form:has(#domain_name) table > tbody > tr > td {
+       labels sit on the middle of the first field line. The form is found by its id: asked as
+       "form:has(#domain_name)", every table cell on every page was checked against it each time
+       anything restyled (FolderView Plus's Docker page with 300 containers: 2.5 million cells
+       restyled while loading, half a minute). */
+    #displaybox #vmform table > tbody > tr > td {
         padding-top: 0.8rem;
         padding-bottom: 0.8rem;
     }
 
-    #displaybox form:has(#domain_name) table > tbody > tr > td:first-child {
+    #displaybox #vmform table > tbody > tr > td:first-child {
         line-height: 3.6rem;
     }
 
@@ -5360,8 +5418,13 @@
             text-align: left !important;
         }
 
-        /* The third cell only holds the inline XML, hidden unless "Inline XML" is on. */
-        #vmform table tr > td:has(> textarea.xml:only-child[style*="none"]) {
+        /* A row's third and last cell only holds the inline XML (or nothing), hidden unless
+           "Show Inline XML" is on. Read from that switch and the cell's place: asking the
+           textareas' style attribute made every style change on any page re-check every table
+           cell (on a phone, FolderView Plus's Docker list took seven seconds to switch to
+           Advanced View), and asking the cell for its textarea (td:has()) re-checked them
+           whenever a list was rebuilt. */
+        #vmform:has(input.inlineview:not(:checked)) table tr > td:nth-child(3):last-child {
             display: none;
         }
 

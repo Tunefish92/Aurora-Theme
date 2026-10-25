@@ -2476,6 +2476,31 @@
   // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
   // the theme; a click on the dimmed backdrop closes it like its own close button. App names in
   // the search field are not spell-checked (no red underline).
+  // Dashboard, Disk Location tile: each bay lists the colours of its drive's orbs (grey for an
+  // empty bay, green, yellow, red, blue) in data-tp-orbs, which theme.css tints the bay by.
+  // Asked with :has() in the stylesheet instead, every table cell on every page took part in
+  // each restyle (FolderView Plus's Docker list loaded half again as slowly).
+  function diskLocationBays() {
+    const tile = document.getElementById('tblDiskLocation');
+    if (!tile) return;
+    tile.querySelectorAll('.flex-container-layout_h > div').forEach(function (bay) {
+      const colours = [];
+      bay.querySelectorAll('i.orb-disklocation').forEach(function (orb) {
+        const colour = (orb.className.match(/\b(grey|green|yellow|red|blue)-orb-disklocation\b/) || [])[1];
+        if (colour && !colours.includes(colour)) colours.push(colour);
+      });
+      if (colours.length) bay.dataset.tpOrbs = colours.join(' ');
+    });
+  }
+
+  // Tables in the page content: a row whose first cell is bold (inline) is a section heading;
+  // theme.css styles its other cells by the class set here.
+  function sectionRows() {
+    document.querySelectorAll('#displaybox table > tbody > tr > td:first-child[style*="bold"]').forEach(function (cell) {
+      if (/font-weight:\s*bold/.test(cell.getAttribute('style'))) cell.parentElement.classList.add('tp-section-row');
+    });
+  }
+
   function caOverlay() {
     const search = document.getElementById('searchBox');
     if (search) search.spellcheck = false;
@@ -3821,7 +3846,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });

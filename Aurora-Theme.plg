@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.25.0120"
+        version="2026.10.25.1327"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.25.0120
+###2026.10.25.1327
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -267,12 +267,16 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 (function () {
   document.documentElement.classList.add('tp-aurora-view', 'fv3-docker-ready', 'fv3-vm-ready');
   // On the Dashboard FolderView builds its folders from a jQuery prefilter on the tile's data
-  // request (DashboardApps.php); that one prefilter is not registered.
+  // request (DashboardApps.php); that one prefilter is not registered. Nor is the one on the
+  // list order Unraid saves (UserPrefs.php): it renumbers the folders' places and copies the
+  // order into FolderView3's own snapshot (update_order.php), which FolderView3 later uses to
+  // put its folders back in place. Saved from this view, without folders, the snapshot lost
+  // them, and after switching back every folder stood at the top of the list.
   if (window.jQuery && typeof jQuery.ajaxPrefilter === 'function') {
     var addPrefilter = jQuery.ajaxPrefilter;
     jQuery.ajaxPrefilter = function (types, handler) {
       var fn = typeof types === 'function' ? types : handler;
-      if (typeof fn === 'function' && /createFolders/.test(String(fn))) return;
+      if (typeof fn === 'function' && /createFolders|update_order\.php/.test(String(fn))) return;
       return addPrefilter.apply(this, arguments);
     };
   }
@@ -8031,6 +8035,31 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
   // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
   // the theme; a click on the dimmed backdrop closes it like its own close button. App names in
   // the search field are not spell-checked (no red underline).
+  // Dashboard, Disk Location tile: each bay lists the colours of its drive's orbs (grey for an
+  // empty bay, green, yellow, red, blue) in data-tp-orbs, which theme.css tints the bay by.
+  // Asked with :has() in the stylesheet instead, every table cell on every page took part in
+  // each restyle (FolderView Plus's Docker list loaded half again as slowly).
+  function diskLocationBays() {
+    const tile = document.getElementById('tblDiskLocation');
+    if (!tile) return;
+    tile.querySelectorAll('.flex-container-layout_h > div').forEach(function (bay) {
+      const colours = [];
+      bay.querySelectorAll('i.orb-disklocation').forEach(function (orb) {
+        const colour = (orb.className.match(/\b(grey|green|yellow|red|blue)-orb-disklocation\b/) || [])[1];
+        if (colour && !colours.includes(colour)) colours.push(colour);
+      });
+      if (colours.length) bay.dataset.tpOrbs = colours.join(' ');
+    });
+  }
+
+  // Tables in the page content: a row whose first cell is bold (inline) is a section heading;
+  // theme.css styles its other cells by the class set here.
+  function sectionRows() {
+    document.querySelectorAll('#displaybox table > tbody > tr > td:first-child[style*="bold"]').forEach(function (cell) {
+      if (/font-weight:\s*bold/.test(cell.getAttribute('style'))) cell.parentElement.classList.add('tp-section-row');
+    });
+  }
+
   function caOverlay() {
     const search = document.getElementById('searchBox');
     if (search) search.spellcheck = false;
@@ -9376,7 +9405,7 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
@@ -10579,6 +10608,17 @@ a.tp-webui .fa {
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: bottom;
+}
+
+/* In a FolderView3 folder the name and state sit in a box narrower than the cell, which cut a
+   long name off mid-letter. There the name fills that box as a line of its own, so it ends in
+   "…" (its line break is then not needed). */
+#docker_list > tr.folder-element > td.ct-name .inner > .appname {
+    display: block;
+}
+
+#docker_list > tr.folder-element > td.ct-name .inner > .appname + br {
+    display: none;
 }
 
 /* ---- Docker with FolderView: folders on a tinted band with an accent edge, an open folder's
@@ -15815,6 +15855,14 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         letter-spacing: 0.05em;
     }
 
+    /* A heading wider than its column ends in "…" instead of running into the next one: next to
+       the sidebar FolderView3's narrower Docker columns had "Volume Mappings (App to Host)"
+       over "Autostart". (Wrapping instead changed how FolderView3 sizes the columns.) */
+    #docker_containers > thead > tr > th {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     table.unraid thead tr:first-child > td {
         color: var(--tp-muted);
     }
@@ -16561,6 +16609,18 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         white-space: normal;
     }
 
+    /* The apps' chips stay on one line, as in Unraid: in FolderView Plus's own layouts a
+       container's name went under its icon. */
+    table.dashboard > tbody > tr > td span.outer.solid {
+        white-space: nowrap;
+    }
+
+    /* FolderView Plus keeps room at the right of its tile for its buttons (quick rail); the
+       padding above took it away and the chips ran under them. */
+    table.dashboard > tbody > tr > td.fv-dashboard-has-visible-quick-rail {
+        padding-right: var(--fvplus-dashboard-quick-rail-gutter, 2rem);
+    }
+
     /* Column headings of the lists (disks, shares) stay on one line. */
     table.dashboard > tbody > tr.header > td {
         white-space: nowrap;
@@ -16810,12 +16870,19 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
     /* Docker and VM tiles: the apps sit in an even grid of small cards. Not when FolderView
        Plus lays out the tile in one of its own layouts (all but "legacy", which keeps the
-       host's), whose grid it sets itself. */
-    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr > td:has(> span.outer.solid) {
+       host's), whose grid it sets itself. The apps' row is the one Unraid marks "updated"
+       ("useupdated" for VM usage); FolderView3 and Plus keep it. Asked with td:has() instead,
+       every table cell of the page was checked again whenever a list was rebuilt. */
+    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr:is(.updated, .useupdated) > td {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
         gap: 0.6rem;
         padding-bottom: 0.8rem;
+    }
+
+    /* "No containers" and the like span the whole tile. */
+    table.dashboard > tbody > tr:is(.updated, .useupdated) > td > :is(#no_apps, #no_vms, #no_usagevms) {
+        grid-column: 1 / -1;
     }
 
     table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"]))) span.outer.solid {
@@ -17645,34 +17712,36 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         font-variant-numeric: tabular-nums;
     }
 
-    /* Empty bays fade back; bays with a drive take the colour of its state. */
-    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) {
+    /* Empty bays fade back; bays with a drive take the colour of its state (the colours of the
+       bay's orbs, listed by enhance.js in data-tp-orbs; without page enhancements the bays keep
+       the plugin's look). */
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="grey"] {
         opacity: 0.55;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.grey-orb-disklocation) .flex-container-end b {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="grey"] .flex-container-end b {
         color: var(--tp-muted);
         font-weight: 500;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.green-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="green"] {
         border-color: var(--tp-success-text);
         background: color-mix(in srgb, var(--tp-success-bg) 70%, var(--tp-subtle)) !important;
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.yellow-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="yellow"] {
         border-color: var(--tp-warn-text);
         background: color-mix(in srgb, var(--tp-warn-bg) 80%, var(--tp-subtle)) !important;
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-warn-text) 18%, transparent);
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.red-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="red"] {
         border-color: var(--tp-danger);
         background: color-mix(in srgb, var(--tp-danger-soft) 100%, var(--tp-subtle)) !important;
         box-shadow: 0 0 0 3px var(--tp-danger-soft);
     }
 
-    #tblDiskLocation .flex-container-layout_h > div:has(.blue-orb-disklocation) {
+    #tblDiskLocation .flex-container-layout_h > div[data-tp-orbs~="blue"] {
         border-color: var(--tp-primary);
         background: color-mix(in srgb, var(--tp-primary-soft) 100%, var(--tp-subtle)) !important;
     }
@@ -18485,9 +18554,12 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             border-top: 0;
         }
 
-        /* Section rows such as "Port eth0 Information". */
+        /* Section rows such as "Port eth0 Information": a bold first cell; enhance.js marks
+           its row (tp-section-row) for the cells after it. Asked with "[style*=…] ~ td"
+           instead, every style change on any page re-checked the cells after the changed
+           element (FolderView Plus's Docker list, rebuilt every 5 s while Docker is busy). */
         & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]),
-        & > tbody > tr > td:first-child:is([style*="font-weight:bold"], [style*="font-weight: bold"]) ~ td {
+        & > tbody > tr.tp-section-row > td {
             padding-top: 1.2rem;
             color: var(--tp-primary);
             font: 600 1.3rem var(--tp-font-heading);
@@ -19012,6 +19084,29 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
         bottom: 12.2rem !important;
     }
 
+    /* While the footer is fixed to the window, the two sit side by side at its right end: over
+       the page they covered whatever ended at its right edge (FolderView Plus's Tools button at
+       the end of the Docker list). The footer keeps that end free for them. */
+    @media (min-width: 768px) {
+        a:is(.move_to_end, .back_to_top) {
+            right: 1.6rem !important;
+            bottom: 0.6rem !important;
+            z-index: 10001;
+            width: 3.2rem;
+            height: 3.2rem;
+            box-shadow: none;
+        }
+
+        a.back_to_top {
+            right: 5.4rem !important;
+            bottom: 0.6rem !important;
+        }
+
+        #footer {
+            padding-right: 10rem;
+        }
+    }
+
     /* Settings > Notifications: each group's name ("Notices", "Alerts") on its own line above
        its Browser / Email / Agents boxes. Inline, a short name pulled the boxes up beside it
        and the row no longer lined up with the others. */
@@ -19384,13 +19479,16 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
 
     /* Add / Edit VM is built from tables, with 1px or 5px cell padding depending on the
        section and the labels at the top of tall cells. Same 16px rhythm as the other forms;
-       labels sit on the middle of the first field line. */
-    #displaybox form:has(#domain_name) table > tbody > tr > td {
+       labels sit on the middle of the first field line. The form is found by its id: asked as
+       "form:has(#domain_name)", every table cell on every page was checked against it each time
+       anything restyled (FolderView Plus's Docker page with 300 containers: 2.5 million cells
+       restyled while loading, half a minute). */
+    #displaybox #vmform table > tbody > tr > td {
         padding-top: 0.8rem;
         padding-bottom: 0.8rem;
     }
 
-    #displaybox form:has(#domain_name) table > tbody > tr > td:first-child {
+    #displaybox #vmform table > tbody > tr > td:first-child {
         line-height: 3.6rem;
     }
 
@@ -20596,8 +20694,13 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             text-align: left !important;
         }
 
-        /* The third cell only holds the inline XML, hidden unless "Inline XML" is on. */
-        #vmform table tr > td:has(> textarea.xml:only-child[style*="none"]) {
+        /* A row's third and last cell only holds the inline XML (or nothing), hidden unless
+           "Show Inline XML" is on. Read from that switch and the cell's place: asking the
+           textareas' style attribute made every style change on any page re-check every table
+           cell (on a phone, FolderView Plus's Docker list took seven seconds to switch to
+           Advanced View), and asking the cell for its textarea (td:has()) re-checked them
+           whenever a list was rebuilt. */
+        #vmform:has(input.inlineview:not(:checked)) table tr > td:nth-child(3):last-child {
             display: none;
         }
 
@@ -21288,7 +21391,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.25.0120 is installed."
+echo "Aurora-Theme 2026.10.25.1327 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

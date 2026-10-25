@@ -886,6 +886,17 @@ a.tp-webui .fa {
     vertical-align: bottom;
 }
 
+/* In a FolderView3 folder the name and state sit in a box narrower than the cell, which cut a
+   long name off mid-letter. There the name fills that box as a line of its own, so it ends in
+   "…" (its line break is then not needed). */
+#docker_list > tr.folder-element > td.ct-name .inner > .appname {
+    display: block;
+}
+
+#docker_list > tr.folder-element > td.ct-name .inner > .appname + br {
+    display: none;
+}
+
 /* ---- Docker with FolderView: folders on a tinted band with an accent edge, an open folder's
    containers on a lighter band of the same colour and indented, and space before the
    containers outside any folder (arrangeFolders() in enhance.js puts them in that order).

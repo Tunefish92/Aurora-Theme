@@ -207,12 +207,16 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 (function () {
   document.documentElement.classList.add('tp-aurora-view', 'fv3-docker-ready', 'fv3-vm-ready');
   // On the Dashboard FolderView builds its folders from a jQuery prefilter on the tile's data
-  // request (DashboardApps.php); that one prefilter is not registered.
+  // request (DashboardApps.php); that one prefilter is not registered. Nor is the one on the
+  // list order Unraid saves (UserPrefs.php): it renumbers the folders' places and copies the
+  // order into FolderView3's own snapshot (update_order.php), which FolderView3 later uses to
+  // put its folders back in place. Saved from this view, without folders, the snapshot lost
+  // them, and after switching back every folder stood at the top of the list.
   if (window.jQuery && typeof jQuery.ajaxPrefilter === 'function') {
     var addPrefilter = jQuery.ajaxPrefilter;
     jQuery.ajaxPrefilter = function (types, handler) {
       var fn = typeof types === 'function' ? types : handler;
-      if (typeof fn === 'function' && /createFolders/.test(String(fn))) return;
+      if (typeof fn === 'function' && /createFolders|update_order\.php/.test(String(fn))) return;
       return addPrefilter.apply(this, arguments);
     };
   }

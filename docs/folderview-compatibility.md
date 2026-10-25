@@ -87,8 +87,70 @@ Fixed on the way (all on `dev`):
   pills made Plus's "12/18 Running" too wide for its folder cell. Both now step aside for Plus's
   own Dashboard layouts and lists (found in the visual review, 6.3).
 
-Open: the hang reported with Plus on a real server is not reproduced on the synthetic host
-(section 5, P1).
+### 2.1 Edge cases on Unraid's real webGui
+
+`plugin/test/unraid-sim/` (section 6.1) runs Unraid's own webGui (7.2 and 7.3) with each plugin
+installed from its newest code and goes through one setting or click at a time, alone and with
+Aurora: container and folder counts (none, one, 40 folders of one, 300 in 30, empty folders, long
+names, nested folders, all stopped, Docker busy), the plugins' preview, layout, page view, theme,
+refresh, performance, column and start-order settings, Aurora's layout, enhancements, theme, accent
+and font, Unraid's theme, listing height, width, font size, number format and Advanced View, phone,
+tablet and wide windows, the Docker, VMs and Dashboard pages (every Dashboard layout of Plus), the
+plugins' settings pages and folder editor, and the clicks: open and close folders, expand all,
+menus, previews, start and stop, sort, autostart, waits.
+
+The last full run before the fixes below (Unraid 7.3): 86 of 110 cases as without Aurora. Every
+case that differed was re-run after the fixes, one by one, and passes, apart from FolderView3's
+style cost below; the remaining differences had been the checks' own (requests to Aurora's own
+endpoints, controls cut off by the same amount alone and with Aurora).
+
+Sorting and the start order, compared by the files saved on the server (Unraid's container and VM
+order, autostart list and waits, the plugins' order, folder and start-order files), identical
+alone and with Aurora:
+
+- FolderView3: dragging containers and folders on the Docker page (unlocked), autostart on and
+  off, its Autostart tab (drag, position, wait, Apply), its custom start sequence in FolderView
+  mode and in Aurora's view, VM sorting and autostart.
+- FolderView Plus: dragging on the Docker page, autostart, reordering in its settings table, its
+  start-order modes (unmanaged, Docker page, custom batches), VM sorting and autostart.
+- Aurora's view saves the same order as Unraid without any plugin.
+
+Found and fixed (all on `dev`):
+
+- **Plus with many containers never finished loading with Aurora.** Two VM editor rules asked
+  `form:has(#domain_name)` and `textarea[style*="none"]`; Chrome then rechecked every table cell
+  of every page on each restyle: 2.5 million cells while Plus built 300 containers (half a minute,
+  then still busy), seven seconds for Plus's Advanced View on a phone. Now found by the form's id
+  and Unraid's "Inline XML" switch. Plus's 300-container page now loads in the same time with and
+  without Aurora (about 38 s, Plus's own time, see below). This is the likely cause of the hang
+  reported with Plus on a real server (P1).
+- Further rules of the same kind, each making list rebuilds re-check cells all over the page:
+  Disk Location's bay colours (`div:has(.green-orb-disklocation)`, now `data-tp-orbs` set by
+  `enhance.js`), the Dashboard app grid (`td:has(> span.outer.solid)`, now Unraid's `tr.updated`
+  row) and section rows on tool pages (`td[style*="bold"] ~ td`, now `tr.tp-section-row` set by
+  `enhance.js`). Together they doubled the restyle work of every Docker list reload with Plus
+  (every 5 s while Docker is busy).
+- FolderView3: saved from Aurora's view, FolderView3's own order snapshot (`update_order.php`)
+  lost the folders' places, and after switching back to FolderView mode every folder stood at the
+  top. Aurora's view no longer runs that FolderView3 handler.
+- FolderView3: long container names in a folder were cut off mid-letter (now end in "…"); the
+  "Volume Mappings (App to Host)" heading ran into "Autostart" next to the sidebar (now ends in
+  "…").
+- Plus: Aurora's "to top / to end" arrows covered Plus's Tools button at the end of the Docker
+  list (they now sit in the footer); its Dashboard chips stacked their name under the icon and
+  ran under Plus's quick buttons.
+
+Measured, not Aurora's to fix:
+
+- FolderView3 restyles every row it opens or rebuilds, and with Aurora's rules each row takes
+  about twice as long to style. The cost is spread over the whole stylesheet (bisected: no rule or
+  group of rules carries it). Opening 40 folders one by one: 1.5 s of style work in all instead of
+  0.7 s (about 20 ms more per folder); opening all of 300 containers: about 13 s instead of 6 s.
+- FolderView Plus with 300 containers takes about 38 s to build its Docker page and about 27 s
+  of CPU for "Expand all", with or without Aurora (to pass on to Plus's maintainer, P7).
+
+Open: the hang reported with Plus on a real server is not reproduced on the synthetic hosts; the
+VM editor rule above is the likely cause (section 5, P1).
 
 ## 3. Ownership model
 
@@ -111,14 +173,14 @@ each one is covered by a check.
 | Where | What | Plugins | Covered by |
 |---|---|---|---|
 | `AuroraTheme.page`, detection | plugin folders `folderview.plus`, `folder.view3`, `folder.view2`, `folder.view`; Plus only when no FolderView3 / 2 | both | both checks (`tp-fvplus`, `auroraDockerView`) |
-| `AuroraTheme.page`, Aurora view head script | restores `listview` / `loadlist` from `listview_original` / `loadlist_original`; drops FolderView3's Dashboard prefilter (matched by the text `createFolders`); drops its `ajaxComplete` start-order handler (matched by `sync_order.php`); calls `read_autostart.php` / `sync_order.php` for a custom start sequence | FolderView3 | `fv3_compat.mjs`, Aurora view (no folders on all three pages) |
+| `AuroraTheme.page`, Aurora view head script | restores `listview` / `loadlist` from `listview_original` / `loadlist_original`; drops FolderView3's Dashboard prefilter (matched by the text `createFolders`) and its order prefilter (matched by `update_order.php`); drops its `ajaxComplete` start-order handler (matched by `sync_order.php`); calls `read_autostart.php` / `sync_order.php` for a custom start sequence | FolderView3 | `fv3_compat.mjs`, Aurora view (no folders on all three pages) |
 | `enhance.js`, `folderViewActive()` / `folderViewPlus()` | which mode the page is in | both | both checks |
 | `enhance.js`, `docker()` | not at all with Plus; FolderView mode: summary, switch, folder-row clicks, tints | both | both checks |
 | `enhance.js`, `dashboardContainers()`, `dashboardUpdates()`, `dashboardDockerOrder()` | dialog, update dots, dividers and app icons; none with Plus; never in `.folder-storage` | both | both checks, Dashboard |
 | `enhance.js`, `vmDetails()`, `vmGroups()`, `vmViewSwitch()` | VM chevrons (never on folder rows or stored rows), groups only without a folder plugin | both | both checks, VMs |
 | `enhance.css` | FolderView3 tints under `:where(:root:not(.tp-fvplus))`, folder-id fix under `.tp-fvplus`, status pills not in Plus's lists (`.tp-enhance:where(:not(.tp-fvplus))`), chip sizes not in Plus's Dashboard layouts, `.tp-docker-loading` | both | checks + screenshots |
 | `unraid-tapeory.css` | Dashboard grid and chip card look step aside for Plus's layouts (`data-fv-dashboard-layout` other than `legacy`), FolderView3 settings page styles (`fv3-*`) | both | checks + screenshots |
-| page-wide CSS rules | no `:has()` on bare `div` / `td` / `tr`; no `:last-of-type`, `:nth-*` or `*-of-type` in an ancestor part of a selector whose last part is a bare tag; no `::selection` inside `#docker_list` / `#kvm_list`; page-specific rules under `tp-on-<page>` | all pages | both checks' timings |
+| page-wide CSS rules | no `:has()` on bare `div` / `td` / `tr` / `form`, and none whose last part is a bare tag (`td`); no `[style*=…]` inside `:has()` or before a combinator (`~`, `+`, ` `); no `:last-of-type`, `:nth-*` or `*-of-type` in an ancestor part of a selector whose last part is a bare tag; no `::selection` inside `#docker_list` / `#kvm_list`; page-specific rules under `tp-on-<page>`; where markup alone cannot tell, `enhance.js` marks the element (`data-tp-orbs`, `tp-section-row`) | all pages | both checks' timings, edge-case runs |
 
 ## 5. Work packages
 
@@ -131,6 +193,10 @@ normally, and note load time and whether it hangs; browser console errors; Plus'
 (Settings > FolderView Plus > Diagnostics, support bundle).
 *Done when* the cause is known; if it is Aurora, it is fixed and the case is added to
 `fvplus_host.mjs` so the check catches it from then on.
+Likely found (section 2.1): on Unraid's real webGui, Plus's Docker page with 300 containers never
+finished loading with Aurora because of two VM editor rules that made Chrome recheck every table
+cell on each restyle. Fixed on `dev`; the edge-case runs keep the case (`plus 300 containers in
+30 folders`). Still to confirm on the server that reported it.
 
 **P2 – Make the FolderView3 "Aurora view" independent of FolderView3's source text.** The head
 script recognises FolderView3's handlers by text in their source (`createFolders`,
@@ -208,6 +274,19 @@ UNRAID_WEBGUI=/tmp/webgui THEME=white SCREENSHOTS=/tmp/shots FVP=/tmp/fvp node p
 Limits: the hosts model the parts of Unraid the plugins and Aurora use, not all of Unraid; server
 time (Docker answering slowly, a large `docker ps`) is not modelled. That is what 6.4 is for.
 
+**Edge cases on Unraid's real webGui (`plugin/test/unraid-sim/`).** A fake Unraid server: Unraid's
+own webGui checkout under PHP's built-in server (routed as Unraid's nginx does), a fake Docker
+Engine API and `docker` command, a fake libvirt, Unraid's live channels, and the plugins installed
+from their checkouts, all in a private mount and process namespace. `cases.mjs` holds about 110
+cases (section 2.1), each opened alone and with Aurora with the same clicks; `measure.mjs` compares
+script errors, reloads, repeated requests, containers and folders listed and shown, text cut off,
+controls covered or out of reach, page and table overflow, blocked time per step and, for sorting
+and start order, the files saved on the server. See its `README.md`:
+
+```sh
+sudo -E plugin/test/unraid-sim/run.sh --webgui /tmp/webgui --fvp /tmp/fvp --fv3 /tmp/fv3 --shots /tmp/shots
+```
+
 ### 6.2 Continuous checking
 
 `.github/workflows/folderview-compat.yml` runs both checks on every push to `dev` / `main` that
@@ -215,6 +294,10 @@ touches the theme or the checks, on pull requests, on demand, and **every Monday
 plugins' newest code** and Unraid's newest stylesheets, so a change on their side is noticed
 within a week even when Aurora did not change. Each run checks Black fully and White quickly and
 keeps the screenshots for 30 days. A red run is handled before anything else is released.
+
+`.github/workflows/folderview-edge-cases.yml` runs the edge cases (6.1) the same way, on Unraid's
+webGui 7.3 and both plugins' newest code, split over four machines, and keeps each step's
+screenshots and the reports.
 
 ### 6.3 Visual review
 
