@@ -1,0 +1,267 @@
+/* "Aurora Theme updated" dialog (scripts/updated.js). Loaded only after an update, also with
+   the theme's colours or page enhancements turned off, so every colour falls back to Unraid's. */
+.tp-upd-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background-color: rgba(8, 12, 20, 0.62);
+    backdrop-filter: blur(4px);
+    animation: tp-upd-fade 0.2s ease-out;
+}
+
+.tp-upd-backdrop.tp-upd-leaving {
+    opacity: 0;
+    transition: opacity 0.18s ease-in;
+}
+
+.tp-upd {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(56rem, 100%);
+    max-height: min(72rem, calc(100vh - 4rem));
+    overflow: hidden;
+    border: 1px solid var(--tp-border, var(--border-color, rgba(128, 128, 128, 0.3)));
+    border-radius: 20px;
+    color: var(--tp-text, var(--text-color, inherit));
+    font-family: var(--tp-font-body, inherit);
+    text-align: left;
+    background-color: var(--tp-elevated, var(--background-color, #1c1c1c));
+    box-shadow: var(--tp-shadow-lg, 0 28px 64px -24px rgba(0, 0, 0, 0.65));
+    animation: tp-upd-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tp-upd-head {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 2.6rem 2.8rem 0;
+}
+
+.tp-upd-badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 5.2rem;
+    height: 5.2rem;
+    border-radius: 16px;
+    color: #ffffff;
+    font-size: 2.2rem;
+    background: var(--tp-gradient, linear-gradient(135deg, #4f8bff, #8b5cf6));
+    box-shadow: 0 14px 28px -14px var(--tp-primary, #4f8bff);
+}
+
+.tp-upd-heading {
+    min-width: 0;
+}
+
+.tp-upd-eyebrow {
+    display: block;
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.tp-upd h2.tp-upd-title {
+    margin: 0.3rem 0 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    overflow-wrap: anywhere;
+}
+
+.tp-upd-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding: 1.6rem 2.8rem 0;
+}
+
+.tp-upd-fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-size: 1.2rem;
+    background: var(--tp-subtle, rgba(128, 128, 128, 0.14));
+}
+
+.tp-upd-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2rem 2.8rem 0;
+    padding: 0 0.4rem 0.4rem 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.tp-upd-section {
+    margin-bottom: 0.8rem;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tp-upd-notes {
+    font-size: 1.35rem;
+    line-height: 1.6;
+}
+
+.tp-upd-notes h4 {
+    margin: 1.6rem 0 0.4rem;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.45rem;
+    font-weight: 600;
+}
+
+.tp-upd-notes h4:first-child {
+    margin-top: 0;
+}
+
+.tp-upd-notes p {
+    margin: 0.6rem 0;
+}
+
+.tp-upd-notes ul {
+    margin: 0.4rem 0 0.8rem;
+    padding: 0;
+    list-style: none;
+}
+
+.tp-upd-notes li {
+    position: relative;
+    margin: 0.5rem 0;
+    padding-left: 1.8rem;
+}
+
+.tp-upd-notes li::before {
+    content: "";
+    position: absolute;
+    top: 0.75em;
+    left: 0.3rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--tp-primary, var(--brand-orange, #4f8bff));
+}
+
+.tp-upd-notes code {
+    padding: 0.1rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.92em;
+    background: var(--tp-subtle, rgba(128, 128, 128, 0.14));
+}
+
+.tp-upd-notes a {
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+}
+
+.tp-upd-empty {
+    margin: 0;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-size: 1.35rem;
+}
+
+.tp-upd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 1.8rem 2.8rem 2.2rem;
+    border-top: 1px solid var(--tp-border, var(--border-color, rgba(128, 128, 128, 0.3)));
+}
+
+.tp-upd .tp-upd-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 9rem;
+    margin: 0;
+    padding: 0.9rem 1.8rem;
+    border: 1px solid var(--tp-input-border, var(--border-color, rgba(128, 128, 128, 0.4)));
+    border-radius: 999px;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-decoration: none;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.tp-upd .tp-upd-button:hover {
+    border-color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    transform: translateY(-1px);
+}
+
+.tp-upd .tp-upd-button.tp-upd-primary,
+.tp-upd .tp-upd-button.tp-upd-primary:hover {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, linear-gradient(135deg, #4f8bff, #8b5cf6));
+}
+
+.tp-upd .tp-upd-button.tp-upd-primary {
+    margin-left: auto;
+}
+
+@media (max-width: 479px) {
+    .tp-upd-backdrop {
+        padding: 1rem;
+    }
+
+    .tp-upd-head,
+    .tp-upd-facts,
+    .tp-upd-actions {
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+
+    .tp-upd-body {
+        margin-right: 2rem;
+        margin-left: 2rem;
+    }
+
+    .tp-upd-actions > .tp-upd-button {
+        flex: 1 1 100%;
+    }
+}
+
+@keyframes tp-upd-fade {
+    from { opacity: 0; }
+}
+
+@keyframes tp-upd-rise {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-upd-backdrop,
+    .tp-upd {
+        animation: none;
+    }
+}

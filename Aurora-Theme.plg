@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.25.1439"
+        version="2026.10.26.0005"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,13 +11,13 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.25.1439
+###2026.10.26.0005
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
 - Own Stats page with a built-in collector, replacing Dynamix System Statistics.
 - Docker application groups, compact container list, restyled switches and menus.
-- Updates from the GitHub releases: "Check for updates" and "Update now" on the settings page, and automatic updates (on by default, hourly).
+- Updates from the GitHub releases: "Check for updates" and "Update now" on the settings page, and automatic updates (on by default, weekly).
 - Redesigned Main, Users, VMs and login page; live port check in the Docker editor; dark / light switch.
 - Redesigned top bar, Apps tab, tool pages, help boxes and notices; the processor tile shows its cores as a compact grid.
 - Phone layout fixes across the webGUI: Dashboard tiles, wide tables, VM editor, Apps, header and pop-ups.
@@ -34,6 +34,7 @@
 - Docker start delay ("wait") field wide enough for its number in FolderView3's view.
 - An orange dot on a container's icon when an update is ready, running or not: on the Dashboard, in group and folder icons and in the Docker tab's compact list. A stopped container with an update stays on the Dashboard when stopped containers are hidden.
 - FolderView Plus support: with it installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout (no view switch).
+- After an update, the next page shows "Aurora Theme updated" with the new version and its release notes; automatic updates also show an Unraid notification. Automatic updates are checked weekly by default.
 - Faster on busy pages: style rules that the browser checked again on every change of any page (Community Applications cards, GPU tile) are limited to their page or replaced.
 </CHANGES>
 
@@ -56,6 +57,12 @@ if [ -e /boot/config/plugins/$OLD.plg ] || [ -d /usr/local/emhttp/plugins/$OLD ]
   rm -rf /usr/local/emhttp/plugins/$OLD /boot/config/plugins/$OLD /var/lib/tunefish-future-theme
   rm -f /boot/config/plugins/$OLD.plg /var/log/plugins/$OLD.plg
   echo "Settings moved over from $OLD, which has been removed."
+fi
+old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme.plg 2>/dev/null | head -n 1)
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.26.0005" ]]; then
+  from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme/updated.json 2>/dev/null)
+  [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.26.0005" "$(date +%s)" > /boot/config/plugins/Aurora-Theme/updated.json
 fi
 cat > /usr/local/emhttp/plugins/Aurora-Theme/AuroraTheme.page <<'AURORA_THEME_EOF'
 Menu="Buttons"
@@ -326,6 +333,12 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
       // with favourites switched off (issue #25); the theme hides it then. ?>
 <style>#menu .nav-item:has(> a[href="/Favorites"]) { display: none !important; }</style>
 <?php endif; ?>
+<?php if (is_file("$auroraCustomDir/updated.json")): ?>
+<?php // After an update (the install script leaves updated.json): the "Aurora Theme updated"
+      // dialog, once. Nothing is loaded for it otherwise. ?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/updated.css') ?>">
+<script defer src="<?php autov('/plugins/Aurora-Theme/scripts/updated.js') ?>"></script>
+<?php endif; ?>
 <?php if (is_file("$auroraCustomDir/custom.css")): ?>
 <style id="aurora-custom-css">
 <?= str_ireplace('</style', '<\/style', file_get_contents("$auroraCustomDir/custom.css")) ?>
@@ -430,18 +443,19 @@ _(Automatic updates)_:
 
 _(Check and install)_:
 : <span class="tft-schedule"><select name="autoupdate_when" id="tft-when" onchange="auroraSchedule()">
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "hourly", _("Every hour"))?>
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "daily", _("Every day"))?>
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "weekly", _("Every week"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "hourly", _("Every hour"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "daily", _("Every day"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "weekly", _("Every week"))?>
   </select><select name="autoupdate_day" id="tft-day">
 <?php foreach ([1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 0 => 'Sunday'] as $auroraDay => $auroraDayName) echo mk_option($aurora['autoupdate_day'] ?? '0', (string) $auroraDay, _($auroraDayName)); ?>
   </select><select name="autoupdate_time" id="tft-time">
 <?php for ($auroraMinutes = 0; $auroraMinutes < 1440; $auroraMinutes += 30) { $auroraTime = sprintf('%02d:%02d', intdiv($auroraMinutes, 60), $auroraMinutes % 60); echo mk_option($aurora['autoupdate_time'] ?? '03:00', $auroraTime, $auroraTime); } ?>
   </select></span>
 
-> When the plugin looks for a newer release on GitHub and installs it quietly: every hour, or
-> once a day or a week at the chosen time (the server's time). Only a failed update shows an
-> Unraid notification; every check is noted in the system log.
+> When the plugin looks for a newer release on GitHub and installs it: once a week (the default)
+> or a day at the chosen time (the server's time), or every hour. Each update shows an Unraid
+> notification, and the next page you open shows what changed; every check is noted in the
+> system log.
 
 <input type="hidden" name="#command" value="/plugins/Aurora-Theme/scripts/schedule.php">
 <script>
@@ -544,7 +558,7 @@ function auroraUpdate(button) {
   // can still point to the previous release for a minute after a new one is published). Without
   // a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
   // Unraid gives up silently when the plugin manager cannot start the task right now (for
-  // example while the hourly automatic update runs), so the button says what is happening.
+  // example while the automatic update runs), so the button says what is happening.
   if (button) {
     if (button.disabled) return;
     button.disabled = true;
@@ -709,7 +723,7 @@ layout="sidebar"
 enhance="yes"
 stats="yes"
 autoupdate="yes"
-autoupdate_when="hourly"
+autoupdate_when="weekly"
 autoupdate_day="0"
 autoupdate_time="03:00"
 accent=""
@@ -5462,14 +5476,69 @@ for ($attempt = 0; ; $attempt++) {
 if ($restored) error_log("Aurora Theme: put back $restored dynamix.cfg settings lost while the theme changed");
 echo json_encode(['theme' => $theme, 'restored' => $restored]);
 AURORA_THEME_EOF
+cat > /usr/local/emhttp/plugins/Aurora-Theme/include/updated.php <<'AURORA_THEME_EOF'
+<?php
+// After Aurora was updated: the version change for the "Aurora Theme updated" dialog
+// (scripts/updated.js). The install script leaves the record in updated.json on the flash drive
+// when the installed version changes; scripts/autoupdate.php marks it as an automatic update.
+//   GET   {"from", "to", "time", "automatic", "notes", "page"}: notes are the Markdown text of the
+//         GitHub release of that version ('' when it has none, such as a development build),
+//         fetched once and kept with the record.
+//   POST  the dialog was closed: the record is removed.
+// Unraid checks its csrf_token on every POST before this file runs.
+require_once '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
+
+const AURORA_UPDATED_FILE = '/boot/config/plugins/' . AURORA_PLUGIN . '/updated.json';
+
+header('Content-Type: application/json');
+header('Cache-Control: no-store');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    @unlink(AURORA_UPDATED_FILE);
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+$record = json_decode((string) @file_get_contents(AURORA_UPDATED_FILE), true);
+$version = '/^\d{4}\.\d{2}\.\d{2}[\w.-]*$/';
+if (!is_array($record) || !preg_match($version, (string) ($record['to'] ?? '')) || !preg_match($version, (string) ($record['from'] ?? ''))) {
+    echo '{}';
+    exit;
+}
+
+if (!array_key_exists('notes', $record)) {
+    $api = 'https://api.github.com/repos/' . AURORA_REPO . '/releases/tags/v' . $record['to'];
+    exec('/usr/bin/curl -sSL --max-time 10 -w ' . escapeshellarg('\n%{http_code}') . ' -H ' . escapeshellarg('Accept: application/vnd.github+json')
+        . ' -A ' . escapeshellarg(AURORA_PLUGIN . '-release-notes') . ' ' . escapeshellarg($api) . ' 2>/dev/null', $output);
+    $code = (int) array_pop($output);
+    $release = $code === 200 ? json_decode(implode("\n", $output), true) : null;
+    // Kept only when GitHub answered: no release for this version (404) is an answer too, a
+    // network problem is not, and the next page asks again.
+    if ($code === 200 || $code === 404) {
+        $record['notes'] = is_array($release) ? mb_substr((string) ($release['body'] ?? ''), 0, 20000) : '';
+        $record['page'] = is_array($release) && preg_match('#^https://github\.com/#', (string) ($release['html_url'] ?? '')) ? $release['html_url'] : AURORA_RELEASES_PAGE;
+        @file_put_contents(AURORA_UPDATED_FILE, json_encode($record) . "\n");
+    }
+}
+
+echo json_encode([
+    'from' => $record['from'],
+    'to' => $record['to'],
+    'time' => (int) ($record['time'] ?? 0),
+    'automatic' => !empty($record['automatic']),
+    'notes' => $record['notes'] ?? null,
+    'page' => $record['page'] ?? AURORA_RELEASES_PAGE,
+]);
+AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/autoupdate.php <<'AURORA_THEME_EOF'
 #!/usr/bin/php
 <?php
 // Automatic updates for the Aurora Theme, run by cron (autoupdate.cron) at the time chosen on
 // the settings page (scripts/schedule.php writes that entry).
 // When "Automatic updates" is on, it installs the newest GitHub release if it is newer than
-// the installed version, the same way the settings page's "Update now" button does. A successful
-// update is quiet (no Unraid notification); a failed one raises a warning.
+// the installed version, the same way the settings page's "Update now" button does. Either way
+// Unraid shows a notification (a warning when it failed); after an update, the next webGUI page
+// also shows what changed (the install script's updated.json, marked here as automatic).
 // The outcome of the last check is kept in /var/lib/aurora-theme/autoupdate.json for that page.
 require '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
 
@@ -5517,6 +5586,13 @@ if (strcmp($available, $installed) <= 0) {
 // The exact release that was found, not the "latest" address (see aurora_latest_release()).
 exec('/usr/local/sbin/plugin install ' . escapeshellarg($latest['plg']) . ' 2>&1', $output, $status);
 if (aurora_installed_version() === $available) {
+    $marker = '/boot/config/plugins/' . AURORA_PLUGIN . '/updated.json';
+    $record = json_decode((string) @file_get_contents($marker), true);
+    if (is_array($record) && ($record['to'] ?? '') === $available) {
+        $record['automatic'] = true;
+        @file_put_contents($marker, json_encode($record) . "\n");
+    }
+    notify('Aurora Theme updated', "Updated automatically from $installed to $available. Open the webGUI to see what changed.", 'normal');
     finish('updated', "Updated from $installed to $available.", $available);
 }
 exec('/usr/bin/logger -t aurora-theme ' . escapeshellarg('automatic update: plugin install said: ' . trim(implode(' ', array_slice($output, -6)))));
@@ -9728,6 +9804,163 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/stats.js <<'AURORA_THEME_EO
 
   window.addEventListener('resize', function () { hosts.forEach(function (host, index) { drawChart(host, CHARTS[index]); }); });
   setRange(range);
+})();
+AURORA_THEME_EOF
+cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/updated.js <<'AURORA_THEME_EOF'
+// "Aurora Theme updated": shown once on the first page opened after the plugin's version changed
+// (an automatic update, "Update now", the Plugins page). include/updated.php gives the versions
+// and the release notes of the new version; closing the dialog tells it so, and it is not shown
+// again. Loaded by AuroraTheme.page only while that record exists.
+(function () {
+  'use strict';
+  const endpoint = '/plugins/Aurora-Theme/include/updated.php';
+
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  // Bold, code and links of one line of the release notes, as nodes (never as HTML).
+  function inline(text) {
+    const fragment = document.createDocumentFragment();
+    const pattern = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
+    let last = 0;
+    let match;
+    while ((match = pattern.exec(text))) {
+      fragment.append(text.slice(last, match.index));
+      if (match[1] !== undefined) fragment.append(element('strong', '', match[1]));
+      else if (match[2] !== undefined) fragment.append(element('code', '', match[2]));
+      else {
+        const link = element('a', '', match[3]);
+        link.href = match[4];
+        link.target = '_blank';
+        link.rel = 'noopener';
+        fragment.append(link);
+      }
+      last = pattern.lastIndex;
+    }
+    fragment.append(text.slice(last));
+    return fragment;
+  }
+
+  // The release notes (Markdown): headings, lists and paragraphs.
+  function notes(markdown) {
+    const box = element('div', 'tp-upd-notes');
+    let list = null;
+    let paragraph = null;
+    markdown.replace(/\r/g, '').split('\n').forEach(function (raw) {
+      const line = raw.trim();
+      const heading = /^#{1,6}\s+(.*)$/.exec(line);
+      const item = /^[-*+]\s+(.*)$/.exec(line);
+      if (!line) { list = null; paragraph = null; return; }
+      if (heading) {
+        list = null; paragraph = null;
+        box.append(element('h4', '', heading[1].replace(/\*\*/g, '')));
+      } else if (item) {
+        paragraph = null;
+        if (!list) { list = element('ul'); box.append(list); }
+        const li = element('li');
+        li.append(inline(item[1]));
+        list.append(li);
+      } else if (list && /^\s{2,}/.test(raw)) {
+        list.lastElementChild.append(' ', inline(line));
+      } else {
+        list = null;
+        if (!paragraph) { paragraph = element('p'); box.append(paragraph); } else paragraph.append(' ');
+        paragraph.append(inline(line));
+      }
+    });
+    return box;
+  }
+
+  function when(seconds) {
+    if (!seconds) return '';
+    const date = new Date(seconds * 1000);
+    const today = new Date();
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (date.toDateString() === today.toDateString()) return 'today, ' + time;
+    return date.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
+  }
+
+  function show(info) {
+    const back = info.to < info.from;
+    const backdrop = element('div', 'tp-upd-backdrop');
+    const dialog = element('div', 'tp-upd');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'tp-upd-title');
+
+    const head = element('div', 'tp-upd-head');
+    const badge = element('span', 'tp-upd-badge');
+    badge.append(element('i', 'fa fa-' + (back ? 'undo' : 'magic')));
+    const heading = element('div', 'tp-upd-heading');
+    heading.append(
+      element('span', 'tp-upd-eyebrow', back ? 'Aurora Theme changed' : 'Aurora Theme updated'),
+      element('h2', 'tp-upd-title', 'Version ' + info.to)
+    );
+    heading.lastChild.id = 'tp-upd-title';
+    head.append(badge, heading);
+
+    const facts = element('div', 'tp-upd-facts');
+    const fact = function (icon, text) {
+      const chip = element('span', 'tp-upd-fact');
+      chip.append(element('i', 'fa fa-' + icon), text);
+      facts.append(chip);
+    };
+    fact('code-fork', (back ? 'back from ' : 'from ') + info.from);
+    if (info.time) fact('clock-o', when(info.time));
+    fact(info.automatic ? 'refresh' : 'hand-pointer-o', info.automatic ? 'automatic update' : 'installed by hand');
+
+    const body = element('div', 'tp-upd-body');
+    body.append(element('div', 'tp-upd-section', "What's new"));
+    if (info.notes) body.append(notes(info.notes));
+    else body.append(element('p', 'tp-upd-empty', info.notes === '' ? 'There are no release notes for this version on GitHub.' : 'The release notes could not be loaded from GitHub just now.'));
+
+    const actions = element('div', 'tp-upd-actions');
+    const link = element('a', 'tp-upd-button', 'Release notes on GitHub');
+    link.href = info.page || 'https://github.com/Tunefish92/Aurora-Theme/releases';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    const settings = element('a', 'tp-upd-button', 'Settings');
+    settings.href = '/Settings/AuroraThemeSettings';
+    const ok = element('button', 'tp-upd-button tp-upd-primary', 'Got it');
+    ok.type = 'button';
+    actions.append(link, settings, ok);
+
+    dialog.append(head, facts, body, actions);
+    backdrop.append(dialog);
+    document.body.append(backdrop);
+    ok.focus();
+
+    let closed = false;
+    const close = function () {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener('keydown', key, true);
+      backdrop.classList.add('tp-upd-leaving');
+      setTimeout(function () { backdrop.remove(); }, 180);
+      fetch(endpoint, { method: 'POST', body: new URLSearchParams({ csrf_token: window.csrf_token || '' }) }).catch(function () {});
+    };
+    const key = function (event) {
+      if (event.key === 'Escape') { event.stopPropagation(); close(); }
+    };
+    document.addEventListener('keydown', key, true);
+    ok.addEventListener('click', close);
+    settings.addEventListener('click', close);
+    backdrop.addEventListener('click', function (event) { if (event.target === backdrop) close(); });
+  }
+
+  function start() {
+    fetch(endpoint, { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (response) { return response.ok ? response.json() : {}; })
+      .then(function (info) { if (info && info.to && info.from) show(info); })
+      .catch(function () {});
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 AURORA_THEME_EOF
 cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_EOF'
@@ -21391,6 +21624,275 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
     100% { --tp-scroll-fade: 0px; }
 }
 AURORA_THEME_EOF
+cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/updated.css <<'AURORA_THEME_EOF'
+/* "Aurora Theme updated" dialog (scripts/updated.js). Loaded only after an update, also with
+   the theme's colours or page enhancements turned off, so every colour falls back to Unraid's. */
+.tp-upd-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background-color: rgba(8, 12, 20, 0.62);
+    backdrop-filter: blur(4px);
+    animation: tp-upd-fade 0.2s ease-out;
+}
+
+.tp-upd-backdrop.tp-upd-leaving {
+    opacity: 0;
+    transition: opacity 0.18s ease-in;
+}
+
+.tp-upd {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(56rem, 100%);
+    max-height: min(72rem, calc(100vh - 4rem));
+    overflow: hidden;
+    border: 1px solid var(--tp-border, var(--border-color, rgba(128, 128, 128, 0.3)));
+    border-radius: 20px;
+    color: var(--tp-text, var(--text-color, inherit));
+    font-family: var(--tp-font-body, inherit);
+    text-align: left;
+    background-color: var(--tp-elevated, var(--background-color, #1c1c1c));
+    box-shadow: var(--tp-shadow-lg, 0 28px 64px -24px rgba(0, 0, 0, 0.65));
+    animation: tp-upd-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tp-upd-head {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 2.6rem 2.8rem 0;
+}
+
+.tp-upd-badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 5.2rem;
+    height: 5.2rem;
+    border-radius: 16px;
+    color: #ffffff;
+    font-size: 2.2rem;
+    background: var(--tp-gradient, linear-gradient(135deg, #4f8bff, #8b5cf6));
+    box-shadow: 0 14px 28px -14px var(--tp-primary, #4f8bff);
+}
+
+.tp-upd-heading {
+    min-width: 0;
+}
+
+.tp-upd-eyebrow {
+    display: block;
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.tp-upd h2.tp-upd-title {
+    margin: 0.3rem 0 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    overflow-wrap: anywhere;
+}
+
+.tp-upd-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding: 1.6rem 2.8rem 0;
+}
+
+.tp-upd-fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-size: 1.2rem;
+    background: var(--tp-subtle, rgba(128, 128, 128, 0.14));
+}
+
+.tp-upd-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2rem 2.8rem 0;
+    padding: 0 0.4rem 0.4rem 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.tp-upd-section {
+    margin-bottom: 0.8rem;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tp-upd-notes {
+    font-size: 1.35rem;
+    line-height: 1.6;
+}
+
+.tp-upd-notes h4 {
+    margin: 1.6rem 0 0.4rem;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.45rem;
+    font-weight: 600;
+}
+
+.tp-upd-notes h4:first-child {
+    margin-top: 0;
+}
+
+.tp-upd-notes p {
+    margin: 0.6rem 0;
+}
+
+.tp-upd-notes ul {
+    margin: 0.4rem 0 0.8rem;
+    padding: 0;
+    list-style: none;
+}
+
+.tp-upd-notes li {
+    position: relative;
+    margin: 0.5rem 0;
+    padding-left: 1.8rem;
+}
+
+.tp-upd-notes li::before {
+    content: "";
+    position: absolute;
+    top: 0.75em;
+    left: 0.3rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--tp-primary, var(--brand-orange, #4f8bff));
+}
+
+.tp-upd-notes code {
+    padding: 0.1rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.92em;
+    background: var(--tp-subtle, rgba(128, 128, 128, 0.14));
+}
+
+.tp-upd-notes a {
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+}
+
+.tp-upd-empty {
+    margin: 0;
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-size: 1.35rem;
+}
+
+.tp-upd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 1.8rem 2.8rem 2.2rem;
+    border-top: 1px solid var(--tp-border, var(--border-color, rgba(128, 128, 128, 0.3)));
+}
+
+.tp-upd .tp-upd-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 9rem;
+    margin: 0;
+    padding: 0.9rem 1.8rem;
+    border: 1px solid var(--tp-input-border, var(--border-color, rgba(128, 128, 128, 0.4)));
+    border-radius: 999px;
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-decoration: none;
+    text-transform: none;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.tp-upd .tp-upd-button:hover {
+    border-color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    color: var(--tp-primary, var(--brand-orange, #4f8bff));
+    transform: translateY(-1px);
+}
+
+.tp-upd .tp-upd-button.tp-upd-primary,
+.tp-upd .tp-upd-button.tp-upd-primary:hover {
+    border-color: transparent;
+    color: var(--tp-primary-text, #ffffff);
+    background: var(--tp-gradient, linear-gradient(135deg, #4f8bff, #8b5cf6));
+}
+
+.tp-upd .tp-upd-button.tp-upd-primary {
+    margin-left: auto;
+}
+
+@media (max-width: 479px) {
+    .tp-upd-backdrop {
+        padding: 1rem;
+    }
+
+    .tp-upd-head,
+    .tp-upd-facts,
+    .tp-upd-actions {
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+
+    .tp-upd-body {
+        margin-right: 2rem;
+        margin-left: 2rem;
+    }
+
+    .tp-upd-actions > .tp-upd-button {
+        flex: 1 1 100%;
+    }
+}
+
+@keyframes tp-upd-fade {
+    from { opacity: 0; }
+}
+
+@keyframes tp-upd-rise {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-upd-backdrop,
+    .tp-upd {
+        animation: none;
+    }
+}
+AURORA_THEME_EOF
 rm -f /boot/config/plugins/Aurora-Theme/update-source
 for page in /usr/local/emhttp/plugins/dynamix/include/.login.php /usr/local/emhttp/plugins/dynamix/include/.set-password.php; do
   [ -f "$page" ] || continue
@@ -21409,7 +21911,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.25.1439 is installed."
+echo "Aurora-Theme 2026.10.26.0005 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

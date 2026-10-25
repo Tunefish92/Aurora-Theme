@@ -85,18 +85,19 @@ _(Automatic updates)_:
 
 _(Check and install)_:
 : <span class="tft-schedule"><select name="autoupdate_when" id="tft-when" onchange="auroraSchedule()">
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "hourly", _("Every hour"))?>
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "daily", _("Every day"))?>
-  <?=mk_option($aurora['autoupdate_when'] ?? 'hourly', "weekly", _("Every week"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "hourly", _("Every hour"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "daily", _("Every day"))?>
+  <?=mk_option($aurora['autoupdate_when'] ?? 'weekly', "weekly", _("Every week"))?>
   </select><select name="autoupdate_day" id="tft-day">
 <?php foreach ([1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 0 => 'Sunday'] as $auroraDay => $auroraDayName) echo mk_option($aurora['autoupdate_day'] ?? '0', (string) $auroraDay, _($auroraDayName)); ?>
   </select><select name="autoupdate_time" id="tft-time">
 <?php for ($auroraMinutes = 0; $auroraMinutes < 1440; $auroraMinutes += 30) { $auroraTime = sprintf('%02d:%02d', intdiv($auroraMinutes, 60), $auroraMinutes % 60); echo mk_option($aurora['autoupdate_time'] ?? '03:00', $auroraTime, $auroraTime); } ?>
   </select></span>
 
-> When the plugin looks for a newer release on GitHub and installs it quietly: every hour, or
-> once a day or a week at the chosen time (the server's time). Only a failed update shows an
-> Unraid notification; every check is noted in the system log.
+> When the plugin looks for a newer release on GitHub and installs it: once a week (the default)
+> or a day at the chosen time (the server's time), or every hour. Each update shows an Unraid
+> notification, and the next page you open shows what changed; every check is noted in the
+> system log.
 
 <input type="hidden" name="#command" value="/plugins/Aurora-Theme/scripts/schedule.php">
 <script>
@@ -199,7 +200,7 @@ function auroraUpdate(button) {
   // can still point to the previous release for a minute after a new one is published). Without
   // a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
   // Unraid gives up silently when the plugin manager cannot start the task right now (for
-  // example while the hourly automatic update runs), so the button says what is happening.
+  // example while the automatic update runs), so the button says what is happening.
   if (button) {
     if (button.disabled) return;
     button.disabled = true;

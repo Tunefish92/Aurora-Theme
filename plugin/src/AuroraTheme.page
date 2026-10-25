@@ -266,6 +266,12 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
       // with favourites switched off (issue #25); the theme hides it then. ?>
 <style>#menu .nav-item:has(> a[href="/Favorites"]) { display: none !important; }</style>
 <?php endif; ?>
+<?php if (is_file("$auroraCustomDir/updated.json")): ?>
+<?php // After an update (the install script leaves updated.json): the "Aurora Theme updated"
+      // dialog, once. Nothing is loaded for it otherwise. ?>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/Aurora-Theme/styles/updated.css') ?>">
+<script defer src="<?php autov('/plugins/Aurora-Theme/scripts/updated.js') ?>"></script>
+<?php endif; ?>
 <?php if (is_file("$auroraCustomDir/custom.css")): ?>
 <style id="aurora-custom-css">
 <?= str_ireplace('</style', '<\/style', file_get_contents("$auroraCustomDir/custom.css")) ?>

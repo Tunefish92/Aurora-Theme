@@ -58,10 +58,25 @@ if [ -e /boot/config/plugins/$OLD.plg ] || [ -d /usr/local/emhttp/plugins/$OLD ]
 fi
 """.strip().replace("@NAME@", NAME)
 
+# A version change (automatic update, "Update now", the Plugins page, also back to an older
+# release) is noted in updated.json for the "Aurora Theme updated" dialog on the next page
+# (include/updated.php, scripts/updated.js). Unraid copies the new .plg to the flash drive only
+# after this script, so the .plg there is still the previous version; at boot both are the same
+# and nothing is noted. Several updates before the dialog was seen keep the first "from".
+MARK_UPDATED = r"""
+old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/@NAME@.plg 2>/dev/null | head -n 1)
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "@VERSION@" ]]; then
+  from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/@NAME@/updated.json 2>/dev/null)
+  [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "@VERSION@" "$(date +%s)" > /boot/config/plugins/@NAME@/updated.json
+fi
+""".strip().replace("@NAME@", NAME).replace("@VERSION@", version)
+
 install = [
     f"rm -rf {EMHTTP}",
     f"mkdir -p {EMHTTP}/styles {EMHTTP}/scripts {EMHTTP}/include {EMHTTP}/fonts /boot/config/plugins/{NAME}",
     MIGRATE_OLD_NAME,
+    MARK_UPDATED,
 ]
 BINARY = {".woff2", ".woff", ".png", ".svg"}
 for target, path in sorted(files.items()):
@@ -129,7 +144,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
 - Own Stats page with a built-in collector, replacing Dynamix System Statistics.
 - Docker application groups, compact container list, restyled switches and menus.
-- Updates from the GitHub releases: "Check for updates" and "Update now" on the settings page, and automatic updates (on by default, hourly).
+- Updates from the GitHub releases: "Check for updates" and "Update now" on the settings page, and automatic updates (on by default, weekly).
 - Redesigned Main, Users, VMs and login page; live port check in the Docker editor; dark / light switch.
 - Redesigned top bar, Apps tab, tool pages, help boxes and notices; the processor tile shows its cores as a compact grid.
 - Phone layout fixes across the webGUI: Dashboard tiles, wide tables, VM editor, Apps, header and pop-ups.
@@ -146,6 +161,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Docker start delay ("wait") field wide enough for its number in FolderView3's view.
 - An orange dot on a container's icon when an update is ready, running or not: on the Dashboard, in group and folder icons and in the Docker tab's compact list. A stopped container with an update stays on the Dashboard when stopped containers are hidden.
 - FolderView Plus support: with it installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout (no view switch).
+- After an update, the next page shows "Aurora Theme updated" with the new version and its release notes; automatic updates also show an Unraid notification. Automatic updates are checked weekly by default.
 - Faster on busy pages: style rules that the browser checked again on every change of any page (Community Applications cards, GPU tile) are limited to their page or replaced.
 </CHANGES>
 
