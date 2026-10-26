@@ -3,7 +3,7 @@
 
 <PLUGIN name="Aurora-Theme"
         author="Tunefish"
-        version="2026.10.26.0033"
+        version="2026.10.26.0808"
         launch="Settings/AuroraThemeSettings"
         pluginURL="https://raw.githubusercontent.com/Tunefish92/Aurora-Theme/release/Aurora-Theme.plg"
         support="https://github.com/Tunefish92/Aurora-Theme/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.26.0033
+###2026.10.26.0808
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -36,6 +36,7 @@
 - FolderView Plus support: with it installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout (no view switch).
 - After an update, the next page shows "Aurora Theme updated" with the new version and its release notes; automatic updates also show an Unraid notification. Automatic updates are checked weekly by default.
 - Docker and VMs tabs with FolderView3 or FolderView Plus: a "beta" note in the top bar; their support still has compatibility issues and is being worked on. With both installed, a warning that this is not supported (also on the Dashboard and the Plugins page).
+- Phones: pages fit the screen width exactly; the "back to top" / "to the end" buttons no longer let the page be pushed sideways.
 - Faster on busy pages: style rules that the browser checked again on every change of any page (Community Applications cards, GPU tile) are limited to their page or replaced.
 </CHANGES>
 
@@ -60,10 +61,10 @@ if [ -e /boot/config/plugins/$OLD.plg ] || [ -d /usr/local/emhttp/plugins/$OLD ]
   echo "Settings moved over from $OLD, which has been removed."
 fi
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.26.0033" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.26.0808" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/Aurora-Theme/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.26.0033" "$(date +%s)" > /boot/config/plugins/Aurora-Theme/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.26.0808" "$(date +%s)" > /boot/config/plugins/Aurora-Theme/updated.json
 fi
 cat > /usr/local/emhttp/plugins/Aurora-Theme/AuroraTheme.page <<'AURORA_THEME_EOF'
 Menu="Buttons"
@@ -6489,12 +6490,15 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/scripts/enhance.js <<'AURORA_THEME_
     const chip = function () {
       const button = element('button', 'tp-fv-beta' + (both ? ' tp-fv-conflict' : ''));
       button.type = 'button';
+      // The plugin's name with "support" (left out in a narrow top bar) and a small tag.
+      const text = element('span', 'tp-fv-beta-text', both ? name + ' + Plus' : name);
+      if (!both) text.append(element('span', 'tp-fv-beta-word', ' support'));
       if (both) {
         button.title = name + ' and FolderView Plus are both installed. This is not supported. Click for details.';
-        button.append(element('i', 'fa fa-exclamation-triangle'), element('span', 'tp-fv-beta-name', name + ' + Plus · '), element('span', '', 'not supported'));
+        button.append(element('i', 'fa fa-exclamation-triangle'), text, element('span', 'tp-fv-beta-tag', 'Not supported'));
       } else {
         button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
-        button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+        button.append(element('i', 'fa fa-info-circle'), text, element('span', 'tp-fv-beta-tag', 'Beta'));
       }
       button.addEventListener('click', function () {
         if (both) {
@@ -10148,49 +10152,69 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/enhance.css <<'AURORA_THEME_
 }
 
 /* Docker and VMs tabs with FolderView3 or FolderView Plus: their support is in beta (enhance.js,
-   folderViewBeta()). In the top bar, or under the page heading where there is none. */
+   folderViewBeta()). A calm pill with the plugin's name and a small tag, in the top bar, or
+   under the page heading where there is none. */
 button.tp-fv-beta {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.7rem;
     margin: 0;
-    padding: 0.3rem 1rem;
-    border: 1px solid color-mix(in srgb, var(--tp-warn-text, #f59e0b) 35%, transparent);
+    padding: 0.4rem 0.5rem 0.4rem 1.1rem;
+    border: 1px solid var(--tp-border, var(--border-color));
     border-radius: 999px;
-    color: var(--tp-warn-text, var(--orange-300, #f59e0b));
-    font: 600 1.1rem var(--tp-font-heading, inherit);
+    color: var(--tp-text, var(--text-color));
+    font: 500 1.2rem var(--tp-font-body, inherit);
     letter-spacing: 0;
     text-transform: none;
     white-space: nowrap;
-    background: var(--tp-warn-bg, transparent);
+    background: var(--tp-subtle, var(--mild-background-color));
     box-shadow: none;
     cursor: pointer;
+    transition: border-color 0.25s, background-color 0.25s;
 }
 
 button.tp-fv-beta:hover {
     border-color: var(--tp-warn-text, #f59e0b);
-    color: var(--tp-warn-text, #f59e0b);
-    background: var(--tp-warn-bg, transparent);
+    color: var(--tp-text, var(--text-color));
+    background: var(--tp-subtle, var(--mild-background-color));
     transform: none;
 }
 
-/* FolderView Plus and FolderView3 installed together: not supported. */
-button.tp-fv-beta.tp-fv-conflict,
-button.tp-fv-beta.tp-fv-conflict:hover {
-    color: var(--tp-danger, var(--red-600, #ef4444));
-    background: var(--tp-danger-soft, transparent);
+button.tp-fv-beta > .fa {
+    color: var(--tp-warn-text, #f59e0b);
+    font-size: 1.3rem;
 }
 
+.tp-fv-beta-tag {
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    color: var(--tp-warn-text, #f59e0b);
+    font: 700 1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--tp-warn-bg, rgba(245, 158, 11, 0.16));
+}
+
+/* FolderView Plus and FolderView3 installed together: not supported. */
 button.tp-fv-beta.tp-fv-conflict {
-    border-color: color-mix(in srgb, var(--tp-danger, #ef4444) 40%, transparent);
+    border-color: color-mix(in srgb, var(--tp-danger, #ef4444) 45%, var(--tp-border, transparent));
 }
 
 button.tp-fv-beta.tp-fv-conflict:hover {
     border-color: var(--tp-danger, #ef4444);
 }
 
+button.tp-fv-beta.tp-fv-conflict > .fa,
+.tp-fv-conflict .tp-fv-beta-tag {
+    color: var(--tp-danger, var(--red-600, #ef4444));
+}
+
+.tp-fv-conflict .tp-fv-beta-tag {
+    background: var(--tp-danger-soft, rgba(239, 68, 68, 0.16));
+}
+
 .tp-heading-text > .tp-fv-beta {
-    margin-top: 0.9rem;
+    margin-top: 1rem;
 }
 
 @media (min-width: 1024px) {
@@ -10199,14 +10223,11 @@ button.tp-fv-beta.tp-fv-conflict:hover {
     }
 }
 
-/* A narrow top bar keeps room for the profile: "Beta" only, the name is in the tooltip. */
+/* A narrow top bar keeps room for the profile: the icon and the tag only (the name is in the
+   tooltip and the dialog). */
 @media (max-width: 1199px) {
-    .tp-crumb .tp-fv-beta-name {
+    .tp-crumb .tp-fv-beta-text {
         display: none;
-    }
-
-    .tp-crumb .tp-fv-beta-name + span {
-        text-transform: capitalize;
     }
 }
 
@@ -21199,15 +21220,26 @@ cat > /usr/local/emhttp/plugins/Aurora-Theme/styles/theme.css <<'AURORA_THEME_EO
             margin-top: 2.4rem;
         }
 
+        /* A small shadow: the large one reached past the window's edge, and Safari let the
+           page be pushed sideways to show it. */
         a:is(.move_to_end, .back_to_top) {
             right: 1.6rem !important;
             bottom: 2rem !important;
             width: 3.8rem;
             height: 3.8rem;
+            box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.55);
         }
 
         a.back_to_top {
             bottom: 6.6rem !important;
+        }
+
+        /* The page is exactly as wide as the screen: nothing (a shadow, a wide row) can make it
+           scroll sideways. Wide lists and tables scroll in their own boxes; "clip" makes no
+           scroll container, so the page scrolls and its sticky headers stick as before. */
+        &,
+        & > body {
+            overflow-x: clip;
         }
     }
 
@@ -22043,7 +22075,7 @@ cat > /boot/config/plugins/Aurora-Theme/stats.cron <<'AURORA_THEME_EOF'
 AURORA_THEME_EOF
 /usr/bin/php /usr/local/emhttp/plugins/Aurora-Theme/scripts/schedule.php
 echo ""
-echo "Aurora-Theme 2026.10.26.0033 is installed."
+echo "Aurora-Theme 2026.10.26.0808 is installed."
 echo "Settings: Settings > User Utilities > Aurora Theme"
 echo ""
 ]]>

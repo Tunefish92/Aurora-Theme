@@ -840,12 +840,15 @@
     const chip = function () {
       const button = element('button', 'tp-fv-beta' + (both ? ' tp-fv-conflict' : ''));
       button.type = 'button';
+      // The plugin's name with "support" (left out in a narrow top bar) and a small tag.
+      const text = element('span', 'tp-fv-beta-text', both ? name + ' + Plus' : name);
+      if (!both) text.append(element('span', 'tp-fv-beta-word', ' support'));
       if (both) {
         button.title = name + ' and FolderView Plus are both installed. This is not supported. Click for details.';
-        button.append(element('i', 'fa fa-exclamation-triangle'), element('span', 'tp-fv-beta-name', name + ' + Plus · '), element('span', '', 'not supported'));
+        button.append(element('i', 'fa fa-exclamation-triangle'), text, element('span', 'tp-fv-beta-tag', 'Not supported'));
       } else {
         button.title = name + ' support is in beta and still has compatibility issues. Click for details.';
-        button.append(element('i', 'fa fa-flask'), element('span', 'tp-fv-beta-name', name + ' · '), element('span', '', 'beta'));
+        button.append(element('i', 'fa fa-info-circle'), text, element('span', 'tp-fv-beta-tag', 'Beta'));
       }
       button.addEventListener('click', function () {
         if (both) {

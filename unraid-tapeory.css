@@ -5540,15 +5540,26 @@
             margin-top: 2.4rem;
         }
 
+        /* A small shadow: the large one reached past the window's edge, and Safari let the
+           page be pushed sideways to show it. */
         a:is(.move_to_end, .back_to_top) {
             right: 1.6rem !important;
             bottom: 2rem !important;
             width: 3.8rem;
             height: 3.8rem;
+            box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.55);
         }
 
         a.back_to_top {
             bottom: 6.6rem !important;
+        }
+
+        /* The page is exactly as wide as the screen: nothing (a shadow, a wide row) can make it
+           scroll sideways. Wide lists and tables scroll in their own boxes; "clip" makes no
+           scroll container, so the page scrolls and its sticky headers stick as before. */
+        &,
+        & > body {
+            overflow-x: clip;
         }
     }
 
