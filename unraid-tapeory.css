@@ -1450,26 +1450,27 @@
 
         /* Array and pool tiles: Unraid gives the four value columns 18% each (as min- and
            max-width), which cut off "healthy" and "Utilization". SMART shows only its thumb
-           (the text is its tooltip), and utilization gets the room for its value and bar.
-           Only the list rows: the first row holds the tile header. */
+           (the text is its tooltip), so status ("standby", a pool member's state) and
+           utilization (its value and bar) get the room. Only the list rows: the first row
+           holds the tile header. */
         table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(1) {
-            min-width: 26%;
-            max-width: 26%;
+            min-width: 25%;
+            max-width: 25%;
         }
 
         table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(2) {
-            min-width: 21%;
-            max-width: 21%;
+            min-width: 25%;
+            max-width: 25%;
         }
 
         table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(3) {
-            min-width: 14%;
-            max-width: 14%;
+            min-width: 12%;
+            max-width: 12%;
         }
 
         table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(4) {
-            min-width: 14%;
-            max-width: 14%;
+            min-width: 13%;
+            max-width: 13%;
         }
 
         table.dashboard > tbody:is(#array_list, [id^="pool_list"]) > tr:not(:first-child) > td > span:nth-child(5) {
@@ -1607,9 +1608,10 @@
     /* Docker and VM tiles: the apps sit in an even grid of small cards. Not when FolderView
        Plus lays out the tile in one of its own layouts (all but "legacy", which keeps the
        host's), whose grid it sets itself. The apps' row is the one Unraid marks "updated"
-       ("useupdated" for VM usage); FolderView3 and Plus keep it. Asked with td:has() instead,
+       ("useupdated" for VM usage) in these three tiles (the storage tiles' rows are marked so
+       too, and keep their columns); FolderView3 and Plus keep it. Asked with td:has() instead,
        every table cell of the page was checked again whenever a list was rebuilt. */
-    table.dashboard > tbody:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr:is(.updated, .useupdated) > td {
+    table.dashboard > tbody:is(#docker_view, #vm_view, #vm_view_usage):not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr:is(.updated, .useupdated) > td {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
         gap: 0.6rem;
@@ -1617,7 +1619,7 @@
     }
 
     /* "No containers" and the like span the whole tile. */
-    table.dashboard > tbody > tr:is(.updated, .useupdated) > td > :is(#no_apps, #no_vms, #no_usagevms) {
+    table.dashboard > tbody:is(#docker_view, #vm_view, #vm_view_usage) > tr:is(.updated, .useupdated) > td > :is(#no_apps, #no_vms, #no_usagevms) {
         grid-column: 1 / -1;
     }
 
@@ -5381,8 +5383,12 @@
             white-space: nowrap;
         }
 
+        /* Column names wrap instead ("Status / MBR status" of a ZFS or Btrfs pool). */
         table.dashboard :is(#array_list, [id^="pool_list"], [title="Shares Information"], [title="Users Information"]) tr.header :is(span.w18, span.w26, span.w36, span.w44, span.w72) {
             font-size: 1rem;
+            letter-spacing: 0.02em;
+            white-space: normal;
+            vertical-align: top;
         }
 
         /* Icon-only buttons in a page heading (previous / next share, user or disk) keep the
