@@ -408,3 +408,16 @@ button.tft-link-button:hover {
 .tft-schedule select#tft-when {
     flex-grow: 1.4;
 }
+
+/* "Dev build" next to the installed version while a dev build runs. */
+.tft-update-text strong .tft-dev-chip {
+    display: inline-block;
+    margin-left: 0.6rem;
+    padding: 0.1rem 0.8rem;
+    border-radius: 999px;
+    background: var(--tp-gradient, var(--tp-primary));
+    color: #fff;
+    font: 600 1.1rem/1.6 var(--tp-font-body, inherit);
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}

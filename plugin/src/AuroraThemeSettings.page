@@ -80,6 +80,17 @@ _(Stats page)_:
 > per minute for it. It replaces the Dynamix System Statistics plugin; remove that plugin first,
 > because both use the name "Stats" for their tab.
 
+_(Update channel)_:
+: <select name="channel">
+  <?=mk_option($aurora['channel'] ?? 'stable', "stable", _("Stable releases"))?>
+  <?=mk_option($aurora['channel'] ?? 'stable', "dev", _("Dev builds (testing)"))?>
+  </select>
+
+> "Dev builds" also installs the test versions published between releases, so you get fixes and
+> new features earlier, together with their rough edges. While a dev build is installed, a "Dev"
+> badge in the top bar says so. To go back, choose "Stable releases", apply, and use "Install
+> stable" below (or wait for the next stable release, which replaces the dev build).
+
 _(Automatic updates)_:
 : <input type="hidden" name="autoupdate" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="autoupdate" value="yes"<?= ($aurora['autoupdate'] ?? 'yes') === 'yes' ? ' checked' : '' ?>> _(Install new versions automatically)_</label>
 
@@ -132,7 +143,7 @@ $auroraRepo = '@@GITHUB_REPO@@';
 <div class="tft-update-card tft-state-current">
 <div class="tft-update-icon"><i class="fa fa-github" id="tft-update-icon"></i></div>
 <div class="tft-update-text">
-<strong id="tft-update-title">Version <?= htmlspecialchars($auroraInstalled ?: 'unknown') ?></strong>
+<strong id="tft-update-title">Version <?= htmlspecialchars($auroraInstalled ?: 'unknown') ?><?= aurora_is_dev($auroraInstalled) ? ' <span class="tft-dev-chip">Dev build</span>' : '' ?></strong>
 <span id="tft-update-message">Updates come from the plugin's releases on GitHub. Use "Check for updates" to look for a newer one now.</span>
 <span class="tft-auto-status<?= ($auroraAuto['result'] ?? '') === 'failed' ? ' tft-auto-failed' : '' ?>"><i class="fa <?= $auroraAutoOn ? 'fa-refresh' : 'fa-pause-circle' ?>"></i> <?php
 if (!$auroraAutoOn) {
@@ -176,11 +187,12 @@ function auroraCheck(button) {
     .then(function (result) {
       var data = result.data || {};
       if (!result.ok) throw new Error(data.error || 'The check did not work.');
-      if (data.newer) {
-        show('available', 'fa-arrow-circle-down', 'Update available', data.message);
+      if (data.newer || data.switch) {
+        show('available', 'fa-arrow-circle-down', data.switch ? 'Stable release available' : 'Update available', data.message);
         update.hidden = false;
-        update.innerHTML = '<i class="fa fa-download"></i> Update to ' + data.available;
+        update.innerHTML = '<i class="fa fa-download"></i> ' + (data.switch ? 'Install stable ' : 'Update to ') + data.available;
         update.dataset.plg = data.plg || '';
+        update.dataset.forced = data.switch ? '1' : '';
       } else {
         show('current', 'fa-check-circle', 'Up to date', data.message);
         update.hidden = true;
@@ -209,17 +221,18 @@ function auroraUpdate(button) {
   }
   var latest = <?= json_encode(AURORA_RELEASE_PLG) ?>;
   if (button && button.dataset.plg) {
-    auroraInstall(button, button.dataset.plg);
+    auroraInstall(button, button.dataset.plg, button.dataset.forced === '1');
     return;
   }
   fetch('/plugins/Aurora-Theme/include/check-update.php', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ csrf_token: window.csrf_token || '' }) })
     .then(function (response) { return response.json(); })
-    .then(function (data) { auroraInstall(button, data.plg || latest); })
+    .then(function (data) { auroraInstall(button, data.plg || latest, !!data.switch); })
     .catch(function () { auroraInstall(button, latest); });
 }
 
-function auroraInstall(button, plg) {
-  openPlugin('plugin install ' + plg, 'Update Aurora Theme', '', 'refresh');
+// "forced": back from a dev build to the stable release, which Unraid otherwise refuses as older.
+function auroraInstall(button, plg, forced) {
+  openPlugin('plugin install ' + plg + (forced ? ' forced' : ''), 'Update Aurora Theme', '', 'refresh');
   if (!button) return;
   var waited = 0;
   var watch = setInterval(function () {

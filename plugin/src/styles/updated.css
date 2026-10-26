@@ -265,3 +265,44 @@
         animation: none;
     }
 }
+
+/* Several releases since the previous version: one block each, newest first. */
+.tp-upd-release + .tp-upd-release {
+    margin-top: 1.6rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--tp-border, var(--border-color, rgba(127, 127, 127, 0.25)));
+}
+
+.tp-upd-release-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.tp-upd-release-version {
+    color: inherit;
+    font-family: var(--tp-font-heading, inherit);
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.tp-upd-release-version:hover {
+    color: var(--tp-primary, inherit);
+}
+
+.tp-upd-release-date {
+    color: var(--tp-muted, var(--alt-text-color, inherit));
+    font-size: 1.2rem;
+}
+
+.tp-upd-release-tag {
+    padding: 0.1rem 0.8rem;
+    border-radius: 999px;
+    background: var(--tp-primary-soft, rgba(59, 130, 246, 0.15));
+    color: var(--tp-primary, inherit);
+    font-size: 1.1rem;
+    font-weight: 600;
+}

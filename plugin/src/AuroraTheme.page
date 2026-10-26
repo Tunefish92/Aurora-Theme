@@ -274,6 +274,55 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
+<?php if (substr('@@VERSION@@', -4) === '-dev'): ?>
+<?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
+      // top bar, linking to the settings, where the update channel goes back to stable. ?>
+<style id="aurora-dev-badge">
+#header .tp-dev-badge { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; flex: none; align-self: center; margin: 0 0.8rem; padding: 0.35rem 1rem 0.35rem 0.8rem; border: 1px solid transparent; border-radius: 999px; background: linear-gradient(var(--tp-header-bg, #111), var(--tp-header-bg, #111)) padding-box, var(--tp-gradient, linear-gradient(120deg, #3b82f6, #22d3ee)) border-box; color: var(--tp-header-text, inherit); font: 600 1.15rem/1.2 var(--tp-font-heading, inherit); letter-spacing: 0.02em; text-decoration: none; white-space: nowrap; box-shadow: 0 0 0.9rem -0.2rem color-mix(in srgb, var(--tp-primary, #3b82f6) 55%, transparent); }
+#header .tp-dev-badge b { font-weight: 700; background: var(--tp-gradient, linear-gradient(120deg, #3b82f6, #22d3ee)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#header .tp-dev-badge i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--tp-primary, #3b82f6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--tp-primary, #3b82f6) 60%, transparent); animation: tp-dev-pulse 2.4s ease-out infinite; }
+#header .tp-dev-badge:hover { box-shadow: 0 0 1.2rem -0.1rem color-mix(in srgb, var(--tp-primary, #3b82f6) 75%, transparent); }
+@keyframes tp-dev-pulse { 70% { box-shadow: 0 0 0 0.6rem transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+#UserProfile > .tp-dev-badge { margin: 0 0.2rem 0 0; }
+#header .tp-dev-badge.tp-dev-in-sidebar { margin: 0 0 0 0.8rem; padding: 0.2rem 0.9rem 0.2rem 0.7rem; font-size: 1.1rem; }
+@media (prefers-reduced-motion: reduce) { #header .tp-dev-badge i { animation: none; } }
+@media (max-width: 767px) { #header .tp-dev-badge { margin: 0 0.4rem; padding: 0.3rem 0.7rem 0.3rem 0.6rem; font-size: 1.05rem; } #header .tp-dev-badge span { display: none; } }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var header = document.getElementById('header');
+  if (!header || header.querySelector('.tp-dev-badge')) return;
+  var badge = document.createElement('a');
+  badge.className = 'tp-dev-badge';
+  badge.href = '/Settings/AuroraThemeSettings';
+  badge.title = 'Aurora Theme dev build @@VERSION@@: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
+  // Where it goes: with the sidebar shown, beside Unraid's version under the logo; otherwise in
+  // the row at the top right, before the dark / light switch (enhance.js adds it once Unraid's
+  // profile has rendered). That row lies over the rest of the top bar, so anything placed under
+  // it would be hidden, and in the sidebar layout the breadcrumb leaves no room for it. Without
+  // the switch: right after Unraid's version. Placed again when the layout or the sidebar changes.
+  var root = document.documentElement;
+  var place = function () {
+    var version = header.querySelector('unraid-header-os-version');
+    var sidebar = root.classList.contains('tp-sidebar') && !root.classList.contains('tp-topbar') && !root.classList.contains('tp-sidebar-collapsed');
+    var row = sidebar && version && version.querySelector(':scope > div > div');
+    var toggle = header.querySelector('#UserProfile > .tp-theme-switch');
+    badge.classList.toggle('tp-dev-in-sidebar', !!row);
+    if (row) { if (badge.parentNode !== row) row.append(badge); }
+    else if (toggle) { if (badge.nextSibling !== toggle) toggle.before(badge); }
+    else if (version) { if (badge.previousSibling !== version) version.after(badge); }
+    else if (!badge.parentNode) header.prepend(badge);
+  };
+  place();
+  // Unraid's header parts render after this, and the sidebar can be hidden at any time.
+  var watch = new MutationObserver(place);
+  watch.observe(header, { childList: true, subtree: true });
+  setTimeout(function () { watch.disconnect(); }, 15000);
+  new MutationObserver(place).observe(root, { attributes: true, attributeFilter: ['class'] });
+});
+</script>
+<?php endif; ?>
 <?php if (in_array('tp-no-favourites', $auroraClasses)): ?>
 <?php // Unraid shows its Favorites tab whenever /boot/config/favorites.cfg holds pages, even
       // with favourites switched off (issue #25); the theme hides it then. ?>

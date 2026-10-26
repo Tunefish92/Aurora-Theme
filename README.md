@@ -60,7 +60,11 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 - **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top. The tool pages get readable help text: notes and warnings as callouts, command output in monospaced boxes, and the Diagnostics file list as cards. Help boxes and notices look the same everywhere.
 - **Users**: user cards with avatars or coloured initials, roles, search and an "Add user" button.
 - **Stats**: its own Stats tab with CPU, memory, network and disk charts, collected once a minute. It replaces the Dynamix System Statistics plugin, so remove that one first.
-- **Settings page**: switches for colours, layout, enhancements and the Stats tab, an accent colour, and the fonts (Aurora's Inter and Space Grotesk, or Unraid's own Clear Sans); updates from the GitHub releases, automatically (on by default, checked weekly; after an update the next page shows what changed) or with "Check for updates" and "Update now"; a form that opens a pre-filled GitHub issue.
+- **Settings page**: switches for colours, layout, enhancements and the Stats tab, an accent colour, and the fonts (Aurora's Inter and Space Grotesk, or Unraid's own Clear Sans); updates from the GitHub releases, automatically (on by default, checked weekly; after an update the next page shows what changed, with the notes of every release since your previous version) or with "Check for updates" and "Update now", from the stable releases or, if you like to test, the dev builds; a form that opens a pre-filled GitHub issue.
+
+## Dev builds
+
+Between releases, new fixes and features first come out as dev builds. To try them, set **Update channel** to **Dev builds (testing)** in the plugin's settings, apply, and use "Check for updates". While a dev build is installed, a small **Aurora Dev** badge in the top bar (next to the Unraid version in the sidebar layout) reminds you; it links to the settings. Dev builds can have rough edges, so please report what you find. To go back, set the channel to **Stable releases** and click "Install stable", or simply wait for the next stable release, which replaces the dev build.
 
 ## If something looks wrong
 

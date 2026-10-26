@@ -1,7 +1,7 @@
 // "Aurora Theme updated": shown once on the first page opened after the plugin's version changed
 // (an automatic update, "Update now", the Plugins page). include/updated.php gives the versions
-// and the release notes of the new version; closing the dialog tells it so, and it is not shown
-// again. Loaded by AuroraTheme.page only while that record exists.
+// and the release notes of every release since the previous version, so nothing is missed when
+// several were skipped; closing the dialog tells it so, and it is not shown again. Loaded by AuroraTheme.page only while that record exists.
 (function () {
   'use strict';
   const endpoint = '/plugins/Aurora-Theme/include/updated.php';
@@ -48,6 +48,8 @@
       if (!line) { list = null; paragraph = null; return; }
       if (heading) {
         list = null; paragraph = null;
+        // The section title already says it.
+        if (/^what['’]?s new$/i.test(heading[1].replace(/\*\*/g, '').trim())) return;
         box.append(element('h4', '', heading[1].replace(/\*\*/g, '')));
       } else if (item) {
         paragraph = null;
@@ -104,10 +106,28 @@
     if (info.time) fact('clock-o', when(info.time));
     fact(info.automatic ? 'refresh' : 'hand-pointer-o', info.automatic ? 'automatic update' : 'installed by hand');
 
+    // One release: its notes. Several (versions were skipped): each with its version and date,
+    // newest first.
+    const releases = Array.isArray(info.releases) ? info.releases : null;
     const body = element('div', 'tp-upd-body');
-    body.append(element('div', 'tp-upd-section', "What's new"));
-    if (info.notes) body.append(notes(info.notes));
-    else body.append(element('p', 'tp-upd-empty', info.notes === '' ? 'There are no release notes for this version on GitHub.' : 'The release notes could not be loaded from GitHub just now.'));
+    body.append(element('div', 'tp-upd-section', releases && releases.length > 1 ? "What's new in " + releases.length + ' versions' : "What's new"));
+    if (!releases) body.append(element('p', 'tp-upd-empty', 'The release notes could not be loaded from GitHub just now.'));
+    else if (!releases.length) body.append(element('p', 'tp-upd-empty', 'There are no release notes for this version on GitHub.'));
+    else if (releases.length === 1) body.append(releases[0].notes ? notes(releases[0].notes) : element('p', 'tp-upd-empty', 'This release has no notes.'));
+    else releases.forEach(function (release) {
+      const block = element('section', 'tp-upd-release');
+      const title = element('div', 'tp-upd-release-head');
+      const name = element('a', 'tp-upd-release-version', release.version);
+      name.href = release.page || 'https://github.com/@@GITHUB_REPO@@/releases';
+      name.target = '_blank';
+      name.rel = 'noopener';
+      title.append(name);
+      const date = release.date ? new Date(release.date) : null;
+      if (date && !isNaN(date)) title.append(element('span', 'tp-upd-release-date', date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })));
+      if (release.version === info.to) title.append(element('span', 'tp-upd-release-tag', 'installed now'));
+      block.append(title, release.notes ? notes(release.notes) : element('p', 'tp-upd-empty', 'This release has no notes.'));
+      body.append(block);
+    });
 
     const actions = element('div', 'tp-upd-actions');
     const link = element('a', 'tp-upd-button', 'Release notes on GitHub');

@@ -1,10 +1,15 @@
 <?php
 // Updates come from the plugin's GitHub releases: the newest release's Aurora-Theme.plg.
 // Used by include/check-update.php ("Check for updates") and scripts/autoupdate.php.
+// Two channels (setting "channel"): "stable" takes the newest release, "dev" also the dev builds,
+// GitHub pre-releases whose version ends in "-dev" ("2026.10.27.1200-dev"). Unraid compares
+// versions as text, so a dev build counts as newer than the stable release of the same minute
+// and older than any later one.
 
 const AURORA_PLUGIN = 'Aurora-Theme';
 const AURORA_REPO = '@@GITHUB_REPO@@';
 const AURORA_RELEASE_API = 'https://api.github.com/repos/' . AURORA_REPO . '/releases/latest';
+const AURORA_RELEASES_API = 'https://api.github.com/repos/' . AURORA_REPO . '/releases?per_page=30';
 const AURORA_RELEASE_PLG = 'https://github.com/' . AURORA_REPO . '/releases/latest/download/' . AURORA_PLUGIN . '.plg';
 const AURORA_RELEASES_PAGE = 'https://github.com/' . AURORA_REPO . '/releases';
 
@@ -18,6 +23,17 @@ function aurora_setting(string $key): string
         $settings = array_merge($defaults, $user);
     }
     return (string) ($settings[$key] ?? '');
+}
+
+/** The update channel: 'dev' when dev builds are wanted, else 'stable'. */
+function aurora_channel(): string
+{
+    return aurora_setting('channel') === 'dev' ? 'dev' : 'stable';
+}
+
+function aurora_is_dev(string $version): bool
+{
+    return substr($version, -4) === '-dev';
 }
 
 /**
@@ -57,6 +73,26 @@ function aurora_release_asset(string $url): string
     return strpos($url, $prefix) === 0 && preg_match('#^[A-Za-z0-9._-]+/' . AURORA_PLUGIN . '\.plg$#', substr($url, strlen($prefix))) ? $url : '';
 }
 
+/** The GitHub API's answer for $url, decoded, or null. */
+function aurora_github_api(string $url)
+{
+    exec('/usr/bin/curl -fsSL --max-time 20 -H ' . escapeshellarg('Accept: application/vnd.github+json')
+        . ' -A ' . escapeshellarg(AURORA_PLUGIN . '-update-check') . ' ' . escapeshellarg($url) . ' 2>/dev/null', $output, $status);
+    return $status === 0 ? json_decode(implode("\n", $output), true) : null;
+}
+
+/** ['version', 'page', 'plg'] of one release from the GitHub API, or null when it has no valid .plg. */
+function aurora_release_info($data): ?array
+{
+    $tag = is_array($data) && empty($data['draft']) ? ltrim((string) ($data['tag_name'] ?? ''), 'vV') : '';
+    if (!preg_match('/^\d{4}\.\d{2}\.\d{2}[\w.-]*$/', $tag)) return null;
+    $plg = '';
+    foreach ((array) ($data['assets'] ?? []) as $asset) {
+        if (($asset['name'] ?? '') === AURORA_PLUGIN . '.plg') $plg = aurora_release_asset((string) ($asset['browser_download_url'] ?? ''));
+    }
+    return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE), 'plg' => $plg];
+}
+
 /**
  * The newest release: ['version' => '2026.10.14.2219', 'page' => release URL, 'plg' => URL of
  * its .plg] or ['error' => text].
@@ -68,18 +104,21 @@ function aurora_release_asset(string $url): string
  * right after a check could bring an older version than the check reported, and the next check
  * would offer an update again.
  */
-function aurora_latest_release(): array
+function aurora_latest_release(string $channel = ''): array
 {
-    exec('/usr/bin/curl -fsSL --max-time 20 -H ' . escapeshellarg('Accept: application/vnd.github+json')
-        . ' -A ' . escapeshellarg(AURORA_PLUGIN . '-update-check') . ' ' . escapeshellarg(AURORA_RELEASE_API) . ' 2>/dev/null', $output, $status);
-    $data = $status === 0 ? json_decode(implode("\n", $output), true) : null;
-    $tag = is_array($data) ? ltrim((string) ($data['tag_name'] ?? ''), 'vV') : '';
-    if (preg_match('/^\d{4}\.\d{2}\.\d{2}[\w.-]*$/', $tag)) {
-        $plg = '';
-        foreach ((array) ($data['assets'] ?? []) as $asset) {
-            if (($asset['name'] ?? '') === AURORA_PLUGIN . '.plg') $plg = aurora_release_asset((string) ($asset['browser_download_url'] ?? ''));
+    // Dev channel: the newest of the recent releases, dev builds (pre-releases) included. If the
+    // list cannot be read, the newest stable release is the answer.
+    if (($channel ?: aurora_channel()) === 'dev') {
+        $newest = null;
+        foreach ((array) aurora_github_api(AURORA_RELEASES_API) as $data) {
+            $release = aurora_release_info($data);
+            if ($release && $release['plg'] && (!$newest || strcmp($release['version'], $newest['version']) > 0)) $newest = $release;
         }
-        return ['version' => $tag, 'page' => (string) ($data['html_url'] ?? AURORA_RELEASES_PAGE), 'plg' => $plg ?: AURORA_RELEASE_PLG];
+        if ($newest) return $newest;
+    }
+    $release = aurora_release_info(aurora_github_api(AURORA_RELEASE_API));
+    if ($release) {
+        return ['plg' => $release['plg'] ?: AURORA_RELEASE_PLG] + $release;
     }
     $file = tempnam('/tmp', 'aurora-release-');
     exec('/usr/bin/curl -fsSL --max-time 90 -o ' . escapeshellarg($file) . ' ' . escapeshellarg(AURORA_RELEASE_PLG) . ' 2>&1', $download, $status);
