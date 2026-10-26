@@ -1339,6 +1339,18 @@
         white-space: nowrap;
     }
 
+    /* ... and a name longer than the chip ends in "…" inside it (FolderView Plus sizes its chips
+       itself; the name ran out of the chip and the tile). Each line of the text beside the icon
+       is cut: the name, and the status line under it. Instead of Unraid's fixed 143 px, the
+       text takes the room the chip has, so a chip as wide as the tile shows the whole name. */
+    &.tp-fvplus table.dashboard > tbody > tr > td span.outer.solid > span.inner {
+        width: auto;
+        max-width: calc(100% - 4.4rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
     /* FolderView Plus keeps room at the right of its tile for its buttons (quick rail); the
        padding above took it away and the chips ran under them. */
     table.dashboard > tbody > tr > td.fv-dashboard-has-visible-quick-rail {
