@@ -1682,6 +1682,53 @@
     }, 4000);
   }
 
+  // Docker tab and Dashboard: the container list is loaded again when Unraid's record of image
+  // updates changes while the page is open (include/docker-updates.php), so a container updated
+  // in the background (CA Auto Update, "Update All" in another tab, the scheduled check) no
+  // longer shows "update ready". Updates started on the page itself already reload the list
+  // when their dialog is closed; the record is read again after every list load, so those do
+  // not load it twice. Checked every 20 seconds while the page is visible, and when it is
+  // shown again.
+  function dockerUpdateWatch() {
+    const list = document.getElementById('docker_list') || document.getElementById('docker_view');
+    if (!list || typeof window.loadlist !== 'function') return;
+    const url = PLUGIN_BASE + '/include/docker-updates.php';
+    let known = null;
+    let busy = false;
+    function read() {
+      return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (response) { return response.ok ? response.json() : {}; })
+        .then(function (data) { return typeof data.stamp === 'string' ? data.stamp : null; });
+    }
+    function check() {
+      if (busy || document.hidden) return;
+      busy = true;
+      read()
+        .then(function (stamp) {
+          if (stamp === null) return;
+          if (known === null || stamp === known) { known = stamp; return; }
+          // Not while a dialog is open (an update in progress, a confirmation) or a row is being
+          // dragged: the next check does it.
+          const dialog = document.querySelector('.sweet-alert.showSweetAlert, .sweet-alert.visible');
+          if ((dialog && dialog.offsetParent !== null) || list.tpSorting) return;
+          known = stamp;
+          window.loadlist();
+        })
+        .catch(function () {})
+        .finally(function () { busy = false; });
+    }
+    if (window.jQuery) {
+      window.jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+        if (/DockerContainers\.php|DashboardApps\.php/.test((settings && settings.url) || '')) {
+          read().then(function (stamp) { if (stamp !== null) known = stamp; }).catch(function () {});
+        }
+      });
+    }
+    check();
+    setInterval(check, 20000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  }
+
   // Dashboard, Docker tile: an orange dot on the icon of every container with an update ready,
   // running or not (issue #24). Unraid redraws the tile's chips on each refresh.
   function dashboardUpdates() {
@@ -3913,7 +3960,7 @@
 
   function start() {
     const info = pageInfo();
-    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { folderViewBeta(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
+    [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { folderViewBeta(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dockerUpdateWatch, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {
       // One failing enhancer must not stop the others or the page's own scripts.
       try { enhancer(); } catch (error) { console.error('Aurora Theme:', error); }
     });
