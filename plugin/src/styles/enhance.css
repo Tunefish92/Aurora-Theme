@@ -3833,8 +3833,9 @@ select.tp-select-open {
 }
 
 /* ---- Phones: each container becomes a small card
-   row 1: icon and name; row 2: status, CPU, memory, web UI; row 3: autostart and actions.
-   Version and ports are left out here; "All columns" still shows Unraid's full table. */
+   row 1: icon and name; row 2: status, CPU, memory, web UI; row 3: autostart and actions;
+   row 4: its addresses; row 5: its mounts (issue #27). The version is left out here; "All
+   columns" still shows Unraid's full table. */
 @media (max-width: 767px) {
     .TableContainer:has(> #docker_containers.tp-compact) {
         overflow-x: visible;
@@ -3863,9 +3864,58 @@ select.tp-select-open {
     #docker_containers.tp-compact .tp-c-auto { grid-row: 3; grid-column: 1 / 3; }
     #docker_containers.tp-compact .tp-c-actions { grid-row: 3; grid-column: 3 / -1; }
 
-    #docker_containers.tp-compact .tp-c-version,
-    #docker_containers.tp-compact .tp-c-ports {
+    #docker_containers.tp-compact .tp-c-version {
         display: none !important;
+    }
+
+    /* Addresses and mounts, each with a small icon; Unraid's "show more" arrow still folds a
+       long list of mounts. A container without either has no such line. */
+    #docker_containers.tp-compact > tbody > tr.sortable > :is(td.tp-c-ports, td.tp-c-volumes) {
+        display: flex !important;
+        align-items: flex-start;
+        gap: 0.8rem;
+        grid-column: 1 / -1;
+        min-width: 0;
+        padding: 0 !important;
+        color: var(--tp-muted, var(--alt-text-color));
+        font: 1.15rem/1.5 var(--tp-font-body, inherit);
+        overflow-wrap: break-word;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > td.tp-c-ports { grid-row: 4; }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > td.tp-c-volumes {
+        grid-row: 5;
+        margin-top: -0.4rem;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > :is(td.tp-c-ports, td.tp-c-volumes).tp-c-empty {
+        display: none !important;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > :is(td.tp-c-ports, td.tp-c-volumes)::before {
+        flex: none;
+        width: 1.6rem;
+        padding-top: 0.1rem;
+        font: 1.2rem FontAwesome;
+        text-align: center;
+        opacity: 0.8;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > td.tp-c-ports::before { content: "\f0ac"; }
+    #docker_containers.tp-compact > tbody > tr.sortable > td.tp-c-volumes::before { content: "\f07c"; }
+
+    /* Unraid breaks paths at any letter; here only after a "/" (enhance.js marks the places). */
+    #docker_containers.tp-compact > tbody > tr.sortable > :is(td.tp-c-ports, td.tp-c-volumes) .docker_readmore {
+        flex: 1;
+        min-width: 0;
+        word-break: normal;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.sortable > td.tp-c-volumes .readmore-js-toggle {
+        flex: none;
+        width: auto !important;
+        margin-left: 0.4rem;
     }
 
     #docker_containers.tp-compact td.tp-c-load > [class^="mem-"] {
@@ -4134,4 +4184,75 @@ tbody.tp-cpu-tile > tr.tp-core-pair .load {
 
 tbody.tp-cpu-tile > tr.tp-core-pair .usage-disk {
     height: 0.35rem !important;
+}
+
+/* ---- Docker (Aurora view): "Orphans", Unraid's "(orphan image)" rows in a section of their
+   own. Unraid shows them in its advanced view only; in the section they are always listed. */
+#docker_list > tr.tp-orphan:not(.tp-filtered-out) {
+    display: table-row !important;
+}
+
+#docker_containers.tp-compact > tbody > tr.tp-orphan:not(.tp-filtered-out) {
+    display: grid !important;
+    grid-template-columns: minmax(22rem, 2.4fr) minmax(0, 5fr) 18rem;
+    align-items: center;
+    column-gap: 1.4rem;
+    min-height: 6.4rem;
+    padding: 0 1.9rem;
+}
+
+#docker_containers.tp-compact > tbody > tr.tp-orphan > td {
+    width: auto !important;
+    padding: 0.8rem 0 !important;
+    border: 0;
+    color: var(--tp-muted, var(--alt-text-color));
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+}
+
+#docker_containers.tp-compact > tbody > tr.tp-orphan > td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* "Remove all" in the Orphans header. */
+.tp-actions button.tp-group-remove-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    height: 3rem;
+    margin: 0;
+    padding: 0 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--red-600, #dc2626) 45%, transparent);
+    border-radius: 999px;
+    color: var(--red-600, #dc2626);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    background: color-mix(in srgb, var(--red-600, #dc2626) 10%, transparent);
+    box-shadow: none;
+    transition: background-color 0.35s, transform 0.35s;
+}
+
+.tp-actions button.tp-group-remove-all:hover {
+    border-color: var(--red-600, #dc2626);
+    color: var(--red-600, #dc2626);
+    background: color-mix(in srgb, var(--red-600, #dc2626) 18%, transparent);
+    transform: translateY(-1px);
+}
+
+/* Phones: icon and date on the first line, the image ID and tags under them. */
+@media (max-width: 767px) {
+    #docker_containers.tp-compact > tbody > tr.tp-orphan:not(.tp-filtered-out) {
+        grid-template-columns: minmax(0, 1fr) auto;
+        row-gap: 0;
+        padding: 0.4rem 1.6rem 0.8rem;
+    }
+
+    #docker_containers.tp-compact > tbody > tr.tp-orphan > td:nth-child(2) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        padding-top: 0 !important;
+    }
 }

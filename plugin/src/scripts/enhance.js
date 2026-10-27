@@ -284,7 +284,8 @@
   // members' icons, and buttons to start or stop the whole section, move the group up or down,
   // rename or delete it (the last four not for "Ungrouped"). The row's tpItems are the section's
   // members ({ name, running, paused }), set by the tab on every refresh.
-  //   options: { noun ('container' / 'VM'), onToggle(), start(stopped items), stop(running items), load }
+  //   options: { noun ('container' / 'VM'), onToggle(), start(stopped items), stop(running items), load,
+  //              removeAll(items): a "Remove all" button instead of start and stop (Docker's orphan images) }
   function sectionHeader(store, group, options) {
     const row = element('tr', 'tp-group');
     const cell = element('td');
@@ -312,21 +313,30 @@
     const actions = element('div', 'tp-actions');
     const members = function () { return row.tpItems || []; };
     const plural = options.noun + 's';
-    actions.append(iconButton('play', 'Start all stopped ' + plural + ' in this section', function () {
-      options.start(members().filter(function (item) { return !item.running && !item.paused; }));
-    }));
-    actions.append(iconButton('stop', 'Stop all running ' + plural + ' in this section', function () {
-      const running = members().filter(function (item) { return item.running; });
-      if (!running.length) return;
-      modal({
-        title: 'Stop ' + running.length + ' ' + (running.length === 1 ? options.noun : plural) + '?',
-        message: 'All running ' + plural + ' in this section will be stopped: ' + running.map(function (item) { return item.name; }).join(', ') + '.',
-        confirmLabel: 'Stop',
-        danger: true,
-      }).then(function (confirmed) {
-        if (confirmed) options.stop(running);
-      });
-    }, 'tp-danger'));
+    if (options.removeAll) {
+      const remove = element('button', 'tp-group-remove-all');
+      remove.type = 'button';
+      remove.title = 'Remove all ' + plural + ' in this section';
+      remove.append(element('i', 'fa fa-trash'), element('span', '', 'Remove all'));
+      remove.addEventListener('click', function () { if (members().length) options.removeAll(members()); });
+      actions.append(remove);
+    } else {
+      actions.append(iconButton('play', 'Start all stopped ' + plural + ' in this section', function () {
+        options.start(members().filter(function (item) { return !item.running && !item.paused; }));
+      }));
+      actions.append(iconButton('stop', 'Stop all running ' + plural + ' in this section', function () {
+        const running = members().filter(function (item) { return item.running; });
+        if (!running.length) return;
+        modal({
+          title: 'Stop ' + running.length + ' ' + (running.length === 1 ? options.noun : plural) + '?',
+          message: 'All running ' + plural + ' in this section will be stopped: ' + running.map(function (item) { return item.name; }).join(', ') + '.',
+          confirmLabel: 'Stop',
+          danger: true,
+        }).then(function (confirmed) {
+          if (confirmed) options.stop(running);
+        });
+      }, 'tp-danger'));
+    }
     if (group) {
       row.tpUp = iconButton('arrow-up', 'Move group up', function () { store.move(group, -1); }, 'tp-group-move');
       row.tpDown = iconButton('arrow-down', 'Move group down', function () { store.move(group, 1); }, 'tp-group-move');
@@ -434,7 +444,7 @@
     setText(header.querySelector('.tp-group-name'), section.title);
     const toggle = header.querySelector('.tp-group-toggle');
     if (toggle.title !== section.title) toggle.title = section.title;
-    setText(header.querySelector('.tp-group-count'), section.items.length + ' ' + (section.items.length === 1 ? options.noun : options.noun + 's') + ' · ' + running + ' running');
+    setText(header.querySelector('.tp-group-count'), section.items.length + ' ' + (section.items.length === 1 ? options.noun : options.noun + 's') + (options.noRunning ? '' : ' · ' + running + ' running'));
     appStrip(header.querySelector('.tp-group-apps'), section.items.map(options.app), 8);
     header.classList.toggle('tp-collapsed', section.collapsed);
     header.querySelector('.tp-group-toggle').setAttribute('aria-expanded', String(!section.collapsed));
@@ -1053,6 +1063,28 @@
         webuiCell.append(element('span', 'tp-webui-none', '—'));
       }
 
+      // Phones show the addresses and mounts under the card (enhance.css), without an empty line
+      // for a container that has none. Long paths may break after a "/" only, not inside a
+      // folder name.
+      row.querySelectorAll('td.tp-c-ports, td.tp-c-volumes').forEach(function (cell) {
+        cell.classList.toggle('tp-c-empty', !cell.textContent.trim());
+      });
+      row.querySelectorAll('td.tp-c-volumes .docker_readmore').forEach(function (box) {
+        const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+        const texts = [];
+        while (walker.nextNode()) texts.push(walker.currentNode);
+        texts.forEach(function (node) {
+          const parts = node.nodeValue.split(/(?<=\/)(?=.)/);
+          if (parts.length < 2) return;
+          const pieces = [];
+          parts.forEach(function (part, index) {
+            if (index) pieces.push(document.createElement('wbr'));
+            pieces.push(document.createTextNode(part));
+          });
+          node.replaceWith(...pieces);
+        });
+      });
+
       const statusCell = element('td', 'tp-extra tp-c-status');
       statusCell.append(element('span', 'tp-pill' + (running ? ' tp-good' : paused ? ' tp-warn' : ''), state ? state.textContent.trim() : ''));
 
@@ -1174,19 +1206,23 @@
     // containers in Unraid's order. Changing the groups saves Unraid's order as the list now
     // shows it, so the containers start in the order they are listed.
     const UNGROUPED = '\u0000ungrouped';
+    // Unraid lists images no container uses as "(orphan image)" rows after the containers; the
+    // Aurora view collects them in an "Orphans" section at the end, with a button removing all.
+    const ORPHANS = '\u0000orphans';
     const collapsed = collapsedState('tft-docker-collapsed');
     const groupRows = new Map();
     const store = groupStore('docker', render, function () { if (!folderView) saveUnraidOrder('docker', list); });
 
-    // Starts or stops several containers one after another, then lets Unraid reload the list once.
-    function runAll(action, ids) {
+    // Starts or stops several containers (or removes images, with key "image") one after
+    // another, then lets Unraid reload the list once.
+    function runAll(action, ids, key) {
       const jq = window.jQuery;
       if (!jq || !window.eventURL || !ids.length) return;
       jq('div.spinner.fixed').show('slow');
       let chain = Promise.resolve();
       ids.forEach(function (id) {
         chain = chain.then(function () {
-          return new Promise(function (resolve) { jq.post(window.eventURL, { action: action, container: id }).always(resolve); });
+          return new Promise(function (resolve) { jq.post(window.eventURL, { action: action, [key || 'container']: id }).always(resolve); });
         });
       });
       chain.then(function () {
@@ -1197,18 +1233,56 @@
 
     function groupRow(key, group) {
       if (groupRows.has(key)) return groupRows.get(key);
-      const row = sectionHeader(store, group, {
+      const onToggle = function () {
+        collapsed.toggle(key);
+        render();
+      };
+      const row = key === ORPHANS ? sectionHeader(store, null, {
+        noun: 'orphan image',
+        onToggle: onToggle,
+        removeAll: removeImages,
+      }) : sectionHeader(store, group, {
         noun: 'container',
         load: true,
-        onToggle: function () {
-          collapsed.toggle(key);
-          render();
-        },
+        onToggle: onToggle,
         start: function (items) { runAll('start', items.map(function (item) { return item.id; })); },
         stop: function (items) { runAll('stop', items.map(function (item) { return item.id; })); },
       });
+      if (key === ORPHANS) row.classList.add('tp-group-orphans');
       groupRows.set(key, row);
       return row;
+    }
+
+    // "Remove all" in the Orphans section: Unraid's own "remove_image" for each, after asking.
+    function removeImages(items) {
+      modal({
+        title: 'Remove ' + items.length + ' orphan ' + (items.length === 1 ? 'image' : 'images') + '?',
+        message: 'No container uses ' + (items.length === 1 ? 'this image' : 'these images') + '. ' + (items.length === 1 ? 'It' : 'They') + ' will be deleted from Docker: ' + items.map(function (item) { return item.name; }).join(', ') + '.',
+        confirmLabel: 'Remove all',
+        danger: true,
+      }).then(function (confirmed) {
+        if (confirmed) runAll('remove_image', items.map(function (item) { return item.id; }), 'image');
+      });
+    }
+
+    // Unraid's orphan image rows: the image's id (its icon's id), tags and icon.
+    function orphanRows() {
+      return [...list.querySelectorAll(':scope > tr > td span.hand[onclick*="addDockerImageContext"]')].map(function (trigger) {
+        const row = trigger.closest('tr');
+        const tags = contextArguments(trigger)[1] || '';
+        const image = trigger.querySelector('img');
+        row.classList.add('tp-orphan');
+        return {
+          row: row,
+          id: trigger.id,
+          name: tags.split(',').filter(function (tag) { return tag && tag !== '<none>:<none>'; }).join(', ') || trigger.id.replace(/^sha256:/, '').slice(0, 12),
+          src: image && image.src,
+          trigger: trigger,
+          get text() { return row.textContent.toLowerCase(); },
+          running: false,
+          paused: false,
+        };
+      });
     }
 
     // Text is only written when it changed: writing inside the list wakes the refresh observer.
@@ -1220,14 +1294,16 @@
     // in their saved order, then "Ungrouped"; the containers in each section (and the whole list
     // when there are no groups) in Unraid's order. Runs after every refresh, and moves nothing
     // when the order is already right.
-    function layoutGroups(rows) {
+    function layoutGroups(rows, orphans) {
       const sections = store.groups.map(function (group) {
         return { key: 'g:' + group.name, group: group, title: group.name, items: rows.filter(function (item) { return group.containers.includes(item.name); }) };
       });
-      if (sections.length) {
+      const grouped = sections.length > 0;
+      if (grouped) {
         const rest = rows.filter(function (item) { return !store.of(item.name); });
         if (rest.length) sections.push({ key: UNGROUPED, group: null, title: 'Ungrouped', items: rest });
       }
+      if (orphans.length) sections.push({ key: ORPHANS, group: null, title: 'Orphans', items: orphans, orphans: true });
       const wanted = new Set(sections.map(function (section) { return section.key; }));
       groupRows.forEach(function (row, key) {
         if (!wanted.has(key)) {
@@ -1236,13 +1312,27 @@
         }
       });
 
-      const order = [];
+      // Without groups the containers come first, as a plain list.
+      const order = grouped ? [] : rows.map(function (item) { return item.row; });
       sections.forEach(function (section, index) {
         const header = groupRow(section.key, section.group);
         header.tpItems = section.items;
         header.tpKey = section.key;
         section.index = index;
         section.collapsed = collapsed.has(section.key);
+        if (section.orphans) {
+          updateSectionHeader(header, section, {
+            noun: 'orphan image',
+            noRunning: true,
+            app: function (item) { return { name: item.name, src: item.src, state: 'stopped', target: item.trigger }; },
+          });
+          order.push(header);
+          section.items.forEach(function (item) {
+            item.collapsed = section.collapsed;
+            order.push(item.row);
+          });
+          return;
+        }
         updateSectionHeader(header, section, {
           noun: 'container',
           groupCount: store.groups.length,
@@ -1379,11 +1469,12 @@
         if (name && name.title !== item.name) name.title = item.name;
         item.row.classList.toggle('tp-update', item.update);
       });
+      const orphans = folderView ? [] : orphanRows();
       if (folderView) {
         arrangeFolders();
       } else {
         rows.forEach(function (item) { decorate(item.row); });
-        layoutGroups(rows);
+        layoutGroups(rows, orphans);
       }
       table.classList.toggle('tp-compact', compact);
       table.classList.toggle('tp-advanced', Boolean(nativeToggle && nativeToggle.checked));
@@ -1424,6 +1515,11 @@
           || (activeFilter === 'stopped' && !item.running && !item.paused)
           || (activeFilter === 'updates' && item.update);
         item.visible = matchesFilter && item.text.includes(query);
+        item.row.classList.toggle('tp-filtered-out', !item.visible || item.collapsed);
+      });
+      // Orphan images are no containers: they show with "All" only.
+      orphans.forEach(function (item) {
+        item.visible = activeFilter === 'all' && item.text.includes(query);
         item.row.classList.toggle('tp-filtered-out', !item.visible || item.collapsed);
       });
       // A section whose containers are all filtered away is hidden with them; an empty group
