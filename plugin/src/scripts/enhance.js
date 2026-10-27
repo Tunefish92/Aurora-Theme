@@ -1785,29 +1785,40 @@
   // when their dialog is closed; the record is read again after every list load, so those do
   // not load it twice. Checked every 20 seconds while the page is visible, and when it is
   // shown again.
+  // Never while a check or an update is still running (the server's "busy", or "checking..."
+  // in the list after "Check for Updates" here): the list would show half the results, and
+  // Unraid's list code running beside the check could save the old results over the new ones.
+  // It is then asked again after a few seconds.
   function dockerUpdateWatch() {
     const list = document.getElementById('docker_list') || document.getElementById('docker_view');
     if (!list || typeof window.loadlist !== 'function') return;
     const url = PLUGIN_BASE + '/include/docker-updates.php';
     let known = null;
     let busy = false;
+    let soon = 0;
     function read() {
       return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
         .then(function (response) { return response.ok ? response.json() : {}; })
-        .then(function (data) { return typeof data.stamp === 'string' ? data.stamp : null; });
+        .then(function (data) { return typeof data.stamp === 'string' ? data : null; });
+    }
+    function waiting() {
+      if (list.querySelector('.updatecolumn .fa-spin') || list.tpSorting) return true;
+      const dialog = document.querySelector('.sweet-alert.showSweetAlert, .sweet-alert.visible');
+      return Boolean(dialog && dialog.offsetParent !== null);
     }
     function check() {
       if (busy || document.hidden) return;
       busy = true;
       read()
-        .then(function (stamp) {
-          if (stamp === null) return;
-          if (known === null || stamp === known) { known = stamp; return; }
-          // Not while a dialog is open (an update in progress, a confirmation) or a row is being
-          // dragged: the next check does it.
-          const dialog = document.querySelector('.sweet-alert.showSweetAlert, .sweet-alert.visible');
-          if ((dialog && dialog.offsetParent !== null) || list.tpSorting) return;
-          known = stamp;
+        .then(function (data) {
+          if (!data) return;
+          if (known === null || data.stamp === known) { known = data.stamp; return; }
+          if (data.busy || waiting()) {
+            clearTimeout(soon);
+            soon = setTimeout(check, 6000);
+            return;
+          }
+          known = data.stamp;
           window.loadlist();
         })
         .catch(function () {})
@@ -1816,7 +1827,7 @@
     if (window.jQuery) {
       window.jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
         if (/DockerContainers\.php|DashboardApps\.php/.test((settings && settings.url) || '')) {
-          read().then(function (stamp) { if (stamp !== null) known = stamp; }).catch(function () {});
+          read().then(function (data) { if (data) known = data.stamp; }).catch(function () {});
         }
       });
     }
