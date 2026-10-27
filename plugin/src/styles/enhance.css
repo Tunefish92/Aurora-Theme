@@ -1668,6 +1668,21 @@ nav.tabs > .tp-segment.tp-title-switch {
     animation: tp-modal-rise 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* A long message (many names) scrolls between the title and the buttons, so the buttons stay
+   on screen, also on a phone (dvh: the height left by the browser's own bars). */
+.tp-modal:not(.tp-ct-modal) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
+}
+
+.tp-modal:not(.tp-ct-modal) > .tp-modal-message {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+}
+
 .tp-modal-title {
     margin: 0;
     font: 600 2rem/1.25 var(--tp-font-heading, inherit);
@@ -2753,6 +2768,7 @@ select.tp-select-open {
 .tp-modal.tp-ct-modal {
     width: min(52rem, 100%);
     max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
     padding: 2.4rem;
     overflow-y: auto;
     box-sizing: border-box;
@@ -3992,6 +4008,7 @@ select.tp-select-open {
     .tp-modal.tp-ct-modal {
         width: 100%;
         max-height: 88vh;
+        max-height: 88dvh;
         border-radius: 22px 22px 0 0;
         padding: 2rem 1.6rem calc(2rem + env(safe-area-inset-bottom, 0px));
     }

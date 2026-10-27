@@ -946,7 +946,11 @@
         -webkit-backdrop-filter: blur(6px);
     }
 
+    /* Unraid sizes its dialogs by 95vh, which on phones is the height without the browser's
+       own bars, so a dialog's bottom (the Done button of an update) could end up behind them.
+       dvh is the height actually visible. */
     .sweet-alert {
+        max-height: 95dvh;
         border: 1px solid var(--tp-border);
         border-radius: 18px;
         font-family: var(--tp-font-body);
@@ -961,6 +965,13 @@
 
     .sweet-alert p {
         color: var(--tp-muted);
+    }
+
+    /* A long text scrolls on its own; the title and the buttons stay in view. */
+    .sweet-alert:not(.nchan) > p {
+        max-height: calc(100vh - 28rem);
+        max-height: calc(100dvh - 28rem);
+        overflow-y: auto;
     }
 
     /* Primary action in the accent gradient, secondary as an outline pill */
@@ -982,6 +993,7 @@
     /* ---- Progress dialogs (plugin install / update, docker pulls, ...): a header, the log in
        an inset terminal panel, and the button row underneath */
     .sweet-alert.nchan {
+        height: 95dvh;
         max-width: 110rem;
         padding: 0 0 1.6rem;
         overflow: hidden;
@@ -2966,6 +2978,7 @@
     .ui-dialog:not(.ui-dialog-content-full) {
         max-width: min(100rem, calc(100vw - 3.2rem));
         max-height: calc(100vh - 3.2rem);
+        max-height: calc(100dvh - 3.2rem);
         animation: tp-dialog-rise 0.3s var(--tp-ease);
     }
 

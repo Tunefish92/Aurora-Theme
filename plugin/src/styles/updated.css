@@ -23,6 +23,7 @@
     flex-direction: column;
     width: min(56rem, 100%);
     max-height: min(72rem, calc(100vh - 4rem));
+    max-height: min(72rem, calc(100dvh - 4rem));
     overflow: hidden;
     border: 1px solid var(--tp-border, var(--border-color, rgba(128, 128, 128, 0.3)));
     border-radius: 20px;
