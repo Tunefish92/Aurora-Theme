@@ -1948,10 +1948,13 @@ table.dashboard #vm_view_usage span.outer.solid.tp-vmuse:hover {
 .tp-vmuse-readings {
     display: grid;
     grid-column: 1 / -1;
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: 0.8rem 1.6rem;
+    min-width: 0;
     padding-top: 1rem;
     border-top: 1px solid var(--tp-border, var(--border-color));
+    /* The chips around keep their text on one line; a long network reading wraps here. */
+    white-space: normal;
 }
 
 .tp-vmuse-readings > span {

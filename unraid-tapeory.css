@@ -1630,6 +1630,12 @@
         padding-bottom: 0.8rem;
     }
 
+    /* Virtual Machines Usage: one wide card per running VM (enhance.css arranges its readings).
+       As strong as the rule above, so the cards do not get the apps' narrow columns (#29). */
+    table.dashboard > tbody#vm_view_usage:not([data-fv-dashboard-layout]:not([data-fv-dashboard-layout="legacy"])) > tr.useupdated > td {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr));
+    }
+
     /* "No containers" and the like span the whole tile. */
     table.dashboard > tbody:is(#docker_view, #vm_view, #vm_view_usage) > tr:is(.updated, .useupdated) > td > :is(#no_apps, #no_vms, #no_usagevms) {
         grid-column: 1 / -1;
