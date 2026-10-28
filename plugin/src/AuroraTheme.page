@@ -284,7 +284,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 #header .tp-dev-badge:hover { box-shadow: 0 0 1.2rem -0.1rem color-mix(in srgb, var(--tp-primary, #3b82f6) 75%, transparent); }
 @keyframes tp-dev-pulse { 70% { box-shadow: 0 0 0 0.6rem transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 #UserProfile > .tp-dev-badge { margin: 0 0.2rem 0 0; }
-#header .tp-dev-badge.tp-dev-in-sidebar { align-self: flex-start; margin: 0.8rem 0 0; padding: 0.2rem 0.9rem 0.2rem 0.7rem; font-size: 1.1rem; }
+#header .tp-dev-badge.tp-dev-in-sidebar { align-self: center; margin: 0.8rem 0 0; padding: 0.2rem 0.9rem 0.2rem 0.7rem; font-size: 1.1rem; }
 :root.tp-sidebar:not(.tp-topbar, .tp-sidebar-collapsed) #menu { padding-top: 14.6rem !important; }
 @media (prefers-reduced-motion: reduce) { #header .tp-dev-badge i { animation: none; } }
 @media (max-width: 767px) { #header .tp-dev-badge { margin: 0 0.4rem; padding: 0.3rem 0.7rem 0.3rem 0.6rem; font-size: 1.05rem; } #header .tp-dev-badge span { display: none; } }
