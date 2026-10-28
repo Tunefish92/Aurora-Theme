@@ -5714,26 +5714,27 @@
         }
     }
 
-    /* OS update notice in the header (both layouts), beside the version: a pill with an icon
-       and Unraid's short text ("Update Available"; the tooltip names the version), without
-       animation. An update ready to install (Unraid's orange badge, marked text-gray-950) in the
-       accent, a reboot it still needs ("Reboot to Update", yellow) in amber. Newer Unraid
-       releases render a <button>, older ones a span; Unraid's own icon is replaced. */
+    /* OS update notice in the header (both layouts), beside the version: a round icon without
+       animation, small enough for the sidebar's version row; the tooltip says what it is
+       ("Unraid OS 7.3.4 Update Available"). An update ready to install (Unraid's orange badge,
+       marked text-gray-950) in the accent, a reboot it still needs ("Reboot to Update", yellow)
+       in amber. Newer Unraid releases render a <button>, older ones a span; Unraid's own icon
+       and text give way to the theme's icon. */
     #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) {
         display: inline-flex;
         flex: none;
         align-items: center;
         justify-content: center;
-        gap: 0.6rem;
-        width: auto;
+        gap: 0;
+        width: 2.4rem;
         min-width: 0;
         max-width: none;
-        height: 2.6rem;
+        height: 2.4rem;
         min-height: 0;
         margin: 0;
-        padding: 0 1.1rem 0 0.9rem;
+        padding: 0;
         border: 1px solid color-mix(in srgb, var(--tp-warn-text, #fbbf24) 45%, transparent);
-        border-radius: 999px;
+        border-radius: 50%;
         color: var(--tp-warn-text, #fbbf24);
         font: 700 1.2rem/1 var(--tp-font-heading, inherit);
         letter-spacing: 0;
@@ -5764,22 +5765,16 @@
         outline-offset: 2px;
     }
 
-    /* Unraid's icon (bell, warning triangle) gives way to the theme's: a download arrow for an
-       update, a restart arrow for a reboot. */
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) > span:first-child:not(:last-child) {
-        display: none;
-    }
-
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) > span:last-child {
-        min-width: 0;
-        font: inherit;
-        color: inherit;
+    /* Unraid's icon (bell, warning triangle) and text give way to the theme's icon: a download
+       arrow for an update, a restart arrow for a reboot. */
+    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) > span {
+        display: none !important;
     }
 
     #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup]))::before {
         flex: none;
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 1.4rem;
+        height: 1.4rem;
         background-color: currentColor;
         -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7'/%3E%3Cpath d='M3 4v5h5'/%3E%3C/svg%3E") center / contain no-repeat;
         mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7'/%3E%3Cpath d='M3 4v5h5'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -5790,19 +5785,6 @@
     #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])).text-gray-950::before {
         -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v11'/%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3Cpath d='M4.5 20h15'/%3E%3C/svg%3E");
         mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v11'/%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3Cpath d='M4.5 20h15'/%3E%3C/svg%3E");
-    }
-
-    /* Phones: the icon alone, in a circle; the tooltip still has the text. */
-    @media (max-width: 767px) {
-        #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) {
-            width: 2.8rem;
-            height: 2.8rem;
-            padding: 0;
-        }
-
-        #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) > span {
-            display: none !important;
-        }
     }
 
     /* ======================================================================
