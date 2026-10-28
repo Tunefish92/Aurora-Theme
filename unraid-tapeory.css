@@ -5736,7 +5736,10 @@
         border: 1px solid color-mix(in srgb, var(--tp-warn-text, #fbbf24) 45%, transparent);
         border-radius: 50%;
         color: var(--tp-warn-text, #fbbf24);
-        font: 700 1.2rem/1 var(--tp-font-heading, inherit);
+        /* Unraid's text can be a text node of its own: font-size 0 hides it, the icon has a
+           size of its own. */
+        font-size: 0 !important;
+        line-height: 0;
         letter-spacing: 0;
         text-decoration: none;
         text-transform: none;
@@ -5767,7 +5770,7 @@
 
     /* Unraid's icon (bell, warning triangle) and text give way to the theme's icon: a download
        arrow for an update, a restart arrow for a reboot. */
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) > span {
+    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) * {
         display: none !important;
     }
 
