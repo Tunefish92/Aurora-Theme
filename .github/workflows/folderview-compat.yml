@@ -32,11 +32,11 @@ jobs:
       matrix:
         plugin: [fvplus, fv3]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26'
 
       - name: Playwright with Chromium
         run: |
@@ -84,7 +84,7 @@ jobs:
       # Every page alone and with Aurora, Black and White, for the visual review.
       - name: Screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots-${{ matrix.plugin }}
           path: ${{ runner.temp }}/screenshots

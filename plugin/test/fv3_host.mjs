@@ -53,10 +53,12 @@ export async function createFv3Host(fv3, scenario) {
     };
 
     // FolderView3's .page as served: front matter and PHP removed, autov() URLs kept, its
-    // translation loader (langs/script.php) rendered for English.
+    // translation loader (langs/script.php) rendered for English and Unraid's default number
+    // format (decimal point ".").
     const languageLoader = () => read('langs/script.php')
         .replace(/^<\?php[\s\S]*?\?>/, '')
         .replace(/<\?= json_encode\(\$loc\) \?>/, '"en"')
+        .replace(/<\?= json_encode\(substr\(\$fv3Number, 0, 1\)\) \?>/, '"."')
         .replace(/<\?php[\s\S]*?\?>/, JSON.stringify({ en: prefix + 'langs/en.json' }));
     const pluginPage = file => {
         const source = read(file);
