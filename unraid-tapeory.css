@@ -2370,6 +2370,12 @@
         color: var(--tp-muted);
     }
 
+    /* Community Applications: the "DockerHub" / "Apps" switch keeps a 1rem bottom margin from
+       Community Applications, which pushed it above the middle of the search bar. */
+    .searchArea > :is(.dockerSearch, .templateSearch) {
+        margin-bottom: 0;
+    }
+
     /* ======================================================================
        Hover tooltips (a.info) across the webGUI
        ====================================================================== */
@@ -4906,7 +4912,7 @@
 
     /* Apps page only (tp-on-apps): a :has() on every div is checked again on each change of any
        page, which made busy pages (FolderView Plus's Docker list) slow. */
-    &.tp-on-apps div:has(> .tp-ca-badge, > [class*=CardBackground]:not(.favCardBackground)) > .ca_holder .homespotlightIconArea {
+    &.tp-on-apps div:has(> .tp-ca-badge, > [class*=CardBackground]:not(.favCardBackground, .dockerCardBackground)) > .ca_holder .homespotlightIconArea {
         top: 4.8rem;
     }
 
@@ -4977,8 +4983,10 @@
     }
 
     /* The pill ignores the pointer, so its wrapper is hovered exactly while the card is; no
-       :has(... :hover), which made the browser recheck the page on every pointer move. */
-    &.tp-on-apps div:hover > [class*=CardBackground]:not(.favCardBackground) {
+       :has(... :hover), which made the browser recheck the page on every pointer move.
+       A Docker Hub search card's text areas are called dockerCardBackground; moved, they were
+       painted over the card's buttons, so "Docker Hub", "Similar" and "Install" took no clicks. */
+    &.tp-on-apps div:hover > [class*=CardBackground]:not(.favCardBackground, .dockerCardBackground) {
         transform: translateY(-3px);
     }
 
