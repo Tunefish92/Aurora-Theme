@@ -1017,6 +1017,23 @@
     let compact = canCompact;
     try { compact = canCompact && localStorage.getItem('tft-docker-view') !== 'full'; } catch (error) { /* storage blocked */ }
 
+    // While a container starts, stops or restarts, Unraid's eventControl spins the state icon in
+    // the name cell, which the compact view hides; its row is marked busy (tp-busy), so the
+    // status column's pill spins too. The reloaded list brings new rows without the mark.
+    if (typeof window.eventControl === 'function' && !window.eventControl.tpBusy) {
+      const eventControl = window.eventControl;
+      window.eventControl = function (params, spin) {
+        if (spin && params) markBusy(params.container);
+        return eventControl.apply(this, arguments);
+      };
+      window.eventControl.tpBusy = true;
+    }
+    function markBusy(id) {
+      const trigger = id ? document.getElementById(id) : null;
+      const row = trigger && trigger.closest('tr');
+      if (row) row.classList.add('tp-busy');
+    }
+
     if (canCompact) {
       [...headRow.children].forEach(function (cell, index) { cell.classList.add('tp-c-' + COLUMNS[index]); });
       [['webui', 'WebUI'], ['status', 'Status'], ['cpu', 'CPU'], ['mem', 'Memory'], ['actions', '']].forEach(function (extra) {
@@ -1223,7 +1240,10 @@
       let chain = Promise.resolve();
       ids.forEach(function (id) {
         chain = chain.then(function () {
-          if (!key) jq(document.getElementById(id)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
+          if (!key) {
+            jq(document.getElementById(id)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
+            markBusy(id);
+          }
           return new Promise(function (resolve) { jq.post(window.eventURL, { action: action, [key || 'container']: id }).always(resolve); });
         });
       });

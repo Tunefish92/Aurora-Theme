@@ -362,13 +362,16 @@ button.tp-fv-beta.tp-fv-conflict > .fa,
 
 /* While a container or VM starts, stops or restarts, Unraid turns its icon into a spinner (the
    icon keeps its started / stopped class, so it stays hidden): the pill takes the accent colour
-   and its dot spins as a ring until the list is loaded again. */
-.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state {
+   and its dot spins as a ring until the list is loaded again. The Docker tab's compact view
+   shows the state in its own status column, whose row enhance.js marks busy (tp-busy). */
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state,
+tr.tp-busy .tp-pill {
     color: var(--tp-primary, var(--link-text-color));
     background-color: var(--tp-primary-soft, var(--mild-background-color));
 }
 
-.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state:before {
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state:before,
+tr.tp-busy .tp-pill:before {
     box-sizing: border-box;
     width: 9px;
     height: 9px;
