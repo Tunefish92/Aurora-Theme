@@ -1019,19 +1019,23 @@
 
     // While a container starts, stops or restarts, Unraid's eventControl spins the state icon in
     // the name cell, which the compact view hides; its row is marked busy (tp-busy), so the
-    // status column's pill spins too. The reloaded list brings new rows without the mark.
+    // status column's pill spins too, and the pills say what is happening ("stopping"). The
+    // reloaded list brings new rows without the mark.
+    const BUSY = { start: 'starting', stop: 'stopping', restart: 'restarting', pause: 'pausing', resume: 'resuming' };
     if (typeof window.eventControl === 'function' && !window.eventControl.tpBusy) {
       const eventControl = window.eventControl;
       window.eventControl = function (params, spin) {
-        if (spin && params) markBusy(params.container);
+        if (spin && params) markBusy(params.container, params.action);
         return eventControl.apply(this, arguments);
       };
       window.eventControl.tpBusy = true;
     }
-    function markBusy(id) {
+    function markBusy(id, action) {
       const trigger = id ? document.getElementById(id) : null;
       const row = trigger && trigger.closest('tr');
-      if (row) row.classList.add('tp-busy');
+      if (!row) return;
+      row.classList.add('tp-busy');
+      if (BUSY[action]) row.querySelectorAll('.tp-pill, .inner > span.state').forEach(function (pill) { pill.textContent = BUSY[action]; });
     }
 
     if (canCompact) {
@@ -1242,7 +1246,7 @@
         chain = chain.then(function () {
           if (!key) {
             jq(document.getElementById(id)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
-            markBusy(id);
+            markBusy(id, action);
           }
           return new Promise(function (resolve) { jq.post(window.eventURL, { action: action, [key || 'container']: id }).always(resolve); });
         });
@@ -3400,6 +3404,29 @@
       return rows;
     }
 
+    // While a VM starts, stops or restarts, Unraid's ajaxVMDispatch spins its state icon, and
+    // the pill beside it spins too (enhance.css); the pill also says what is happening
+    // ("stopping") until the list is loaded again.
+    const BUSY = {
+      'domain-start': 'starting', 'domain-start-console': 'starting', 'domain-stop': 'stopping', 'domain-destroy': 'stopping',
+      'domain-restart': 'restarting', 'domain-pause': 'pausing', 'domain-resume': 'resuming', 'domain-pmwakeup': 'resuming',
+      'domain-pmsuspend': 'suspending',
+    };
+    ['ajaxVMDispatch', 'ajaxVMDispatchconsole', 'ajaxVMDispatchconsoleRV'].forEach(function (name) {
+      const dispatch = window[name];
+      if (typeof dispatch !== 'function' || dispatch.tpBusy) return;
+      window[name] = function (params, spin) {
+        if (spin && params) markBusy(params.uuid, params.action);
+        return dispatch.apply(this, arguments);
+      };
+      window[name].tpBusy = true;
+    });
+    function markBusy(uuid, action) {
+      const trigger = uuid ? document.getElementById('vm-' + uuid) : null;
+      const state = trigger && trigger.parentElement.querySelector('.inner > span.state');
+      if (state && BUSY[action]) state.textContent = BUSY[action];
+    }
+
     // Starts or stops several VMs one after another, then lets Unraid reload the list once.
     // Each VM's icon spins while it is being started or stopped, as with Unraid's own buttons.
     function runAll(action, items) {
@@ -3410,6 +3437,7 @@
       items.forEach(function (item) {
         chain = chain.then(function () {
           jq(document.getElementById('vm-' + item.uuid)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
+          markBusy(item.uuid, action);
           return new Promise(function (resolve) { jq.post('/plugins/dynamix.vm.manager/include/VMajax.php', { action: action, uuid: item.uuid }).always(resolve); });
         });
       });
