@@ -353,11 +353,29 @@ button.tp-fv-beta.tp-fv-conflict > .fa,
     color: var(--tp-warn-text, var(--orange-300));
 }
 
-/* The pill's dot replaces the play / stop icon; the spinner shown while a state changes stays. */
+/* The pill's dot replaces the play / stop icon. */
 .tp-enhance:where(:not(.tp-fvplus)) .inner > i.started:has(~ span.state),
 .tp-enhance:where(:not(.tp-fvplus)) .inner > i.stopped:has(~ span.state),
 .tp-enhance:where(:not(.tp-fvplus)) .inner > i.paused:has(~ span.state) {
     display: none;
+}
+
+/* While a container or VM starts, stops or restarts, Unraid turns its icon into a spinner (the
+   icon keeps its started / stopped class, so it stays hidden): the pill takes the accent colour
+   and its dot spins as a ring until the list is loaded again. */
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state {
+    color: var(--tp-primary, var(--link-text-color));
+    background-color: var(--tp-primary-soft, var(--mild-background-color));
+}
+
+.tp-enhance:where(:not(.tp-fvplus)) .inner > i.fa-spin ~ span.state:before {
+    box-sizing: border-box;
+    width: 9px;
+    height: 9px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    background: none;
+    animation: fa-spin 0.8s linear infinite;
 }
 
 /* ---- Docker list: hidden until it is grouped, so it never flashes in Unraid's plain order.

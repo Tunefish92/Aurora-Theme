@@ -1214,7 +1214,8 @@
     const store = groupStore('docker', render, function () { if (!folderView) saveUnraidOrder('docker', list); });
 
     // Starts or stops several containers (or removes images, with key "image") one after
-    // another, then lets Unraid reload the list once.
+    // another, then lets Unraid reload the list once. Each container's icon spins while it is
+    // being started or stopped, as with Unraid's own buttons.
     function runAll(action, ids, key) {
       const jq = window.jQuery;
       if (!jq || !window.eventURL || !ids.length) return;
@@ -1222,6 +1223,7 @@
       let chain = Promise.resolve();
       ids.forEach(function (id) {
         chain = chain.then(function () {
+          if (!key) jq(document.getElementById(id)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
           return new Promise(function (resolve) { jq.post(window.eventURL, { action: action, [key || 'container']: id }).always(resolve); });
         });
       });
@@ -3379,6 +3381,7 @@
     }
 
     // Starts or stops several VMs one after another, then lets Unraid reload the list once.
+    // Each VM's icon spins while it is being started or stopped, as with Unraid's own buttons.
     function runAll(action, items) {
       const jq = window.jQuery;
       if (!jq || !items.length) return;
@@ -3386,6 +3389,7 @@
       let chain = Promise.resolve();
       items.forEach(function (item) {
         chain = chain.then(function () {
+          jq(document.getElementById('vm-' + item.uuid)).parent().find('i').removeClass('fa-play fa-square fa-pause').addClass('fa-refresh fa-spin');
           return new Promise(function (resolve) { jq.post('/plugins/dynamix.vm.manager/include/VMajax.php', { action: action, uuid: item.uuid }).always(resolve); });
         });
       });
