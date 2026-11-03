@@ -106,9 +106,19 @@ _(Check and install)_:
   </select></span>
 
 > When the plugin looks for a newer release on GitHub and installs it: once a week (the default)
-> or a day at the chosen time (the server's time), or every hour. Each update shows an Unraid
-> notification, and the next page you open shows what changed; every check is noted in the
-> system log.
+> or a day at the chosen time (the server's time), or every hour. The next page you open after
+> an update shows what changed; every check is noted in the system log.
+
+_(Update notifications)_:
+: <select name="autoupdate_notify">
+  <?=mk_option($aurora['autoupdate_notify'] ?? 'all', "all", _("Updates and failures"))?>
+  <?=mk_option($aurora['autoupdate_notify'] ?? 'all', "failed", _("Failures only"))?>
+  <?=mk_option($aurora['autoupdate_notify'] ?? 'all', "none", _("None"))?>
+  </select>
+
+> Which automatic updates show an Unraid notification: each installed update and each one that
+> failed (the default), only the failed ones, or none. The "Aurora Theme updated" window on the
+> next page is shown either way.
 
 <input type="hidden" name="#command" value="/plugins/Aurora-Theme/scripts/schedule.php">
 <script>

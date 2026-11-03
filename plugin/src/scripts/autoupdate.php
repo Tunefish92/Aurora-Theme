@@ -4,7 +4,8 @@
 // the settings page (scripts/schedule.php writes that entry).
 // When "Automatic updates" is on, it installs the newest GitHub release if it is newer than
 // the installed version, the same way the settings page's "Update now" button does. Either way
-// Unraid shows a notification (a warning when it failed); after an update, the next webGUI page
+// Unraid shows a notification (a warning when it failed), as far as "Update notifications"
+// (autoupdate_notify: all, failed, none) allows; after an update, the next webGUI page
 // also shows what changed (the install script's updated.json, marked here as automatic).
 // The outcome of the last check is kept in /var/lib/aurora-theme/autoupdate.json for that page.
 require '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
@@ -23,6 +24,10 @@ function finish(string $result, string $message, string $version = ''): void
 
 function notify(string $subject, string $description, string $level): void
 {
+    $wanted = aurora_setting('autoupdate_notify');
+    if ($wanted === 'none' || ($wanted === 'failed' && $level !== 'warning')) {
+        return;
+    }
     $notify = '/usr/local/emhttp/webGui/scripts/notify';
     if (is_executable($notify)) {
         exec($notify . ' -e ' . escapeshellarg('Aurora Theme') . ' -s ' . escapeshellarg($subject)
