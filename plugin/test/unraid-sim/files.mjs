@@ -2,7 +2,12 @@
 // order, Docker's autostart list, the plugins' order, folder and start-order files, Aurora's groups.
 import fs from 'node:fs';
 import path from 'node:path';
+/** A file's text, or null when it cannot be read. */
 const read = file => { try { return fs.readFileSync(file, 'utf8'); } catch { return null; } };
+/**
+ * The current text of every file that holds an order or autostart setting, by name, so both runs
+ * can be compared.
+ */
 export function orderFiles() {
     const files = {
         'unraid order': '/boot/config/plugins/dockerMan/userprefs.cfg',

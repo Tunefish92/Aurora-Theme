@@ -24,7 +24,9 @@ const fv3 = requireCheckout('FV3', 'src/folder.view3/usr/local/emhttp/plugins/fo
 const auroraPage = fs.readFileSync(path.join(repo, 'plugin/src/AuroraTheme.page'), 'utf8');
 const auroraViewScript = auroraPage.match(/<\?php if \(\$auroraDockerView === 'aurora'\): \?>\s*([\s\S]*?)<\?php endif; \?>/)[1];
 
-// Aurora's groups as AuroraTheme.page hands them over: two Docker groups and one VM group.
+/**
+ * Aurora's groups as AuroraTheme.page hands them over: two Docker groups and one VM group.
+ */
 const groupsHead = scenario => '<script>window.auroraDockerGroups = '
     + JSON.stringify([{ name: 'Media', containers: ['fixture-app-1', 'fixture-app-2', 'fixture-app-3'] }, { name: 'Tools', containers: ['fixture-app-4', 'fixture-app-5'] }])
     + '; window.auroraVmGroups = ' + JSON.stringify([{ name: 'Desktops', containers: ['fixture-vm-0', 'fixture-vm-1'] }])

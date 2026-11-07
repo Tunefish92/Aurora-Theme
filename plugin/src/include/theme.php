@@ -19,6 +19,10 @@ const AURORA_THEME_LOCK = AURORA_THEME_DIR . '/theme.lock';
 // A snapshot older than this is not used to put keys back: the user may have changed things since.
 const AURORA_SNAPSHOT_MAX_AGE = 120;
 
+/**
+ * Ends the request with an HTTP error status and a JSON {error} message for the theme switch to
+ * show.
+ */
 function aurora_fail(int $status, string $message): void
 {
     http_response_code($status);
@@ -41,7 +45,9 @@ function aurora_read_cfg(): ?array
     return null;
 }
 
-// Values are written back as read (INI_SCANNER_RAW), quoted like Unraid's own write_ini_file.
+/**
+ * Values are written back as read (INI_SCANNER_RAW), quoted like Unraid's own write_ini_file.
+ */
 function aurora_ini_value($value): string
 {
     return '"' . $value . '"';

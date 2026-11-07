@@ -21,6 +21,10 @@
     Tools: ['Maintenance', 'Diagnostics, system information and maintenance utilities.'],
   };
 
+  /**
+   * Creates an element with an optional class and text; the shorthand every enhancer builds its
+   * markup with.
+   */
   function element(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -28,6 +32,9 @@
     return node;
   }
 
+  /**
+   * Creates a round icon-only button whose label doubles as its tooltip and its accessible name.
+   */
   function iconButton(icon, label, onClick, extraClass) {
     const button = element('button', 'tp-icon-button' + (extraClass ? ' ' + extraClass : ''));
     button.type = 'button';
@@ -38,9 +45,11 @@
     return button;
   }
 
-  // FolderView (folder.view, .view2, .view3) arranges the Docker list and the Dashboard's Docker
-  // tile, unless the switch above the Docker list is set to the theme's view (AuroraTheme.page
-  // then keeps FolderView out of the list).
+  /**
+   * FolderView (folder.view, .view2, .view3) arranges the Docker list and the Dashboard's Docker
+   * tile, unless the switch above the Docker list is set to the theme's view (AuroraTheme.page
+   * then keeps FolderView out of the list).
+   */
   function folderViewActive() {
     const view = window.auroraDockerView;
     if (folderViewPlus()) return true;
@@ -48,9 +57,11 @@
     return Boolean(document.querySelector('script[src*="/folder.view"]'));
   }
 
-  // FolderView Plus (folderview.plus) owns its lists outright: the theme leaves its folders, rows
-  // and chips alone (no view switch, no clicks taken over, nothing moved or rewritten) and keeps
-  // to colours and layout. AuroraTheme.page tells when it is installed; its scripts tell too.
+  /**
+   * FolderView Plus (folderview.plus) owns its lists outright: the theme leaves its folders, rows
+   * and chips alone (no view switch, no clicks taken over, nothing moved or rewritten) and keeps
+   * to colours and layout. AuroraTheme.page tells when it is installed; its scripts tell too.
+   */
   function folderViewPlus() {
     const view = window.auroraDockerView;
     return Boolean((view && view.plus) || document.querySelector('script[src*="/plugins/folderview.plus/"]'));
@@ -63,6 +74,10 @@
   // its icon is clicked. The strip is only rebuilt when the apps or their states change.
   //   apps: [{ name, src, state: 'running' | 'paused' | 'stopped', update, target }]
   const STRIP_ORDER = { running: 0, paused: 1, stopped: 2 };
+  /**
+   * Draws a strip of app icons (a group's or a folder's members) with at most max icons, apps with
+   * an update first. A click on an icon opens that app's own menu.
+   */
   function appStrip(strip, list, max) {
     // Apps with an update first, so the limit never hides their dot; then running, paused, stopped.
     const apps = list.slice().sort(function (a, b) { return (b.update ? 1 : 0) - (a.update ? 1 : 0) || STRIP_ORDER[a.state] - STRIP_ORDER[b.state]; });
@@ -96,9 +111,11 @@
     strip.hidden = !apps.length;
   }
 
-  // A click (or Enter) on an icon of a strip: the click is passed on to the app's own element,
-  // at the icon's position, so its menu opens there, and it goes no further (the strip sits
-  // inside a group's header or chip, which would open or close the group).
+  /**
+   * A click (or Enter) on an icon of a strip: the click is passed on to the app's own element,
+   * at the icon's position, so its menu opens there, and it goes no further (the strip sits
+   * inside a group's header or chip, which would open or close the group).
+   */
   function openFromStrip(event) {
     if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
     const icon = event.target.closest('.tp-app-icon');
@@ -113,15 +130,19 @@
     }));
   }
 
-  // ---- Application groups: named sets of containers (type 'docker') or VMs (type 'vm'),
-  // shown as collapsible sections on the Docker and VMs tabs and on the Dashboard. Stored on the
-  // server (include/docker-groups.php) so every browser sees the same groups, in the order they
-  // are arranged in; members are kept by name, in "containers" for both kinds.
+  /**
+   * ---- Application groups: named sets of containers (type 'docker') or VMs (type 'vm'),
+   * shown as collapsible sections on the Docker and VMs tabs and on the Dashboard. Stored on the
+   * server (include/docker-groups.php) so every browser sees the same groups, in the order they
+   * are arranged in; members are kept by name, in "containers" for both kinds.
+   */
   function validGroups(list) {
     return Array.isArray(list) ? list.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); }) : [];
   }
 
-  // Which sections are collapsed, remembered per browser (shared by the tab and the Dashboard).
+  /**
+   * Which sections are collapsed, remembered per browser (shared by the tab and the Dashboard).
+   */
   function collapsedState(storageKey) {
     const read = function () {
       try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (error) { return []; }
@@ -136,8 +157,10 @@
     };
   }
 
-  // changed() redraws after the groups changed; saved(), if given, runs after a change was
-  // drawn (the tabs save Unraid's order there, see saveUnraidOrder).
+  /**
+   * changed() redraws after the groups changed; saved(), if given, runs after a change was
+   * drawn (the tabs save Unraid's order there, see saveUnraidOrder).
+   */
   function groupStore(type, changed, saved) {
     const url = PLUGIN_BASE + '/include/docker-groups.php' + (type === 'vm' ? '?type=vm' : '');
     const noun = type === 'vm' ? 'VMs' : 'containers';
@@ -280,12 +303,14 @@
     return store;
   }
 
-  // A section's header row on the Docker or VMs tab: open / close with the name and count, the
-  // members' icons, and buttons to start or stop the whole section, move the group up or down,
-  // rename or delete it (the last four not for "Ungrouped"). The row's tpItems are the section's
-  // members ({ name, running, paused }), set by the tab on every refresh.
-  //   options: { noun ('container' / 'VM'), onToggle(), start(stopped items), stop(running items), load,
-  //              removeAll(items): a "Remove all" button instead of start and stop (Docker's orphan images) }
+  /**
+   * A section's header row on the Docker or VMs tab: open / close with the name and count, the
+   * members' icons, and buttons to start or stop the whole section, move the group up or down,
+   * rename or delete it (the last four not for "Ungrouped"). The row's tpItems are the section's
+   * members ({ name, running, paused }), set by the tab on every refresh.
+   *   options: { noun ('container' / 'VM'), onToggle(), start(stopped items), stop(running items), load,
+   *              removeAll(items): a "Remove all" button instead of start and stop (Docker's orphan images) }
+   */
   function sectionHeader(store, group, options) {
     const row = element('tr', 'tp-group');
     const cell = element('td');
@@ -350,14 +375,20 @@
     return row;
   }
 
-  // Unraid's lock button (in the menu) turns rearranging the Docker and VM lists on and off and
-  // remembers "unlocked" in its lockbutton cookie. The groups' move controls (grip, up, down)
-  // follow it: html.tp-unlocked is set while the lists can be rearranged (enhance.css shows the
-  // controls only then).
+  /**
+   * Unraid's lock button (in the menu) turns rearranging the Docker and VM lists on and off and
+   * remembers "unlocked" in its lockbutton cookie. The groups' move controls (grip, up, down)
+   * follow it: html.tp-unlocked is set while the lists can be rearranged (enhance.css shows the
+   * controls only then).
+   */
   function listsUnlocked() {
     return /(?:^|;\s*)lockbutton=/.test(document.cookie);
   }
 
+  /**
+   * Keeps the root class tp-unlocked in step with Unraid's lock button on the Docker and VMs pages,
+   * so drag handles show only while the list is unlocked.
+   */
   function lockState() {
     const sync = function () { document.documentElement.classList.toggle('tp-unlocked', listsUnlocked()); };
     sync();
@@ -375,8 +406,10 @@
     }
   }
 
-  // Moves a group by dragging its header's grip (mouse, pen or touch) above or below another
-  // group; its members move with it. A line shows where it will go. "Ungrouped" stays last.
+  /**
+   * Moves a group by dragging its header's grip (mouse, pen or touch) above or below another
+   * group; its members move with it. A line shows where it will go. "Ungrouped" stays last.
+   */
   function dragGroup(row, grip, store) {
     grip.addEventListener('pointerdown', function (event) {
       if (event.button !== 0 || !listsUnlocked()) return;
@@ -437,7 +470,9 @@
     });
   }
 
-  // Fills in a section header: name, count, icons, open or closed, and which move buttons work.
+  /**
+   * Fills in a section header: name, count, icons, open or closed, and which move buttons work.
+   */
   function updateSectionHeader(header, section, options) {
     const running = section.items.filter(function (item) { return item.running; }).length;
     const setText = function (node, text) { if (node.textContent !== text) node.textContent = text; };
@@ -454,9 +489,11 @@
     }
   }
 
-  // Unraid's own order of the Docker or VM list: the one its lock button lets you drag, which is
-  // also the order the containers start in and the Dashboard shows. Saved from the list as it now
-  // stands (sections and all), the way Unraid's drag and drop saves it.
+  /**
+   * Unraid's own order of the Docker or VM list: the one its lock button lets you drag, which is
+   * also the order the containers start in and the Dashboard shows. Saved from the list as it now
+   * stands (sections and all), the way Unraid's drag and drop saves it.
+   */
   function saveUnraidOrder(type, list) {
     const jq = window.jQuery;
     if (!jq || !list) return;
@@ -470,10 +507,12 @@
     });
   }
 
-  // Unraid's drag and drop keeps a dragged row within the list's rows. A row taller than the
-  // first one (a FolderView folder) then never gets far enough up to go before it, so the
-  // dragged row may also move over the table's header. Applied whenever Unraid's lock button
-  // turns dragging on (and at once if it already is).
+  /**
+   * Unraid's drag and drop keeps a dragged row within the list's rows. A row taller than the
+   * first one (a FolderView folder) then never gets far enough up to go before it, so the
+   * dragged row may also move over the table's header. Applied whenever Unraid's lock button
+   * turns dragging on (and at once if it already is).
+   */
   function roomToDragToTop(list) {
     const jq = window.jQuery;
     const table = list.closest('table');
@@ -485,11 +524,13 @@
     widen();
   }
 
-  // Unraid's drag and drop (unlocked with the lock button in the menu) moves a row and saves the
-  // order itself. Dropped in another group's section, the container or VM joins that group (or
-  // leaves its group in "Ungrouped"); the section is read right at the drop, before the list is
-  // laid out again. While a row is dragged, list.tpSorting is set and the tab leaves the list
-  // alone (its placeholder row would be moved away); redraw() runs once the row is dropped.
+  /**
+   * Unraid's drag and drop (unlocked with the lock button in the menu) moves a row and saves the
+   * order itself. Dropped in another group's section, the container or VM joins that group (or
+   * leaves its group in "Ungrouped"); the section is read right at the drop, before the list is
+   * laid out again. While a row is dragged, list.tpSorting is set and the tab leaves the list
+   * alone (its placeholder row would be moved away); redraw() runs once the row is dropped.
+   */
   function dropIntoSections(list, store, nameOfRow, ungroupedKey, redraw) {
     const jq = window.jQuery;
     if (!jq) return;
@@ -512,9 +553,11 @@
   }
 
 
-  // Opens Unraid's menu for a container or VM (the click on its icon) from a button at the end of
-  // its row. Unraid opens the menu at the click's position and does not keep it on screen, so the
-  // click is placed left of the button: the menu then ends at the button instead of past the edge.
+  /**
+   * Opens Unraid's menu for a container or VM (the click on its icon) from a button at the end of
+   * its row. Unraid opens the menu at the click's position and does not keep it on screen, so the
+   * click is placed left of the button: the menu then ends at the button instead of past the edge.
+   */
   function openMenuFrom(trigger, button) {
     const box = button.getBoundingClientRect();
     trigger.dispatchEvent(new MouseEvent('click', {
@@ -523,9 +566,11 @@
     }));
   }
 
-  // Opens a container's web interface the way Unraid's own context menu does (window.open).
-  // The element is a link without href: Unraid shows its "external link" warning for real
-  // links to other addresses, but not for its menu, so the WebUI buttons behave like the menu.
+  /**
+   * Opens a container's web interface the way Unraid's own context menu does (window.open).
+   * The element is a link without href: Unraid shows its "external link" warning for real
+   * links to other addresses, but not for its menu, so the WebUI buttons behave like the menu.
+   */
   function webuiOpener(node, url) {
     node.setAttribute('role', 'link');
     node.tabIndex = 0;
@@ -540,6 +585,10 @@
     return node;
   }
 
+  /**
+   * Returns a function that runs fn once, 150 ms after the last of a burst of calls; for observers
+   * that fire on every small change.
+   */
   function debounce(fn) {
     let timer;
     return function () {
@@ -548,9 +597,11 @@
     };
   }
 
-  // Unraid passes each container's details to its context menu in the icon's onclick call:
-  // addDockerContainerContext(name, image, template, started, paused, update, autostart, webui, ...).
-  // The arguments are read as text; nothing from the attribute is executed.
+  /**
+   * Unraid passes each container's details to its context menu in the icon's onclick call:
+   * addDockerContainerContext(name, image, template, started, paused, update, autostart, webui, ...).
+   * The arguments are read as text; nothing from the attribute is executed.
+   */
   function contextArguments(trigger) {
     const call = (trigger && trigger.getAttribute('onclick')) || '';
     const inner = call.slice(call.indexOf('(') + 1, call.lastIndexOf(')'));
@@ -563,11 +614,13 @@
     return values;
   }
 
-  // Themed dialog, used instead of the browser's prompt / confirm / alert boxes.
-  //   modal({ title, message, input: { value, placeholder, maxLength }, validate, confirmLabel, cancelLabel, danger, hideCancel })
-  // message may be a list of paragraphs.
-  // Resolves with the entered text (or true when there is no input), or null when cancelled.
-  // validate(text) may return a message to show under the input and keep the dialog open.
+  /**
+   * Themed dialog, used instead of the browser's prompt / confirm / alert boxes.
+   *   modal({ title, message, input: { value, placeholder, maxLength }, validate, confirmLabel, cancelLabel, danger, hideCancel })
+   * message may be a list of paragraphs.
+   * Resolves with the entered text (or true when there is no input), or null when cancelled.
+   * validate(text) may return a message to show under the input and keep the dialog open.
+   */
   function modal(options) {
     return new Promise(function (resolve) {
       const previousFocus = document.activeElement;
@@ -607,12 +660,20 @@
       box.append(actions);
       backdrop.append(box);
 
+      /**
+       * Closes the dialog, gives the focus back to where it was and resolves the dialog's promise
+       * with result (null when cancelled).
+       */
       function close(result) {
         document.removeEventListener('keydown', onKey, true);
         backdrop.remove();
         if (previousFocus && previousFocus.focus) previousFocus.focus();
         resolve(result);
       }
+      /**
+       * Confirms the dialog: without a text field it resolves true, else it checks the entered text
+       * with options.validate and shows the problem instead of closing.
+       */
       function accept() {
         if (!input) return close(true);
         const text = input.value.trim();
@@ -624,6 +685,10 @@
         }
         close(text);
       }
+      /**
+       * Keyboard handling while the dialog is open: Escape cancels, Enter confirms, Tab keeps the
+       * focus inside the dialog.
+       */
       function onKey(event) {
         if (event.key === 'Escape') {
           event.stopPropagation();
@@ -661,7 +726,9 @@
     });
   }
 
-  // "Tower/DisplaySettings" in the page title gives the server name and the page name.
+  /**
+   * "Tower/DisplaySettings" in the page title gives the server name and the page name.
+   */
   function pageInfo() {
     const titleParts = document.title.split('/');
     const active = document.querySelector('#menu .nav-item.active a');
@@ -684,7 +751,9 @@
     };
   }
 
-  // Slim top bar: breadcrumb on the left, with the array state mirrored from the footer.
+  /**
+   * Slim top bar: breadcrumb on the left, with the array state mirrored from the footer.
+   */
   function topBar(info) {
     const header = document.getElementById('header');
     if (!header || !info.tab || header.querySelector('.tp-crumb')) return;
@@ -698,6 +767,10 @@
     if (!status) return;
     const pill = element('span', 'tp-pill');
     crumb.append(pill);
+    /**
+     * Copies Unraid's array status text into the pill in the top bar, green for started and amber
+     * for stopped or a problem.
+     */
     function mirror() {
       const text = status.textContent.trim();
       pill.hidden = !text;
@@ -708,14 +781,16 @@
     mirror();
   }
 
-  // Top right: a sun / moon switch between the Black and White Dynamix themes. The choice is a
-  // server setting, saved in two places so it holds on every page and in every browser:
-  //   1. dynamix.cfg, through include/theme.php, which changes only the theme key;
-  //   2. the Unraid API's own copy (customization.setTheme), when the API is running, because
-  //      the API can otherwise write its older value back.
-  // The API rewrites dynamix.cfg itself a moment later, so theme.php is asked once more to check
-  // that nothing went missing in between and to put back anything that did (issue #22).
-  // The page reloads once the server has answered. Other Dynamix themes do not show the switch.
+  /**
+   * Top right: a sun / moon switch between the Black and White Dynamix themes. The choice is a
+   * server setting, saved in two places so it holds on every page and in every browser:
+   *   1. dynamix.cfg, through include/theme.php, which changes only the theme key;
+   *   2. the Unraid API's own copy (customization.setTheme), when the API is running, because
+   *      the API can otherwise write its older value back.
+   * The API rewrites dynamix.cfg itself a moment later, so theme.php is asked once more to check
+   * that nothing went missing in between and to put back anything that did (issue #22).
+   * The page reloads once the server has answered. Other Dynamix themes do not show the switch.
+   */
   function themeSwitch() {
     const root = document.documentElement;
     const dark = root.classList.contains('Theme--black');
@@ -728,7 +803,9 @@
     button.setAttribute('aria-label', button.title);
     button.append(element('i', 'fa ' + (dark ? 'fa-moon-o' : 'fa-sun-o')));
 
-    // step "save" changes the theme; step "verify" puts back keys lost since "save".
+    /**
+     * step "save" changes the theme; step "verify" puts back keys lost since "save".
+     */
     function saveConfig(theme, step) {
       const body = new URLSearchParams({ theme: theme, step: step, csrf_token: window.csrf_token || '' });
       return fetch(PLUGIN_BASE + '/include/theme.php', { method: 'POST', credentials: 'same-origin', body: body })
@@ -741,7 +818,9 @@
         });
     }
 
-    // The Unraid API keeps a copy of the theme; it is told too when it is reachable.
+    /**
+     * The Unraid API keeps a copy of the theme; it is told too when it is reachable.
+     */
     function saveApi(theme) {
       if (!window.apolloClient || !window.gql) return Promise.resolve(false);
       const mutation = window.gql('mutation setTheme($theme: ThemeName!) { customization { setTheme(theme: $theme) { name } } }');
@@ -752,7 +831,9 @@
       return Promise.race([call, new Promise(function (resolve) { setTimeout(function () { resolve(true); }, 4000); })]);
     }
 
-    // Gives the API time to write its copy of dynamix.cfg before it is checked.
+    /**
+     * Gives the API time to write its copy of dynamix.cfg before it is checked.
+     */
     function settle(apiCalled) {
       return new Promise(function (resolve) { setTimeout(resolve, apiCalled ? 1500 : 0); });
     }
@@ -795,6 +876,10 @@
     let pointerOn = false;
     button.addEventListener('pointerenter', function () { pointerOn = true; });
     button.addEventListener('pointerleave', function () { pointerOn = false; place(); });
+    /**
+     * Puts the theme switch first in Unraid's profile row, again after the component redraws, but
+     * never while the pointer is on it.
+     */
     function place() {
       const profile = document.getElementById('UserProfile');
       if (!profile || pointerOn) return;
@@ -806,8 +891,10 @@
     new MutationObserver(place).observe(document.getElementById('header') || document.body, { childList: true, subtree: true });
   }
 
-  // Sidebar: which server this browser is connected to. Only its name; the address is in the
-  // browser's own address bar (and the card's tooltip).
+  /**
+   * Sidebar: which server this browser is connected to. Only its name; the address is in the
+   * browser's own address bar (and the card's tooltip).
+   */
   function serverCard(info) {
     const menu = document.getElementById('menu');
     if (!menu || !info.server || menu.querySelector('.tp-server')) return;
@@ -819,6 +906,10 @@
     menu.prepend(block);
   }
 
+  /**
+   * Adds the heading above a page's content: the tab's eyebrow, the page title and a one-line
+   * description of the tab.
+   */
   function pageHeading(info) {
     const box = document.getElementById('displaybox');
     if (!box || !info.tab || box.querySelector('.tp-heading')) return;
@@ -835,12 +926,14 @@
     box.prepend(heading);
   }
 
-  // Docker and VMs tabs with a folder plugin (FolderView3, FolderView Plus): a "beta" chip in the
-  // top bar (next to the page heading where the top bar has no breadcrumb: top layout, narrow
-  // windows). A click explains that their support is not finished yet.
-  // With FolderView Plus and FolderView3 (or FolderView2) installed together, a warning instead,
-  // also on the Dashboard and the Plugins page: Plus does not support it (it pauses its folders,
-  // "safe mode", and asks to remove the other plugin), and Aurora then follows FolderView3.
+  /**
+   * Docker and VMs tabs with a folder plugin (FolderView3, FolderView Plus): a "beta" chip in the
+   * top bar (next to the page heading where the top bar has no breadcrumb: top layout, narrow
+   * windows). A click explains that their support is not finished yet.
+   * With FolderView Plus and FolderView3 (or FolderView2) installed together, a warning instead,
+   * also on the Dashboard and the Plugins page: Plus does not support it (it pauses its folders,
+   * "safe mode", and asks to remove the other plugin), and Aurora then follows FolderView3.
+   */
   function folderViewBeta(info) {
     const view = window.auroraDockerView || (window.auroraFolderViewConflict ? { folderView: true, both: true, name: window.auroraFolderViewConflict } : null);
     if (!(view && view.folderView) || info.subPage) return;
@@ -893,6 +986,10 @@
     if (heading && !heading.querySelector('.tp-fv-beta')) heading.append(chip());
   }
 
+  /**
+   * Creates or updates a row of summary tiles (label, value, note) such as the Docker tab's counts;
+   * a tile is only rewritten when its value changed.
+   */
   function summaryStrip(id, label, items) {
     let strip = document.getElementById(id);
     if (!strip) {
@@ -915,11 +1012,13 @@
     return strip;
   }
 
-  // Docker tab: totals, filter tabs and search above the container table, kept current as
-  // Unraid refreshes the rows.
-  // With FolderView installed: a switch between Aurora's view (columns, groups, filters) and
-  // FolderView's folders, for the Docker and VMs tabs alike. Stored on the server for every
-  // browser (include/docker-view.php); the page reloads to apply it. Null without FolderView.
+  /**
+   * Docker tab: totals, filter tabs and search above the container table, kept current as
+   * Unraid refreshes the rows.
+   * With FolderView installed: a switch between Aurora's view (columns, groups, filters) and
+   * FolderView's folders, for the Docker and VMs tabs alike. Stored on the server for every
+   * browser (include/docker-view.php); the page reloads to apply it. Null without FolderView.
+   */
   function folderViewSwitch() {
     if (!(window.auroraDockerView && window.auroraDockerView.folderView && PLUGIN_BASE) || folderViewPlus()) return null;
     const viewSwitch = element('div', 'tp-segment tp-view-switch');
@@ -970,8 +1069,10 @@
     return viewSwitch;
   }
 
-  // VMs tab: the same switch, beside the page's title: the "Virtual Machines" tab, or the
-  // title above the list when the page has no tabs (Display Settings).
+  /**
+   * VMs tab: the same switch, beside the page's title: the "Virtual Machines" tab, or the
+   * title above the list when the page has no tabs (Display Settings).
+   */
   function vmViewSwitch() {
     const table = document.getElementById('kvm_table');
     const viewSwitch = table && folderViewSwitch();
@@ -991,6 +1092,10 @@
     }
   }
 
+  /**
+   * Enhances the Docker tab: summary tiles, filters and search, the compact view with its extra
+   * columns, application groups, the Orphans section and the busy state of containers.
+   */
   function docker() {
     const table = document.getElementById('docker_containers');
     const list = document.getElementById('docker_list');
@@ -1030,6 +1135,10 @@
       };
       window.eventControl.tpBusy = true;
     }
+    /**
+     * Marks a container's row busy while it starts, stops or restarts: its pills spin and say what
+     * is happening, until the reloaded list replaces the row.
+     */
     function markBusy(id, action) {
       const trigger = id ? document.getElementById(id) : null;
       const row = trigger && trigger.closest('tr');
@@ -1045,9 +1154,11 @@
       });
     }
 
-    // Adds the image name, a status cell and an actions cell to one of Unraid's rows. The actions
-    // call the same functions as Unraid's own context menu. Rows are rebuilt on every refresh,
-    // so this runs again for each new row.
+    /**
+     * Adds the image name, a status cell and an actions cell to one of Unraid's rows. The actions
+     * call the same functions as Unraid's own context menu. Rows are rebuilt on every refresh,
+     * so this runs again for each new row.
+     */
     function decorate(row) {
       if (!canCompact || row.dataset.tpReady || row.children.length !== COLUMNS.length) return;
       row.dataset.tpReady = '1';
@@ -1234,9 +1345,11 @@
     const groupRows = new Map();
     const store = groupStore('docker', render, function () { if (!folderView) saveUnraidOrder('docker', list); });
 
-    // Starts or stops several containers (or removes images, with key "image") one after
-    // another, then lets Unraid reload the list once. Each container's icon spins while it is
-    // being started or stopped, as with Unraid's own buttons.
+    /**
+     * Starts or stops several containers (or removes images, with key "image") one after
+     * another, then lets Unraid reload the list once. Each container's icon spins while it is
+     * being started or stopped, as with Unraid's own buttons.
+     */
     function runAll(action, ids, key) {
       const jq = window.jQuery;
       if (!jq || !window.eventURL || !ids.length) return;
@@ -1257,6 +1370,10 @@
       });
     }
 
+    /**
+     * Returns the section header row of a group (or of Orphans), creating it on first use with that
+     * section's start, stop or remove buttons.
+     */
     function groupRow(key, group) {
       if (groupRows.has(key)) return groupRows.get(key);
       const onToggle = function () {
@@ -1279,7 +1396,9 @@
       return row;
     }
 
-    // "Remove all" in the Orphans section: Unraid's own "remove_image" for each, after asking.
+    /**
+     * "Remove all" in the Orphans section: Unraid's own "remove_image" for each, after asking.
+     */
     function removeImages(items) {
       modal({
         title: 'Remove ' + items.length + ' orphan ' + (items.length === 1 ? 'image' : 'images') + '?',
@@ -1291,7 +1410,9 @@
       });
     }
 
-    // Unraid's orphan image rows: the image's id (its icon's id), tags and icon.
+    /**
+     * Unraid's orphan image rows: the image's id (its icon's id), tags and icon.
+     */
     function orphanRows() {
       return [...list.querySelectorAll(':scope > tr > td span.hand[onclick*="addDockerImageContext"]')].map(function (trigger) {
         const row = trigger.closest('tr');
@@ -1311,15 +1432,19 @@
       });
     }
 
-    // Text is only written when it changed: writing inside the list wakes the refresh observer.
+    /**
+     * Text is only written when it changed: writing inside the list wakes the refresh observer.
+     */
     function setText(node, text) {
       if (node.textContent !== text) node.textContent = text;
     }
 
-    // Puts the section headers and their containers in order at the top of the list: the groups
-    // in their saved order, then "Ungrouped"; the containers in each section (and the whole list
-    // when there are no groups) in Unraid's order. Runs after every refresh, and moves nothing
-    // when the order is already right.
+    /**
+     * Puts the section headers and their containers in order at the top of the list: the groups
+     * in their saved order, then "Ungrouped"; the containers in each section (and the whole list
+     * when there are no groups) in Unraid's order. Runs after every refresh, and moves nothing
+     * when the order is already right.
+     */
     function layoutGroups(rows, orphans) {
       const sections = store.groups.map(function (group) {
         return { key: 'g:' + group.name, group: group, title: group.name, items: rows.filter(function (item) { return group.containers.includes(item.name); }) };
@@ -1394,12 +1519,15 @@
     // CPU values with two decimals ("0.00%", "1.50%") in the decimal mark Unraid uses for them
     // (Display Settings, Number format).
     let decimalMark = window.auroraDecimalMark === ',' ? ',' : '.';
+    /** Formats a CPU percentage with two decimals and the decimal mark from Display Settings. */
     function cpuText(value) {
       return value.toFixed(2).replace('.', decimalMark) + '%';
     }
-    // Unraid writes a container's CPU as "0%" or "1.5%" every few seconds; it is rewritten with
-    // two decimals like the groups' sums. Only text that differs is written, so the list's
-    // observer settles after one more pass.
+    /**
+     * Unraid writes a container's CPU as "0%" or "1.5%" every few seconds; it is rewritten with
+     * two decimals like the groups' sums. Only text that differs is written, so the list's
+     * observer settles after one more pass.
+     */
     function formatCpu(rows) {
       rows.forEach(function (item) {
         const cell = item.row.querySelector('[class^="cpu-"]');
@@ -1412,6 +1540,9 @@
       });
     }
 
+    /**
+     * Adds up the CPU and memory of a section's running containers, for the figures in its header.
+     */
     function sectionLoad(items) {
       let cpu = 0;
       let bytes = 0;
@@ -1443,10 +1574,12 @@
       return { cpu: cpuText(cpu), mem: bytes ? size(bytes) + (limit ? ' / ' + size(limit) : '') : '' };
     }
 
-    // FolderView: the list stays in FolderView's order (folders and containers where they were
-    // dragged to, an open folder's containers under it). A container right after a folder (or
-    // after an open folder's containers) is marked, so enhance.css can set the folder apart
-    // from it, and a long folder name gets its full name as the tooltip.
+    /**
+     * FolderView: the list stays in FolderView's order (folders and containers where they were
+     * dragged to, an open folder's containers under it). A container right after a folder (or
+     * after an open folder's containers) is marked, so enhance.css can set the folder apart
+     * from it, and a long folder name gets its full name as the tooltip.
+     */
     function arrangeFolders() {
       let afterFolder = false;
       [...list.children].forEach(function (row) {
@@ -1461,6 +1594,10 @@
       });
     }
 
+    /**
+     * Reads what the enhancer needs from one of Unraid's container rows: name, icon trigger, state,
+     * update and the cells it rearranges.
+     */
     function describe(row) {
       const name = row.querySelector('td.ct-name');
       const update = row.querySelector('td.updatecolumn');
@@ -1482,6 +1619,11 @@
       };
     }
 
+    /**
+     * Arranges the Docker list: every container under its group's header (Ungrouped and Orphans
+     * last), filters and search applied, group sums updated. Runs again on every refresh of the
+     * list.
+     */
     function render() {
       if (list.tpSorting) return;
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
@@ -1590,8 +1732,10 @@
       return setTimeout(function () { loadingText.textContent = step[1]; }, step[0]);
     });
 
-    // The list is ready once Unraid replaced its empty placeholder row with containers or with
-    // its "No Docker containers installed" row.
+    /**
+     * The list is ready once Unraid replaced its empty placeholder row with containers or with
+     * its "No Docker containers installed" row.
+     */
     function markReady() {
       if (list.classList.contains('tp-ready') || !(list.querySelector('td.ct-name') || list.textContent.trim())) return;
       list.classList.add('tp-ready');
@@ -1628,8 +1772,10 @@
     markReady();
   }
 
-  // Dashboard: uptime, CPU, memory and array at a glance, read from Unraid's own tiles and
-  // refreshed whenever Unraid updates those values.
+  /**
+   * Dashboard: uptime, CPU, memory and array at a glance, read from Unraid's own tiles and
+   * refreshed whenever Unraid updates those values.
+   */
   function dashboardSummary() {
     const grid = document.querySelector('#displaybox div.frame');
     if (!grid || !document.getElementById('db_box1')) return;
@@ -1640,6 +1786,10 @@
     const arrayHeader = document.querySelector('#array_list .tile-header-left .section > span');
     const memoryInfo = [...document.querySelectorAll('.head_info')].map(function (node) { return node.textContent; }).find(function (value) { return /Memory:/.test(value); }) || '';
 
+    /**
+     * Fills the server card's readings (uptime, CPU, memory, array use) from the values Unraid
+     * shows elsewhere on the page.
+     */
     function render() {
       const uptime = text('span.uptime');
       const uptimeParts = uptime.match(/^(\d+\s+\w+),?\s*(.*)$/);
@@ -1667,8 +1817,10 @@
     render();
   }
 
-  // Dashboard load charts are drawn by SmoothieCharts on a canvas, so CSS cannot colour them.
-  // Their options are adjusted once: theme colours, a thicker smooth line with a soft fill.
+  /**
+   * Dashboard load charts are drawn by SmoothieCharts on a canvas, so CSS cannot colour them.
+   * Their options are adjusted once: theme colours, a thicker smooth line with a soft fill.
+   */
   function dashboardCharts() {
     const styles = getComputedStyle(document.documentElement);
     const token = function (name, fallback) { return styles.getPropertyValue(name).trim() || fallback; };
@@ -1702,10 +1854,12 @@
     });
   }
 
-  // Dashboard, processor tile: Unraid fills it from the Unraid API's live feed only, so it shows
-  // 0% and N/A whenever that service is not running. When no figures have come after a few
-  // seconds, the plugin reads the processor counters itself and feeds them into the same
-  // functions the live feed uses. It steps back as soon as the API delivers.
+  /**
+   * Dashboard, processor tile: Unraid fills it from the Unraid API's live feed only, so it shows
+   * 0% and N/A whenever that service is not running. When no figures have come after a few
+   * seconds, the plugin reads the processor counters itself and feeds them into the same
+   * functions the live feed uses. It steps back as soon as the API delivers.
+   */
   function dashboardCpu() {
     const chart = window.cpuchart;
     if (!chart || typeof window.updateCPUBarCharts !== 'function' || !document.getElementById('cpu-total-power') || !PLUGIN_BASE) return;
@@ -1733,6 +1887,10 @@
       }
     };
 
+    /**
+     * Shows one CPU reading: per core and in total, worked out from the counters of this sample and
+     * the previous one.
+     */
     function show(sample) {
       if (!previous || !sample.total || !previous.total) return;
       const seconds = sample.t - previous.t;
@@ -1773,6 +1931,10 @@
       });
     }
 
+    /**
+     * Asks the server for the CPU counters while the Unraid API does not deliver them, skipping a
+     * turn while the tab is hidden or a request is still out.
+     */
     function poll() {
       if (apiDelivers()) {
         clearInterval(timer);
@@ -1804,17 +1966,19 @@
     }, 4000);
   }
 
-  // Docker tab and Dashboard: the container list is loaded again when Unraid's record of image
-  // updates changes while the page is open (include/docker-updates.php), so a container updated
-  // in the background (CA Auto Update, "Update All" in another tab, the scheduled check) no
-  // longer shows "update ready". Updates started on the page itself already reload the list
-  // when their dialog is closed; the record is read again after every list load, so those do
-  // not load it twice. Checked every 20 seconds while the page is visible, and when it is
-  // shown again.
-  // Never while a check or an update is still running (the server's "busy", or "checking..."
-  // in the list after "Check for Updates" here): the list would show half the results, and
-  // Unraid's list code running beside the check could save the old results over the new ones.
-  // It is then asked again after a few seconds.
+  /**
+   * Docker tab and Dashboard: the container list is loaded again when Unraid's record of image
+   * updates changes while the page is open (include/docker-updates.php), so a container updated
+   * in the background (CA Auto Update, "Update All" in another tab, the scheduled check) no
+   * longer shows "update ready". Updates started on the page itself already reload the list
+   * when their dialog is closed; the record is read again after every list load, so those do
+   * not load it twice. Checked every 20 seconds while the page is visible, and when it is
+   * shown again.
+   * Never while a check or an update is still running (the server's "busy", or "checking..."
+   * in the list after "Check for Updates" here): the list would show half the results, and
+   * Unraid's list code running beside the check could save the old results over the new ones.
+   * It is then asked again after a few seconds.
+   */
   function dockerUpdateWatch() {
     const list = document.getElementById('docker_list') || document.getElementById('docker_view');
     if (!list || typeof window.loadlist !== 'function') return;
@@ -1822,16 +1986,25 @@
     let known = null;
     let busy = false;
     let soon = 0;
+    /** Fetches the stamp of Docker's update status, or null when the answer cannot be used. */
     function read() {
       return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
         .then(function (response) { return response.ok ? response.json() : {}; })
         .then(function (data) { return typeof data.stamp === 'string' ? data : null; });
     }
+    /**
+     * True while reloading the list would interrupt something: an update check is running, a row is
+     * being dragged, or one of Unraid's dialogs is open.
+     */
     function waiting() {
       if (list.querySelector('.updatecolumn .fa-spin') || list.tpSorting) return true;
       const dialog = document.querySelector('.sweet-alert.showSweetAlert, .sweet-alert.visible');
       return Boolean(dialog && dialog.offsetParent !== null);
     }
+    /**
+     * Compares the update status with the one the list was drawn from and reloads the list when it
+     * changed and nothing is in progress (else tries again soon).
+     */
     function check() {
       if (busy || document.hidden) return;
       busy = true;
@@ -1862,8 +2035,10 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
   }
 
-  // Dashboard, Docker tile: an orange dot on the icon of every container with an update ready,
-  // running or not (issue #24). Unraid redraws the tile's chips on each refresh.
+  /**
+   * Dashboard, Docker tile: an orange dot on the icon of every container with an update ready,
+   * running or not (issue #24). Unraid redraws the tile's chips on each refresh.
+   */
   function dashboardUpdates() {
     const view = document.getElementById('docker_view');
     // FolderView Plus marks updates on its own tile.
@@ -1887,14 +2062,20 @@
     new MutationObserver(mark).observe(view, { childList: true, subtree: true });
   }
 
-  // Dashboard, Docker tile: a click on a container opens a dialog with its state and everything
-  // Unraid's small context menu offers, as large buttons. The buttons call Unraid's own functions.
+  /**
+   * Dashboard, Docker tile: a click on a container opens a dialog with its state and everything
+   * Unraid's small context menu offers, as large buttons. The buttons call Unraid's own functions.
+   */
   function dashboardContainers() {
     const view = document.getElementById('docker_view');
     // FolderView Plus handles clicks on its tile itself; Unraid's own menu stays.
     if (!view || folderViewPlus()) return;
     const safeUrl = function (url) { return /^https?:\/\//i.test(url || '') ? url : ''; };
 
+    /**
+     * Opens Aurora's container window for a Dashboard chip, from the arguments of Unraid's own menu
+     * call; false when the chip is not a container (a folder) or the arguments are missing.
+     */
     function open(chip) {
       // Only the chip's own icon: a FolderView folder holds its containers' chips inside it, and
       // a folder keeps its own menu (Expand, Stop, ...).
@@ -1936,11 +2117,16 @@
       head.append(icon, text, closeButton);
       box.append(head);
 
+      /** Closes the container window and gives the focus back to where it was. */
       function close() {
         document.removeEventListener('keydown', onKey, true);
         backdrop.remove();
         if (previousFocus && previousFocus.focus) previousFocus.focus();
       }
+      /**
+       * Creates one of the window's action buttons; a click closes the window, then runs the
+       * action.
+       */
       function button(iconName, label, run, kind) {
         const node = element('button', 'tp-ct-action' + (kind ? ' tp-ct-' + kind : ''));
         node.type = 'button';
@@ -1951,6 +2137,10 @@
         });
         return node;
       }
+      /**
+       * Creates one of the window's link buttons (WebUI, project page, support); WebUI links open
+       * the way Unraid's own menu opens them.
+       */
       function link(iconName, label, url, webui) {
         const node = element('a', 'tp-ct-action tp-ct-link');
         if (webui) webuiOpener(node, url);
@@ -1999,6 +2189,10 @@
       if (ct.donate) links.append(link('heart', 'Donate', ct.donate));
       if (links.children.length) box.append(element('h3', 'tp-ct-section', 'Links'), links);
 
+      /**
+       * Keyboard handling in the container window: Escape closes it, Tab keeps the focus among its
+       * buttons and links.
+       */
       function onKey(event) {
         if (event.key === 'Escape') {
           event.stopPropagation();
@@ -2059,10 +2253,12 @@
     }, true);
   }
 
-  // Dashboard, Processor tile: instead of a "Physical CPU n Power: ... Temperature: ..." line
-  // and a full-width row for every core, the cores are a grid of small tiles (number, load, bar)
-  // and power and temperature are chips. Unraid's own elements stay in place and keep being
-  // updated by Unraid; package lines without readings (N/A, -1) are hidden.
+  /**
+   * Dashboard, Processor tile: instead of a "Physical CPU n Power: ... Temperature: ..." line
+   * and a full-width row for every core, the cores are a grid of small tiles (number, load, bar)
+   * and power and temperature are chips. Unraid's own elements stay in place and keep being
+   * updated by Unraid; package lines without readings (N/A, -1) are hidden.
+   */
   function dashboardCores() {
     const total = document.getElementById('cpu-total-power');
     const tile = total && total.closest('tbody');
@@ -2146,9 +2342,11 @@
     });
   }
 
-  // Dashboard, System tile: Unraid draws its four rings in grey from a colour list in the page
-  // script. The list gets the theme's colours (RAM: system, free, VMs, Docker, ...), and the
-  // boot, log and Docker rings are drawn by the theme in a colour that follows the usage level.
+  /**
+   * Dashboard, System tile: Unraid draws its four rings in grey from a colour list in the page
+   * script. The list gets the theme's colours (RAM: system, free, VMs, Docker, ...), and the
+   * boot, log and Docker rings are drawn by the theme in a colour that follows the usage level.
+   */
   function dashboardMemory() {
     const charts = document.querySelector('.tile-system-memory-charts');
     if (!charts) return;
@@ -2183,12 +2381,14 @@
     });
   }
 
-  // Dashboard, GPU Statistics plugin (one tile per GPU, #tblGPUDash1, 2, ...): its title is loose
-  // text in the line below the icon, and vendor, driver and device sit in a little table of
-  // their own under the header. The title becomes the tile heading, the device follows it as one
-  // line, and load, temperature and processes become a short line under that; the readings get
-  // their layout in enhance.css. The plugin's script finds its values by class, so the elements
-  // are moved, not copied.
+  /**
+   * Dashboard, GPU Statistics plugin (one tile per GPU, #tblGPUDash1, 2, ...): its title is loose
+   * text in the line below the icon, and vendor, driver and device sit in a little table of
+   * their own under the header. The title becomes the tile heading, the device follows it as one
+   * line, and load, temperature and processes become a short line under that; the readings get
+   * their layout in enhance.css. The plugin's script finds its values by class, so the elements
+   * are moved, not copied.
+   */
   function dashboardGpu() {
     document.querySelectorAll('table.dashboard > tbody[id^="tblGPUDash"]:not(.tp-gpu)').forEach(function (tile) {
       const section = tile.querySelector('.tile-header-left > .section');
@@ -2250,9 +2450,11 @@
     });
   }
 
-  // Dashboard, Docker tile. With the theme's groups: see dashboardGroups. With FolderView's
-  // folders: the tile keeps FolderView's order, a line sets each folder apart from the
-  // containers after it, and each folder chip shows its apps' icons.
+  /**
+   * Dashboard, Docker tile. With the theme's groups: see dashboardGroups. With FolderView's
+   * folders: the tile keeps FolderView's order, a line sets each folder apart from the
+   * containers after it, and each folder chip shows its apps' icons.
+   */
   function dashboardDockerOrder() {
     const view = document.getElementById('docker_view');
     if (!view) return;
@@ -2307,13 +2509,17 @@
     arrange();
   }
 
-  // Dashboard, Virtual Machines tile: the theme's VM groups (not while FolderView arranges it).
+  /**
+   * Dashboard, Virtual Machines tile: the theme's VM groups (not while FolderView arranges it).
+   */
   function dashboardVmGroups() {
     const view = document.getElementById('vm_view');
     if (view && !folderViewActive()) dashboardGroups(view, 'vm');
   }
 
-  // A Dashboard chip's name: the container's name element, or the VM's name text.
+  /**
+   * A Dashboard chip's name: the container's name element, or the VM's name text.
+   */
   function chipName(chip) {
     const inner = chip.querySelector('.inner');
     const named = inner && inner.querySelector('.appname');
@@ -2321,14 +2527,18 @@
     return inner && inner.firstChild ? inner.firstChild.textContent.trim() : '';
   }
 
-  // Whether a Dashboard container chip has an image update ready (the "update" argument of its
-  // icon's addDockerContainerContext call is 1). VM chips have none.
+  /**
+   * Whether a Dashboard container chip has an image update ready (the "update" argument of its
+   * icon's addDockerContainerContext call is 1). VM chips have none.
+   */
   function chipUpdate(chip) {
     const trigger = chip.querySelector(':scope > span.hand[onclick*="addDockerContainerContext"]');
     return Boolean(trigger) && contextArguments(trigger)[5] === '1';
   }
 
-  // Dashboard chips as apps for an icon strip; a click on an icon is a click on the chip's icon.
+  /**
+   * Dashboard chips as apps for an icon strip; a click on an icon is a click on the chip's icon.
+   */
   function chipApps(chips) {
     return chips.map(function (chip) {
       const hand = chip.querySelector(':scope > span.hand');
@@ -2338,7 +2548,9 @@
     });
   }
 
-  // Long names end in "…" (enhance.css); the whole name is the tooltip.
+  /**
+   * Long names end in "…" (enhance.css); the whole name is the tooltip.
+   */
   function nameTooltips(cell) {
     cell.querySelectorAll('span.outer:not(.tp-group-chip) .inner').forEach(function (inner) {
       const name = chipName(inner.parentElement);
@@ -2346,10 +2558,12 @@
     });
   }
 
-  // Dashboard, Docker or Virtual Machines tile: the theme's groups as chips that open and close a
-  // panel with their members, in the groups' order and then "Ungrouped" (only while there are
-  // groups, as on the tabs); the members in Unraid's order. Each group chip shows its members'
-  // icons, which open their menus. Open and closed is shared with the tab.
+  /**
+   * Dashboard, Docker or Virtual Machines tile: the theme's groups as chips that open and close a
+   * panel with their members, in the groups' order and then "Ungrouped" (only while there are
+   * groups, as on the tabs); the members in Unraid's order. Each group chip shows its members'
+   * icons, which open their menus. Open and closed is shared with the tab.
+   */
   function dashboardGroups(view, type) {
     const kind = type === 'vm' ? 'vms' : 'apps';
     const noun = type === 'vm' ? 'VM' : 'container';
@@ -2449,11 +2663,13 @@
     arrange();
   }
 
-  // Dashboard, Virtual Machines Usage tile (VM Manager settings, "Show VM usage"): Unraid puts a
-  // running VM's icon, name and its five readings (guest and host CPU, memory, disk, network) in
-  // one small chip, where the values ran into each other. Each VM becomes a full card: icon and
-  // name on top, the readings in a grid below. Unraid rewrites the readings by their ids, so they
-  // are moved into the grid, not copied.
+  /**
+   * Dashboard, Virtual Machines Usage tile (VM Manager settings, "Show VM usage"): Unraid puts a
+   * running VM's icon, name and its five readings (guest and host CPU, memory, disk, network) in
+   * one small chip, where the values ran into each other. Each VM becomes a full card: icon and
+   * name on top, the readings in a grid below. Unraid rewrites the readings by their ids, so they
+   * are moved into the grid, not copied.
+   */
   function dashboardVmUsage() {
     const tile = document.getElementById('vm_view_usage');
     if (!tile) return;
@@ -2471,9 +2687,11 @@
     arrange();
   }
 
-  // Airflow tile: Unraid prints fan names and speeds as rows of three. They become one row of
-  // small cards that wraps only when there are more fans than fit. The speed elements are moved,
-  // not copied, so Unraid keeps updating them by their ids.
+  /**
+   * Airflow tile: Unraid prints fan names and speeds as rows of three. They become one row of
+   * small cards that wraps only when there are more fans than fit. The speed elements are moved,
+   * not copied, so Unraid keeps updating them by their ids.
+   */
   function dashboardFans() {
     const firstSpeed = document.querySelector('table.dashboard td > span[id^="fan"]');
     if (!firstSpeed) return;
@@ -2502,9 +2720,11 @@
     cell.replaceChildren(grid);
   }
 
-  // Unraid's "External Link" dialog puts the address, the checkbox and its label in one bold
-  // run of text. It is rearranged into an address box and a clickable label; the checkbox itself
-  // is moved, not replaced, so Unraid still reads it when OK is pressed.
+  /**
+   * Unraid's "External Link" dialog puts the address, the checkbox and its label in one bold
+   * run of text. It is rearranged into an address box and a clickable label; the checkbox itself
+   * is moved, not replaced, so Unraid still reads it when OK is pressed.
+   */
   function externalLinkDialog() {
     const arrange = function () {
       const box = document.getElementById('Link_Always_Allow');
@@ -2525,8 +2745,10 @@
     arrange();
   }
 
-  // Main menu: every tab gets its name as a tooltip, for the narrow top bar where tabs show only
-  // their icon. On phones, where the tabs scroll sideways, the open tab is scrolled into view.
+  /**
+   * Main menu: every tab gets its name as a tooltip, for the narrow top bar where tabs show only
+   * their icon. On phones, where the tabs scroll sideways, the open tab is scrolled into view.
+   */
   function navTitles() {
     document.querySelectorAll('#menu .nav-tile:not(.right) .nav-item a').forEach(function (link) {
       if (!link.title) link.title = link.textContent.trim();
@@ -2539,10 +2761,12 @@
     row.scrollLeft += a.left - r.left - (r.width - a.width) / 2;
   }
 
-  // Menu: Unraid's array usage bar (Display Settings, "Show array utilization indicator")
-  // becomes a widget at the start of the quick actions: a drive icon, "Array" with the
-  // percentage, and a thin bar in the usage colour Unraid chose (its warning and critical
-  // levels). It opens Main. Unraid's own bar stays in the page, hidden.
+  /**
+   * Menu: Unraid's array usage bar (Display Settings, "Show array utilization indicator")
+   * becomes a widget at the start of the quick actions: a drive icon, "Array" with the
+   * percentage, and a thin bar in the usage colour Unraid chose (its warning and critical
+   * levels). It opens Main. Unraid's own bar stays in the page, hidden.
+   */
   function usageBar() {
     const native = document.querySelector('#menu .nav-tile.right > .usage-bar');
     if (!native) return;
@@ -2587,8 +2811,10 @@
     wide.addEventListener('change', place);
   }
 
-  // Menu: when the next page takes a moment to arrive (Docker with many containers), "Opening
-  // Docker…" shows at the bottom so the click does not look missed. Quick pages never show it.
+  /**
+   * Menu: when the next page takes a moment to arrive (Docker with many containers), "Opening
+   * Docker…" shows at the bottom so the click does not look missed. Quick pages never show it.
+   */
   function navProgress() {
     let timer = 0;
     let notice = null;
@@ -2617,9 +2843,11 @@
     });
   }
 
-  // Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
-  // any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
-  // "No help on this page".
+  /**
+   * Help button: Unraid's button only shows or hides the page's help boxes, so on pages without
+   * any (Dashboard, Main, Docker, ...) a click did nothing. There it is dimmed, with the tooltip
+   * "No help on this page".
+   */
   function helpButton() {
     const items = [...document.querySelectorAll('.nav-item.HelpButton')];
     if (!items.length) return;
@@ -2647,10 +2875,12 @@
     }).observe(document.getElementById('displaybox') || document.body, { childList: true, subtree: true });
   }
 
-  // Tools pages: their help text is given a clearer structure. Paragraphs written all in
-  // italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
-  // warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
-  // lines (Credits) become rows. On Diagnostics the list of collected files becomes cards.
+  /**
+   * Tools pages: their help text is given a clearer structure. Paragraphs written all in
+   * italics or starting with "NOTE" become notes, warnings ("DO NOT ...", red text) become
+   * warning callouts, all-caps lines (the EULA's sections) become headings and "Name Copyright"
+   * lines (Credits) become rows. On Diagnostics the list of collected files becomes cards.
+   */
   function toolText(info) {
     if (info.tab !== 'Tools' || !location.pathname.split('/')[2]) return;
     const content = document.querySelector('#displaybox .content');
@@ -2673,7 +2903,9 @@
     diagnosticsList(content);
   }
 
-  // Diagnostics: "+ /config <br> copy all ..." in a pre block, rebuilt as one card per entry.
+  /**
+   * Diagnostics: "+ /config <br> copy all ..." in a pre block, rebuilt as one card per entry.
+   */
   function diagnosticsList(content) {
     const holder = content.querySelector('pre.pre > p');
     if (!holder || !/\/Diagnostics$/.test(location.pathname)) return;
@@ -2720,13 +2952,15 @@
     holder.closest('pre').replaceWith(grid);
   }
 
-  // Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
-  // the theme; a click on the dimmed backdrop closes it like its own close button. App names in
-  // the search field are not spell-checked (no red underline).
-  // Dashboard, Disk Location tile: each bay lists the colours of its drive's orbs (grey for an
-  // empty bay, green, yellow, red, blue) in data-tp-orbs, which theme.css tints the bay by.
-  // Asked with :has() in the stylesheet instead, every table cell on every page took part in
-  // each restyle (FolderView Plus's Docker list loaded half again as slowly).
+  /**
+   * Community Applications: its Change Log, Credits and Statistics view is shown as a modal by
+   * the theme; a click on the dimmed backdrop closes it like its own close button. App names in
+   * the search field are not spell-checked (no red underline).
+   * Dashboard, Disk Location tile: each bay lists the colours of its drive's orbs (grey for an
+   * empty bay, green, yellow, red, blue) in data-tp-orbs, which theme.css tints the bay by.
+   * Asked with :has() in the stylesheet instead, every table cell on every page took part in
+   * each restyle (FolderView Plus's Docker list loaded half again as slowly).
+   */
   function diskLocationBays() {
     const tile = document.getElementById('tblDiskLocation');
     if (!tile) return;
@@ -2740,14 +2974,20 @@
     });
   }
 
-  // Tables in the page content: a row whose first cell is bold (inline) is a section heading;
-  // theme.css styles its other cells by the class set here.
+  /**
+   * Tables in the page content: a row whose first cell is bold (inline) is a section heading;
+   * theme.css styles its other cells by the class set here.
+   */
   function sectionRows() {
     document.querySelectorAll('#displaybox table > tbody > tr > td:first-child[style*="bold"]').forEach(function (cell) {
       if (/font-weight:\s*bold/.test(cell.getAttribute('style'))) cell.parentElement.classList.add('tp-section-row');
     });
   }
 
+  /**
+   * Apps tab: no spell checking in the search field, and a click beside the app details overlay
+   * closes it like its close button.
+   */
   function caOverlay() {
     const search = document.getElementById('searchBox');
     if (search) search.spellcheck = false;
@@ -2760,8 +3000,10 @@
     });
   }
 
-  // Settings and Tools: a search field above the panels. Typing filters the panels by their
-  // name (and page name); sections without a match are hidden with them.
+  /**
+   * Settings and Tools: a search field above the panels. Typing filters the panels by their
+   * name (and page name); sections without a match are hidden with them.
+   */
   function panelSearch(info) {
     if (info.subPage || !/^(Settings|Tools)$/.test(info.tab)) return;
     const panels = [...document.querySelectorAll('#displaybox .Panels .Panel')];
@@ -2790,6 +3032,10 @@
     else firstTitle.before(wrap);
     (document.querySelector('.tp-fav-title') || firstTitle).before(empty);
 
+    /**
+     * Shows only the panels whose name contains every word typed, and hides sections left without a
+     * match.
+     */
     function filter() {
       const words = field.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
       let shown = 0;
@@ -2828,9 +3074,11 @@
     });
   }
 
-  // Settings and Tools: a "Favourites" section above the others. Each card gets a star; a starred
-  // card moves into Favourites and leaves its own section, and goes back to its old place when
-  // the star is removed. The list is kept on the flash drive, so it is the same in every browser.
+  /**
+   * Settings and Tools: a "Favourites" section above the others. Each card gets a star; a starred
+   * card moves into Favourites and leaves its own section, and goes back to its old place when
+   * the star is removed. The list is kept on the flash drive, so it is the same in every browser.
+   */
   function panelFavourites(info) {
     if (info.subPage || !/^(Settings|Tools)$/.test(info.tab)) return;
     // Favourites switched off in Display Settings.
@@ -2873,6 +3121,10 @@
 
     let favourites = [];
 
+    /**
+     * Updates every panel's star and copies the starred panels into the Favourites section, in the
+     * order they were starred.
+     */
     function place() {
       cards.forEach(function (card) {
         const starred = favourites.includes(card.key);
@@ -2902,6 +3154,10 @@
       document.dispatchEvent(new CustomEvent('tp-panels-moved'));
     }
 
+    /**
+     * Stars or unstars a panel and saves the favourites on the server; when saving fails, the
+     * previous favourites come back.
+     */
     function toggle(key) {
       const before = favourites.slice();
       favourites = favourites.includes(key) ? favourites.filter(function (item) { return item !== key; }) : favourites.concat(key);
@@ -2931,10 +3187,12 @@
       .catch(function (error) { console.error('Aurora Theme favourites:', error); });
   }
 
-  // Drop-down lists: the open list of a <select> is drawn by the browser and cannot be styled,
-  // so a themed list is shown in its place. The <select> stays the real control: choosing an
-  // entry sets it and fires the events its page listens for. Touch devices keep the native
-  // picker, which suits them better.
+  /**
+   * Drop-down lists: the open list of a <select> is drawn by the browser and cannot be styled,
+   * so a themed list is shown in its place. The <select> stays the real control: choosing an
+   * entry sets it and fires the events its page listens for. Touch devices keep the native
+   * picker, which suits them better.
+   */
   function selectLists() {
     if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
     let open = null;
@@ -2944,6 +3202,7 @@
         !select.closest('.tp-native-select') && select.options.length > 0;
     };
 
+    /** Closes the open drop-down list; with returnFocus the focus goes back to its select. */
     function close(returnFocus) {
       if (!open) return;
       const current = open;
@@ -2954,6 +3213,10 @@
       if (returnFocus) current.select.focus({ preventScroll: true });
     }
 
+    /**
+     * Selects an entry of the open list in the real select and fires input and change, so Unraid's
+     * own handlers run as after a normal choice.
+     */
     function choose(entry) {
       const select = open.select;
       const changed = select.selectedIndex !== entry.index;
@@ -2964,6 +3227,10 @@
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
+    /**
+     * Highlights the entry at position (kept within the list) for keyboard navigation and scrolls
+     * it into view.
+     */
     function setActive(position) {
       const entries = open.entries;
       if (!entries.length) return;
@@ -2978,6 +3245,10 @@
       else if (node.offsetTop + node.offsetHeight > panel.scrollTop + panel.clientHeight) panel.scrollTop = node.offsetTop + node.offsetHeight - panel.clientHeight + 6;
     }
 
+    /**
+     * Opens the theme's drop-down list for a select: its options and groups as entries, placed
+     * below the select (above it when there is no room).
+     */
     function show(select) {
       close(false);
       const panel = element('div', 'tp-select-panel');
@@ -3091,13 +3362,15 @@
     }, true);
   }
 
-  // Docker container editor (add, edit, install from Apps): every host port field is checked
-  // while typing and shows a green tick or a red cross on its right, with the reason under it.
-  // Checked: a number from 1 to 65535; not twice in this form; not used by another container
-  // on the server's address (from Unraid's own list on the page); not taken by a program on the
-  // server (include/ports.php). A container with its own address (custom network) can reuse
-  // ports, so only the first two checks apply there; the port a container already has when it
-  // is edited is accepted as well.
+  /**
+   * Docker container editor (add, edit, install from Apps): every host port field is checked
+   * while typing and shows a green tick or a red cross on its right, with the reason under it.
+   * Checked: a number from 1 to 65535; not twice in this form; not used by another container
+   * on the server's address (from Unraid's own list on the page); not taken by a program on the
+   * server (include/ports.php). A container with its own address (custom network) can reuse
+   * ports, so only the first two checks apply there; the port a container already has when it
+   * is edited is accepted as well.
+   */
   function dockerPorts() {
     const form = document.querySelector('input[name="contName"]');
     if (!form || !document.getElementById('configLocation')) return;
@@ -3124,6 +3397,10 @@
       return mode === 'bridge' || mode === 'host';
     };
 
+    /**
+     * Lists the Docker editor's port settings with their field, name, protocol and whether a port
+     * is required.
+     */
     function portRows() {
       return [...document.querySelectorAll('#configLocation input[name="confType[]"]')]
         .filter(function (type) { return type.value === 'Port'; })
@@ -3137,7 +3414,9 @@
         .filter(Boolean);
     }
 
-    // Returns [ok, message]; ok is null for an empty optional field (no mark).
+    /**
+     * Returns [ok, message]; ok is null for an empty optional field (no mark).
+     */
     function check(item, rows) {
       const text = item.field.value.trim();
       if (!text) return item.required ? [false, 'A port is required here.'] : [null, ''];
@@ -3174,6 +3453,10 @@
       return [true, (first === last ? 'Port ' + first + ' is' : 'Ports ' + first + ' to ' + last + ' are') + ' free.'];
     }
 
+    /**
+     * Wraps a port field once with the place for its status icon and message, and remembers the
+     * port it had when the editor opened.
+     */
     function decorate(item) {
       const field = item.field;
       if (field.dataset.tpPortReady) return;
@@ -3194,6 +3477,10 @@
       field.addEventListener('input', run);
     }
 
+    /**
+     * Checks every port field against the ports in use and the other fields, and shows the result
+     * beside each one.
+     */
     function run() {
       const rows = portRows();
       rows.forEach(decorate);
@@ -3213,7 +3500,9 @@
       renderAllocations();
     }
 
-    // The same check for the host port in the "Add / Edit Configuration" dialog.
+    /**
+     * The same check for the host port in the "Add / Edit Configuration" dialog.
+     */
     function dialogCheck(event) {
       const field = event.target;
       if (!field.matches || !field.matches('.ui-dialog input[name="Value"]')) return;
@@ -3264,6 +3553,9 @@
       return parts ? [Number(parts[1]), Number(parts[2] || parts[1])] : null;
     };
 
+    /**
+     * Shows the Docker settings' port allocations as a searchable list, under the original table.
+     */
     function renderAllocations() {
       if (!allocationBox || !allocations.length) return;
       let view = allocationBox.querySelector(':scope > .tp-alloc');
@@ -3352,13 +3644,15 @@
       .catch(function (error) { console.error('Aurora Theme ports:', error); });
   }
 
-  // VMs: Unraid opens a VM's details (disks, interfaces, snapshots) when its name is clicked,
-  // which is easy to miss. Each VM gets a chevron button in front of its icon that does the same,
-  // and turns while the details are open. Unraid remembers which VMs are open.
-  // VMs tab: the theme's groups for VMs, as on the Docker tab: collapsible sections in the
-  // groups' order and then "Ungrouped", the VMs in Unraid's order, each section with its VMs'
-  // icons and start / stop for all of them; "+ Group" above the list and a folder button on each
-  // VM. Not while FolderView arranges the list.
+  /**
+   * VMs: Unraid opens a VM's details (disks, interfaces, snapshots) when its name is clicked,
+   * which is easy to miss. Each VM gets a chevron button in front of its icon that does the same,
+   * and turns while the details are open. Unraid remembers which VMs are open.
+   * VMs tab: the theme's groups for VMs, as on the Docker tab: collapsible sections in the
+   * groups' order and then "Ungrouped", the VMs in Unraid's order, each section with its VMs'
+   * icons and start / stop for all of them; "+ Group" above the list and a folder button on each
+   * VM. Not while FolderView arranges the list.
+   */
   function vmGroups() {
     const list = document.getElementById('kvm_list');
     const table = document.getElementById('kvm_table');
@@ -3385,6 +3679,10 @@
       const link = row.querySelector('td.vm-name .inner > a');
       return link ? link.textContent.trim() : '';
     };
+    /**
+     * Reads what the enhancer needs from one of Unraid's VM rows: name, uuid, icon trigger and
+     * state.
+     */
     function describe(row) {
       const cell = row.querySelector('td.vm-name');
       const trigger = cell.querySelector('span.hand[id^="vm-"]');
@@ -3397,7 +3695,9 @@
         paused: Boolean(cell.querySelector('i.paused')),
       };
     }
-    // A VM's row and the rows under it (its details), up to the next VM or section.
+    /**
+     * A VM's row and the rows under it (its details), up to the next VM or section.
+     */
     function rowsOf(item) {
       const rows = [item.row];
       for (let next = item.row.nextElementSibling; next && !next.hasAttribute('parent-id') && !next.classList.contains('tp-group'); next = next.nextElementSibling) rows.push(next);
@@ -3421,14 +3721,20 @@
       };
       window[name].tpBusy = true;
     });
+    /**
+     * Shows what is happening ("stopping") in a VM's state pill while it starts, stops or restarts,
+     * until the list is loaded again.
+     */
     function markBusy(uuid, action) {
       const trigger = uuid ? document.getElementById('vm-' + uuid) : null;
       const state = trigger && trigger.parentElement.querySelector('.inner > span.state');
       if (state && BUSY[action]) state.textContent = BUSY[action];
     }
 
-    // Starts or stops several VMs one after another, then lets Unraid reload the list once.
-    // Each VM's icon spins while it is being started or stopped, as with Unraid's own buttons.
+    /**
+     * Starts or stops several VMs one after another, then lets Unraid reload the list once.
+     * Each VM's icon spins while it is being started or stopped, as with Unraid's own buttons.
+     */
     function runAll(action, items) {
       const jq = window.jQuery;
       if (!jq || !items.length) return;
@@ -3452,6 +3758,10 @@
     // opened next to the button). The detail rows under a VM span the new column too.
     const headRow = table.querySelector('thead tr');
     if (headRow && !headRow.querySelector('.tp-vm-actions')) headRow.append(element('th', 'tp-vm-actions'));
+    /**
+     * Adds the actions cell to a VM's row once: start, or stop and restart (resume when paused),
+     * its group and Unraid's menu.
+     */
     function decorate(item) {
       if (item.row.querySelector(':scope > td.tp-vm-actions')) return;
       const dispatch = function (action) {
@@ -3476,6 +3786,10 @@
       item.row.append(cell);
     }
 
+    /**
+     * Returns the section header row of a VM group, creating it on first use with the group's start
+     * and stop buttons.
+     */
     function headerFor(key, group) {
       if (headers.has(key)) return headers.get(key);
       const row = sectionHeader(store, group, {
@@ -3491,6 +3805,10 @@
       return row;
     }
 
+    /**
+     * Arranges the VMs list: every VM with its details rows under its group's header, collapsed
+     * sections hidden. Runs again on every refresh of the list.
+     */
     function render() {
       if (list.tpSorting) return;
       const items = [...list.querySelectorAll(':scope > tr[parent-id]')].map(describe).filter(function (item) { return item.name; });
@@ -3553,10 +3871,18 @@
     render();
   }
 
+  /**
+   * VMs tab: a chevron button in each VM's name cell opens and closes its details row (disks,
+   * interfaces), the same rows Unraid's toggle_id() shows and hides.
+   */
   function vmDetails() {
     const list = document.getElementById('kvm_list');
     if (!list || typeof window.toggle_id !== 'function') return;
 
+    /**
+     * Adds the chevron to every VM row that does not have one yet; FolderView folder rows are left
+     * alone.
+     */
     function decorate() {
       list.querySelectorAll('tr[parent-id]').forEach(function (row) {
         // A FolderView folder row looks like a VM's (parent-id and a details row) but is not one,
@@ -3598,9 +3924,11 @@
         sync();
       });
     }
-    // Snapshots in the details: a "Create snapshot" button in the section heading (the section
-    // is added when the VM has none yet), and Revert / Remove / more buttons on each snapshot.
-    // Everything calls Unraid's own functions, the same ones its menus use.
+    /**
+     * Snapshots in the details: a "Create snapshot" button in the section heading (the section
+     * is added when the VM has none yet), and Revert / Remove / more buttons on each snapshot.
+     * Everything calls Unraid's own functions, the same ones its menus use.
+     */
     function snapshotTools(row, details) {
       const trigger = row.querySelector('[onclick*="addVMContext"]');
       const vm = contextArguments(trigger);
@@ -3662,7 +3990,9 @@
         actions.append(
           small('fast-backward', 'Revert ' + name + ' to snapshot ' + snapshot, function () { window.selectsnapshot(uuid, name, snapshot, 'revert', true, state, method); }),
           small('trash', 'Remove snapshot ' + snapshot, function () { busy(); window.selectsnapshot(uuid, name, snapshot, 'remove', true); }, 'tp-snap-danger'),
-          // Block commit / pull and the rest stay in Unraid's menu, opened here as well.
+          /**
+           * Block commit / pull and the rest stay in Unraid's menu, opened here as well.
+           */
           small('ellipsis-h', 'More actions for snapshot ' + snapshot, function (event) {
             span.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: event.clientX, clientY: event.clientY }));
           })
@@ -3675,8 +4005,10 @@
     new MutationObserver(debounce(decorate)).observe(list, { childList: true });
   }
 
-  // Main: temperatures and error counts in the device tables become small coloured chips.
-  // Unraid redraws the rows every few seconds, so new rows are marked again as they come.
+  /**
+   * Main: temperatures and error counts in the device tables become small coloured chips.
+   * Unraid redraws the rows every few seconds, so new rows are marked again as they come.
+   */
   function mainTables() {
     const tables = [...document.querySelectorAll('table.disk_status, table.usb_mounts')];
     if (!tables.length) return;
@@ -3743,10 +4075,12 @@
     });
   }
 
-  // Main, Array Operation: Unraid lays the actions out as table rows (status, button,
-  // explanation). The rows become cards in one grid, grouped by purpose, each with an icon and
-  // a title: Array, Parity check, Last check, Disks, Mover, Power. Nothing is moved out of its
-  // form, and the cells keep their ids, so Unraid's own scripts work unchanged.
+  /**
+   * Main, Array Operation: Unraid lays the actions out as table rows (status, button,
+   * explanation). The rows become cards in one grid, grouped by purpose, each with an icon and
+   * a title: Array, Parity check, Last check, Disks, Mover, Power. Nothing is moved out of its
+   * form, and the cells keep their ids, so Unraid's own scripts work unchanged.
+   */
   function arrayOperations() {
     const tables = [...document.querySelectorAll('#displaybox table.ArrayOperation-Table')];
     if (!tables.length || document.querySelector('.tp-ops')) return;
@@ -3836,6 +4170,10 @@
         new MutationObserver(update).observe(row, { attributes: true, attributeFilter: ['hidden'] });
         new MutationObserver(update).observe(value, { childList: true, characterData: true, subtree: true });
       });
+      /**
+       * Shows the mover's tiles while it runs, with its progress taken from Unraid's own status
+       * line.
+       */
       function update() {
         syncs.forEach(function (sync) { sync(); });
         const visible = [...tiles.children].some(function (tile) { return !tile.hidden; });
@@ -3924,10 +4262,12 @@
     });
   }
 
-  // Users tab: Unraid's avatar tiles become cards (avatar, name, role, description), grouped
-  // as Administrators and Share users, with an overview strip, a search field in the heading
-  // row and an "Add user" button. Default avatars become coloured initials. The cards stay
-  // Unraid's links to each user's page; "Add user" submits Unraid's own form.
+  /**
+   * Users tab: Unraid's avatar tiles become cards (avatar, name, role, description), grouped
+   * as Administrators and Share users, with an overview strip, a search field in the heading
+   * row and an "Add user" button. Default avatars become coloured initials. The cards stay
+   * Unraid's links to each user's page; "Add user" submits Unraid's own form.
+   */
   function usersPage(info) {
     if (info.tab !== 'Users' || info.subPage) return;
     const cards = [...document.querySelectorAll('#displaybox .Panels > .user-list')];
@@ -4041,11 +4381,13 @@
     }
   }
 
-  // Plugins: Unraid checks every plugin for updates once per visit, with a single download that
-  // is not retried, so now and then a row ends on "not available" or "cannot check" although
-  // the plugin is fine. Such a row is checked again in the background, once per plugin and
-  // visit, with Unraid's own "plugin check" (include/plugin-recheck.php, up to three tries).
-  // Unraid's list code then redraws the row from the file that check left behind.
+  /**
+   * Plugins: Unraid checks every plugin for updates once per visit, with a single download that
+   * is not retried, so now and then a row ends on "not available" or "cannot check" although
+   * the plugin is fine. Such a row is checked again in the background, once per plugin and
+   * visit, with Unraid's own "plugin check" (include/plugin-recheck.php, up to three tries).
+   * Unraid's list code then redraws the row from the file that check left behind.
+   */
   function pluginRecheck() {
     const list = document.getElementById('plugin_list');
     if (!list || typeof window.updateInfo !== 'function') return;
@@ -4054,16 +4396,23 @@
     const queue = [];
     let active = 0;
 
-    // Failed rows by their icon, so this works in every language: the broken link of "not
-    // available" and the red warning of "cannot check".
+    /**
+     * Failed rows by their icon, so this works in every language: the broken link of "not
+     * available" and the red warning of "cannot check".
+     */
     function failed(cell) {
       return cell.querySelector('i.fa-unlink, .red-text > i.fa-exclamation-triangle');
     }
 
+    /** Starts the next queued plugin check, two at a time. */
     function next() {
       while (active < 2 && queue.length) recheck(queue.shift());
     }
 
+    /**
+     * Asks for one plugin's update status again; Unraid's own result comes back when the check
+     * fails again.
+     */
     function recheck(cell) {
       const box = cell.closest('tr') && cell.closest('tr').querySelector('input.remove[data$=".plg"]');
       const plg = box ? box.getAttribute('data') : '';
@@ -4099,6 +4448,7 @@
         .finally(function () { active--; next(); });
     }
 
+    /** Queues every plugin whose update status says the check failed, once per page. */
     function scan() {
       list.querySelectorAll('td[id^="sid-"]').forEach(function (cell) {
         if (tried.has(cell.id) || !failed(cell)) return;
@@ -4117,6 +4467,10 @@
     scan();
   }
 
+  /**
+   * Runs every enhancer for the current page, each on its own, so one that fails does not stop the
+   * others or Unraid's scripts.
+   */
   function start() {
     const info = pageInfo();
     [function () { topBar(info); }, themeSwitch, function () { serverCard(info); }, function () { pageHeading(info); }, function () { folderViewBeta(info); }, function () { panelFavourites(info); }, function () { panelSearch(info); }, function () { usersPage(info); }, selectLists, lockState, docker, dockerPorts, vmViewSwitch, vmGroups, vmDetails, mainTables, arrayOperations, dashboardSummary, dashboardCharts, dashboardCpu, dashboardCores, dashboardContainers, dashboardUpdates, dockerUpdateWatch, dashboardDockerOrder, dashboardVmGroups, dashboardMemory, dashboardGpu, dashboardVmUsage, dashboardFans, diskLocationBays, sectionRows, externalLinkDialog, caOverlay, helpButton, navTitles, usageBar, navProgress, pluginRecheck, function () { toolText(info); }].forEach(function (enhancer) {

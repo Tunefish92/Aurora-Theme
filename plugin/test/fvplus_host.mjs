@@ -9,13 +9,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const prefix = '/plugins/folderview.plus/';
+/** A meta tag carrying a JSON value, the way FolderView Plus's pages hand data to its scripts. */
 const meta = (name, value) => `<meta name="${name}" content='${JSON.stringify(value).replaceAll("'", '&#39;')}'>`;
+/** A script tag for one of FolderView Plus's files, with a version query as Unraid's autov() adds. */
 const script = file => `<script src="${file}?v=compat"></script>`;
 
+/**
+ * Starts the fake Unraid host for FolderView Plus with scenario's containers, folders and VMs, on a
+ * free local port; resolves with its origin and server.
+ */
 export async function createPlusHost(fvp, scenario) {
     const { createProductionPerfFixture } = await import(path.join(fvp, 'scripts/lib/production-perf-fixture.mjs'));
     const fixture = createProductionPerfFixture(fvp, scenario, 'en');
     const plugin = path.join(fvp, 'src/folderview.plus/usr/local/emhttp/plugins/folderview.plus');
+    /** Reads a file of the FolderView Plus plugin from the checkout. */
     const read = file => fs.readFileSync(path.join(plugin, file), 'utf8');
     const fixtureHandler = fixture.server.listeners('request')[0];
     fixture.server.removeAllListeners('request');
@@ -36,23 +43,32 @@ export async function createPlusHost(fvp, scenario) {
     }]));
     const vmOrder = Object.keys(vmFolders).map(id => 'folder-' + id).concat(vmNames);
     const prefs = { performanceProfile: 'standard', lazyPreviewEnabled: false, setupWizardCompleted: true, autoRules: [] };
+    /** The VM runtime snapshot FolderView Plus asks its server for. */
     const vmSnapshot = () => ({ ok: true, kind: 'runtime_snapshot', schemaVersion: 1, type: 'vm', folders: vmFolders,
         runtime: vmRuntime, order: vmOrder, unraidOrder: vmNames, prefs, metadata: {}, revision: 'b'.repeat(64) });
 
     // The Docker containers as FolderView Plus's fixture serves them, plus the order Unraid lists
     // them in (unraidOrder), which the Dashboard reads and that fixture (Docker page only) leaves out.
     let origin = '';
+    /** The Docker runtime snapshot FolderView Plus asks its server for. */
     const dockerSnapshot = async () => {
         const snapshot = await (await fetch(origin + prefix + 'server/runtime_snapshot.php?type=docker&fixture=raw')).json();
         return { ...snapshot, unraidOrder: snapshot.order.filter(name => !name.startsWith('folder-')) };
     };
 
-    // As FolderView Plus's langs/script.php: only the namespaces that have a catalogue.
+    /**
+     * As FolderView Plus's langs/script.php: only the namespaces that have a catalogue.
+     */
     const catalogs = wanted => { const namespaces = wanted.filter(name => fs.existsSync(path.join(plugin, `langs/namespaces/en/${name}.json`))); return { requestedLocale: 'en', resolvedLocale: 'en', direction: 'ltr',
         namespaces: ['common', 'legacy-surface', ...namespaces],
         assets: [{ locale: 'en', namespace: 'legacy', url: prefix + 'langs/en.json?v=compat' },
             ...['common', 'legacy-surface', ...namespaces].map(namespace => ({ locale: 'en', namespace, url: prefix + `langs/namespaces/en/${namespace}.json?v=compat` }))] }; };
+    /** The script files a FolderView Plus .page loads through fvplus_asset(), in their order. */
     const scriptsFrom = source => [...source.matchAll(/<script[^>]*src="[^"\n]*?fvplus_asset\('([^']+)'\)[^"\n]*"[^>]*><\/script>/g)].map(match => match[1]);
+    /**
+     * One of FolderView Plus's .page files as Unraid would serve it: front matter and PHP removed,
+     * its scripts and data in place.
+     */
     const pluginPage = file => {
         const source = read(file);
         return source.slice(source.indexOf('---') + 3).replace(/<\?(?:php|=)[\s\S]*?\?>/g, php => {
@@ -82,6 +98,10 @@ export async function createPlusHost(fvp, scenario) {
               });
         jQuery(() => window.loadlist());`;
 
+    /**
+     * The whole HTML page for one surface (docker, dashboard, vms): Unraid's frame and list markup
+     * with FolderView Plus's page inside.
+     */
     const page = surface => {
         const vms = surface === 'vms';
         const body = vms
@@ -103,16 +123,22 @@ export async function createPlusHost(fvp, scenario) {
             + pluginPage(vms ? 'folderview.plus.VMs.page' : 'folderview.plus.Dashboard.page') + live + '</body></html>';
     };
 
-    // Unraid's markup: DashboardApps.php (Docker and VM chips) and VMMachines.php (VM rows).
+    /**
+     * Unraid's markup: DashboardApps.php (Docker and VM chips) and VMMachines.php (VM rows).
+     */
     const dockerChips = runtime => Object.values(runtime).map(ct => {
         const status = ct.running ? 'started' : 'stopped';
         const id = String(ct.id).slice(0, 12);
         return `<span class='outer solid apps ${status}'><span id='${id}' onclick="addDockerContainerContext('${ct.name}','sha256:0','',${ct.running ? 1 : 0},0,0,'false','','','sh','${id}','','','','','')" class='hand'><img src='${prefix}images/folder-icon.png' class='img'></span><span class='inner'><span class=''>${ct.name}</span><br><i class='fa fa-${ct.running ? 'play' : 'square'} ${status} ${ct.running ? 'green-text' : 'red-text'}'></i><span class='state'>${status}</span></span></span>`;
     }).join('');
+    /** The Dashboard's VM chips as Unraid's DashboardApps.php draws them. */
     const vmChips = () => Object.values(vmRuntime).map(vm => {
         const status = vm.state === 'running' ? 'started' : 'stopped';
         return `<span class='outer solid vms ${status}'><span id='vm-${vm.uuid}' onclick="addVMContext('${vm.name}','${vm.uuid}','',' ${vm.state}','','','','','')" class='hand'><img src='${vm.icon}' class='img'></span><span class='inner'>${vm.name}<br><i class='fa fa-${status === 'started' ? 'play' : 'square'} ${status} ${status === 'started' ? 'green-text' : 'red-text'}'></i><span class='state'>${status}</span></span></span>`;
     }).join('');
+    /**
+     * The VMs list as Unraid's VMMachines.php returns it: each VM's row and its hidden details row.
+     */
     const vmRows = () => vmNames.map((name, index) => {
         const vm = vmRuntime[name];
         const status = vm.state === 'running' ? 'started' : 'stopped';
@@ -121,6 +147,7 @@ export async function createPlusHost(fvp, scenario) {
             + `<tr child-id='${index}' id='name-${index}' style='display:none'><td colspan='8' style='margin:0;padding:0'><table class='tablesorter domdisk'><thead class='child'><tr><th>Disk devices/Volume</th></tr></thead><tbody class='child'><tr><td>/mnt/user/domains/${name}/vdisk1.img</td></tr></tbody></table></td></tr>`;
     }).join('');
 
+    /** Answers the request with a body (JSON unless another type is given), never cached. */
     const send = (res, body, type = 'application/json') => {
         res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
         res.end(type === 'application/json' ? JSON.stringify(body) : body);

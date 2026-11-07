@@ -22,8 +22,11 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 
 const ROOT = '/usr/local/emhttp';
+/** Writes a file, creating its folders first. */
 const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); };
+/** An object as the key="value" lines Unraid's .cfg files use. */
 const ini = object => Object.entries(object).map(([key, value]) => `${key}="${value}"`).join('\n') + '\n';
+/** Escapes text for an XML template. */
 const xml = text => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 export const PLUGINS = {
     fv3: { dir: 'folder.view3', src: process.env.FV3 + '/src/folder.view3/usr/local/emhttp/plugins/folder.view3', config: '/boot/config/plugins/folder.view3' },
@@ -31,6 +34,10 @@ export const PLUGINS = {
 };
 const ICONS = ['default.png', 'disk.png', 'explore.png', 'directory.png', 'cdrom.png'];
 
+/**
+ * Container names for a scenario: plain app names, or long and odd ones with the long and mixed
+ * styles.
+ */
 function containerNames(count, style) {
     const words = ['plex', 'sonarr', 'radarr', 'nginx-proxy-manager', 'home-assistant', 'nextcloud', 'mariadb', 'redis', 'grafana', 'prometheus', 'jellyfin', 'qbittorrent', 'unifi-controller', 'vaultwarden', 'paperless-ngx', 'immich-server', 'tautulli', 'overseerr', 'prowlarr', 'bazarr'];
     return Array.from({ length: count }, (_value, index) => {
@@ -41,9 +48,14 @@ function containerNames(count, style) {
     });
 }
 
+/**
+ * The containers of a scenario: names, running, paused, updates, templates and ports as the options
+ * ask.
+ */
 export function makeContainers(options = {}) {
     const count = options.count ?? 40;
     const names = containerNames(count, options.names || 'plain');
+    /** Whether the container at index is chosen by a list of indexes or by every n-th. */
     const pick = (list, index) => Array.isArray(list) ? list.includes(index) : typeof list === 'number' ? list > 0 && index % list === 0 : false;
     return names.map((name, index) => {
         const stopped = options.allStopped ? true : options.allRunning ? false : pick(options.stopped ?? 3, index);
@@ -63,6 +75,7 @@ export function makeContainers(options = {}) {
     });
 }
 
+/** FolderView folders for a scenario, the containers spread over them. */
 export function makeFolders(names, options = {}) {
     const count = options.count ?? 0;
     const folders = {};
@@ -82,7 +95,9 @@ export function makeFolders(names, options = {}) {
     return folders;
 }
 
-// VMs for the fake libvirt (libvirt_stub.php): a third running, one paused if asked.
+/**
+ * VMs for the fake libvirt (libvirt_stub.php): a third running, one paused if asked.
+ */
 export function makeVms(options = {}) {
     const count = options.count ?? 0;
     const names = ['Windows 11', 'Ubuntu Server', 'Home Assistant OS', 'pfSense', 'macOS Sonoma', 'Debian 12', 'TrueNAS', 'Kali'];
@@ -95,13 +110,20 @@ export function makeVms(options = {}) {
     }));
 }
 
+/**
+ * Writes a scenario to the fake server: the containers and VMs, Unraid's templates and settings,
+ * Docker's autostart and update status, the FolderView plugin and its folders, and Aurora with its
+ * settings.
+ */
 export function applyScenario(scenario) {
     const containers = makeContainers(scenario.containers);
     const vms = makeVms(scenario.vms);
     write('/tmp/sim/vms.json', JSON.stringify({ vms }, null, 1));
     fs.rmSync('/boot/config/plugins/dynamix.vm.manager/userprefs.cfg', { force: true });
     write('/boot/config/domain.cfg', vms.length || scenario.vms ? 'SERVICE="enable"\nMEDIADIR="/mnt/user/isos/"\nDOMAINDIR="/mnt/user/domains/"\n' : 'SERVICE="disable"\n');
-    // libvirt counts as running when its pid file names a live process: the fake dockerd's.
+    /**
+     * libvirt counts as running when its pid file names a live process: the fake dockerd's.
+     */
     const daemon = (() => { try { return execSync('pgrep -f dockerd.mjs').toString().trim().split('\n')[0]; } catch { return '1'; } })();
     if (vms.length || scenario.vms) write('/var/run/libvirt/libvirtd.pid', daemon); else fs.rmSync('/var/run/libvirt/libvirtd.pid', { force: true });
     const state = { containers, actionDelay: scenario.actionDelay || 0, dockerloadOff: !!scenario.dockerloadOff };

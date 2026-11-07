@@ -11,15 +11,21 @@ import path from 'node:path';
 const prefix = '/plugins/folder.view3/';
 const types = { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
 
+/**
+ * Starts the fake Unraid host for FolderView3 with scenario's containers, folders and VMs, on a
+ * free local port; resolves with its origin and server.
+ */
 export async function createFv3Host(fv3, scenario) {
     const plugin = path.join(fv3, 'src/folder.view3/usr/local/emhttp/plugins/folder.view3');
     const jquery = path.join(fv3, 'node_modules/jquery/dist/jquery.min.js');
+    /** Reads a file of the FolderView3 plugin from the checkout. */
     const read = file => fs.readFileSync(path.join(plugin, file), 'utf8');
     const icon = prefix + 'img/folder-icon.png';
     const iconFile = fs.existsSync(path.join(plugin, 'img/folder-icon.png')) ? icon : '/plugins/dynamix.docker.manager/images/question.png';
 
     // Containers: two thirds running, spread over the folders; VMs: a third running.
     const names = Array.from({ length: scenario.members }, (_value, index) => `fixture-app-${index}`);
+    /** The 12-digit container id of the container at index, as Unraid shows it. */
     const shortId = index => (index + 1).toString(16).padStart(12, '0');
     const containers = Object.fromEntries(names.map((name, index) => {
         const running = index % 3 !== 0;
@@ -52,14 +58,20 @@ export async function createFv3Host(fv3, scenario) {
         vm: { folders: vmFolders, info: vms, order: Object.keys(vmFolders).map(id => 'folder-' + id).concat(vmNames), unraidOrder: vmNames },
     };
 
-    // FolderView3's .page as served: front matter and PHP removed, autov() URLs kept, its
-    // translation loader (langs/script.php) rendered for English and Unraid's default number
-    // format (decimal point ".").
+    /**
+     * FolderView3's .page as served: front matter and PHP removed, autov() URLs kept, its
+     * translation loader (langs/script.php) rendered for English and Unraid's default number
+     * format (decimal point ".").
+     */
     const languageLoader = () => read('langs/script.php')
         .replace(/^<\?php[\s\S]*?\?>/, '')
         .replace(/<\?= json_encode\(\$loc\) \?>/, '"en"')
         .replace(/<\?= json_encode\(substr\(\$fv3Number, 0, 1\)\) \?>/, '"."')
         .replace(/<\?php[\s\S]*?\?>/, JSON.stringify({ en: prefix + 'langs/en.json' }));
+    /**
+     * One of FolderView3's .page files as Unraid would serve it: front matter and PHP removed,
+     * autov() URLs kept, the translation loader rendered.
+     */
     const pluginPage = file => {
         const source = read(file);
         return source.slice(source.indexOf('---') + 3)
@@ -68,9 +80,11 @@ export async function createFv3Host(fv3, scenario) {
             .replace(/<\?(?:php|=)[\s\S]*?\?>/g, '');
     };
 
-    // Unraid's page script, reduced to what these pages do with the lists: loadlist() loads the
-    // list from Unraid's include and calls listview(), as DockerContainers.page, VMMachines.page
-    // and DashStats.page do; the menus and dialogs are stubs.
+    /**
+     * Unraid's page script, reduced to what these pages do with the lists: loadlist() loads the
+     * list from Unraid's include and calls listview(), as DockerContainers.page, VMMachines.page
+     * and DashStats.page do; the menus and dialogs are stubs.
+     */
     const unraidScript = surface => `
         window.csrf_token = 'fixture-unraid-token'; window.timers = {}; window.docker = [];
         window.eventControl = () => {}; window.addDockerContainerContext = () => {}; window.addVMContext = () => {};
@@ -101,8 +115,10 @@ export async function createFv3Host(fv3, scenario) {
             jQuery('#vm_view tr.updated').remove(); jQuery('#vm_view').append(parts[1]); });`}
         jQuery(() => window.loadlist());`;
 
-    // Unraid's live values: every container's CPU and memory every second on the Docker page,
-    // the server load on the Dashboard.
+    /**
+     * Unraid's live values: every container's CPU and memory every second on the Docker page,
+     * the server load on the Dashboard.
+     */
     const live = surface => surface === 'docker'
         ? `<script>setInterval(() => document.querySelectorAll('[class^="cpu-"]:not([class*="folder"])').forEach(cell => {
             cell.textContent = (Math.random() * 9).toFixed(1) + '%';
@@ -118,6 +134,10 @@ export async function createFv3Host(fv3, scenario) {
         vms: '<div class="title"><span class="left">Virtual Machines</span></div><div class="TableContainer"><table id="kvm_table" class="tablesorter four shift"><thead><tr><th>Name</th><th>Description</th><th>CPUs</th><th>Memory</th><th>vDisks</th><th>Graphics</th><th>IP Address</th><th>Autostart</th></tr></thead><tbody id="kvm_list"><tr><td colspan="8"></td></tr></tbody></table></div>',
     };
     const pageFiles = { docker: 'folder.view3.Docker.page', dashboard: 'folder.view3.Dashboard.page', vms: 'folder.view3.VMs.page' };
+    /**
+     * The whole HTML page for one surface (docker, dashboard, vms): Unraid's frame and list markup
+     * with FolderView3's page inside.
+     */
     const page = surface => '<!doctype html><html><head><meta charset="utf-8">'
         + '<style>body{font:14px Arial;background:#1d1d1f;color:#eee;margin:16px}.img{width:32px}</style>'
         + '<script src="/vendor/jquery.js"></script>' + `<script>${unraidScript(surface)}</script>`
@@ -125,8 +145,14 @@ export async function createFv3Host(fv3, scenario) {
         + `<div id="menu"><div class="nav-tile"><div class="nav-item active"><a href="/${surface}">${surface}</a></div></div></div>`
         + `<div id="displaybox">${bodies[surface]}</div>` + pluginPage(pageFiles[surface]) + live(surface) + '</body></html>';
 
-    // Unraid's markup for the lists.
+    /**
+     * Unraid's markup for the lists.
+     */
     const status = ct => ct.info.State.Running ? ['play', 'started', 'green-text'] : ['square', 'stopped', 'red-text'];
+    /**
+     * The Docker list as Unraid's DockerContainers.php returns it: the rows, the script that fills
+     * docker[], and the trailing flag.
+     */
     const dockerRows = () => names.map(name => {
         const ct = containers[name];
         const [shape, state, color] = status(ct);
@@ -143,17 +169,23 @@ export async function createFv3Host(fv3, scenario) {
             + `<td><input type='checkbox' id='${id}-auto' class='autostart' container='${name}'><span id='${id}-wait' style='float:right;display:none'>wait<input class='wait' container='${name}' type='number' value='' placeholder='0'></span></td>`
             + `<td><div style='white-space:nowrap'>${ct.Status}</div></td></tr>`;
     }).join('') + '\0' + names.map(name => `docker.push({name:'${name}',id:'${containers[name].shortId}',state:${containers[name].info.State.Running ? 1 : 0},pause:0,update:0});`).join('') + '\0' + '0';
+    /** The Dashboard's container chips as Unraid's DashboardApps.php draws them. */
     const dockerChips = () => names.map(name => {
         const ct = containers[name];
         const [shape, state, color] = status(ct);
         return `<span class='outer solid apps ${state}'><span id='${ct.shortId}' onclick="addDockerContainerContext('${name}','sha256:c','',${ct.info.State.Running ? 1 : 0},0,0,'false','','','sh','${ct.shortId}','','','','','')" class='hand'><img src='${iconFile}' class='img'></span><span class='inner'><span class=''>${name}</span><br><i class='fa fa-${shape} ${state} ${color}'></i><span class='state'>${state}</span></span></span>`;
     }).join('');
+    /** Icon, state class and colour of a VM's state, as Unraid writes them. */
     const vmStatus = vm => vm.state === 'running' ? ['play', 'started', 'green-text'] : ['square', 'stopped', 'red-text'];
+    /** The Dashboard's VM chips as Unraid's DashboardApps.php draws them. */
     const vmChips = () => vmNames.map(name => {
         const vm = vms[name];
         const [shape, state, color] = vmStatus(vm);
         return `<span class='outer solid vms ${state}'><span id='vm-${vm.uuid}' onclick="addVMContext('${name}','${vm.uuid}')" class='hand'><img src='${vm.icon}' class='img'></span><span class='inner'>${name}<br><i class='fa fa-${shape} ${state} ${color}'></i><span class='state'>${state}</span></span></span>`;
     }).join('');
+    /**
+     * The VMs list as Unraid's VMMachines.php returns it: each VM's row and its hidden details row.
+     */
     const vmRows = () => vmNames.map((name, index) => {
         const vm = vms[name];
         const [shape, state, color] = vmStatus(vm);
@@ -164,6 +196,7 @@ export async function createFv3Host(fv3, scenario) {
 
     const server = http.createServer((req, res) => {
         const url = new URL(req.url, 'http://127.0.0.1');
+        /** Answers the request with a body (JSON unless another type is given), never cached. */
         const send = (body, type = 'application/json') => {
             res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
             res.end(type === 'application/json' ? JSON.stringify(body) : body);

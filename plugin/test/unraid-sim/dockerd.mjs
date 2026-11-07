@@ -7,22 +7,35 @@ import http from 'node:http';
 
 const SOCKET = '/var/run/docker.sock';
 const STATE = '/tmp/sim/containers.json';
+/** Reads the fake Docker's state file; an empty state when there is none yet. */
 const load = () => { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch { return { containers: [] }; } };
+/** Writes the fake Docker's state back to its file. */
 const save = state => fs.writeFileSync(STATE, JSON.stringify(state, null, 1));
 const created = Math.floor(Date.now() / 1000) - 86400 * 30;
 
+/** A container's 64-digit id, from its short id. */
 const fullId = ct => ct.id.padEnd(64, '0');
+/** A container's image with its tag (":latest" when none is given). */
 const image = ct => ct.image.includes(':') ? ct.image : ct.image + ':latest';
+/** A container's network, bridge by default. */
 const networkMode = ct => ct.network || 'bridge';
+/** A container's address in its network; none on the host network. */
 const ip = (ct, index) => ct.network === 'host' ? '' : `${ct.network === 'br0' ? '192.168.1' : '172.17.0'}.${(index % 250) + 3}`;
+/**
+ * A container's NetworkSettings.Networks as Docker reports them; the address only while it runs.
+ */
 const networks = (ct, index) => ({ [networkMode(ct)]: { IPAddress: ct.running ? ip(ct, index) : '', MacAddress: ct.running ? '02:42:ac:11:00:' + (index % 99).toString().padStart(2, '0') : '' } });
+/** A container's status text as docker ps shows it. */
 const status = ct => ct.running ? (ct.paused ? 'Up 3 hours (Paused)' : 'Up 3 hours') : 'Exited (0) 2 hours ago';
+/** A container's port bindings as Docker reports them. */
 const ports = ct => Object.fromEntries((ct.ports || []).map(([inside, type, outside]) => [`${inside}/${type}`, outside ? [{ HostIp: '', HostPort: String(outside) }] : null]));
+/** A container as Docker's list endpoint (/containers/json) returns it. */
 const summary = (ct, index) => ({
     Id: fullId(ct), Names: ['/' + ct.name], Image: image(ct), ImageID: 'sha256:' + ct.imageId.padEnd(64, '0'), Command: '/init', Created: created,
     State: ct.running ? (ct.paused ? 'paused' : 'running') : 'exited', Status: status(ct), Ports: [], Labels: ct.labels || {},
     HostConfig: { NetworkMode: networkMode(ct) }, NetworkSettings: { Networks: networks(ct, index) }, Mounts: [],
 });
+/** A container as Docker's inspect endpoint returns it. */
 const inspect = (ct, index) => ({
     Id: fullId(ct), Name: '/' + ct.name, Created: new Date(created * 1000).toISOString(), Image: 'sha256:' + ct.imageId.padEnd(64, '0'),
     State: { Status: ct.running ? 'running' : 'exited', Running: !!ct.running, Paused: !!ct.paused, Restarting: false, Pid: ct.running ? 1000 + index : 0, StartedAt: new Date(Date.now() - 3 * 3600e3).toISOString() },
@@ -31,6 +44,7 @@ const inspect = (ct, index) => ({
     HostConfig: { Binds: ct.volumes || [], PortBindings: ports(ct), NetworkMode: networkMode(ct), CpusetCpus: '' },
     NetworkSettings: { Networks: networks(ct, index) }, LogPath: '',
 });
+/** The images Docker lists: every container's image plus the orphan images of the scenario. */
 const images = state => {
     const byId = new Map();
     state.containers.forEach(ct => byId.set(ct.imageId, { Id: 'sha256:' + ct.imageId.padEnd(64, '0'), ParentId: '', RepoTags: [image(ct)], Created: created, Size: 123456789, VirtualSize: 123456789 }));
@@ -38,8 +52,13 @@ const images = state => {
     return [...byId.values()];
 };
 
+/**
+ * Answers the docker command lines Unraid's scripts run, from the fake state; start, stop and the
+ * like change it.
+ */
 function cli(args, state) {
     const text = args.join(' ');
+    /** The container with this name or id prefix. */
     const find = name => state.containers.find(ct => ct.name === name || fullId(ct).startsWith(name));
     if (/^network ls --format='\{\{\.Name\}\}=\{\{\.Driver\}\}'/.test(text)) return 'bridge=bridge\nhost=host\nnone=null\nbr0=macvlan';
     if (/^network ls/.test(text)) return 'br0';
@@ -62,6 +81,10 @@ function cli(args, state) {
     return '';
 }
 
+/**
+ * Changes a container's state as a docker start, stop, restart, pause, unpause or kill would, and
+ * saves it; false when there is no such container.
+ */
 function act(action, ct, state) {
     if (!ct) return false;
     if (action === 'start' || action === 'restart') { ct.running = true; ct.paused = false; }
@@ -76,6 +99,7 @@ try { fs.unlinkSync(SOCKET); } catch { /* not there */ }
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://docker');
     const state = load();
+    /** Answers with a JSON body and the given status. */
     const json = (body, code = 200) => {
         const text = JSON.stringify(body);
         res.writeHead(code, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) });

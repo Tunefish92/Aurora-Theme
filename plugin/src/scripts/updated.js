@@ -6,6 +6,10 @@
   'use strict';
   const endpoint = '/plugins/Aurora-Theme/include/updated.php';
 
+  /**
+   * Creates an element with an optional class and text; the shorthand the dialog builds its markup
+   * with.
+   */
   function element(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -13,7 +17,9 @@
     return node;
   }
 
-  // Bold, code and links of one line of the release notes, as nodes (never as HTML).
+  /**
+   * Bold, code and links of one line of the release notes, as nodes (never as HTML).
+   */
   function inline(text) {
     const fragment = document.createDocumentFragment();
     const pattern = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
@@ -36,7 +42,9 @@
     return fragment;
   }
 
-  // The release notes (Markdown): headings, lists and paragraphs.
+  /**
+   * The release notes (Markdown): headings, lists and paragraphs.
+   */
   function notes(markdown) {
     const box = element('div', 'tp-upd-notes');
     let list = null;
@@ -68,6 +76,7 @@
     return box;
   }
 
+  /** Formats when an update ran as "today, 14:05" or "3 Nov, 14:05"; empty without a time. */
   function when(seconds) {
     if (!seconds) return '';
     const date = new Date(seconds * 1000);
@@ -77,6 +86,10 @@
     return date.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
   }
 
+  /**
+   * Shows the "Aurora Theme updated" dialog with the old and new version and the notes of every
+   * release in between.
+   */
   function show(info) {
     const back = info.to < info.from;
     const backdrop = element('div', 'tp-upd-backdrop');
@@ -163,6 +176,10 @@
     backdrop.addEventListener('click', function (event) { if (event.target === backdrop) close(); });
   }
 
+  /**
+   * Asks the server whether an update is waiting to be shown (its record stays until the dialog is
+   * closed) and shows the dialog when one is.
+   */
   function start() {
     fetch(endpoint, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : {}; })

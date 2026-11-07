@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 
 export const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+/** Loads Playwright from where Node finds it, else from the FolderView checkout in fallbackDir. */
 export function loadPlaywright(fallbackDir) {
     try { return createRequire(import.meta.url)('playwright'); }
     catch (error) { return createRequire(path.join(fallbackDir, 'package.json'))('playwright'); }
@@ -34,8 +35,14 @@ const auroraFiles = {
 //   SCREENSHOTS    a directory: each page is saved alone and with Aurora, for the visual review.
 //   QUICK          1: the small scenario only, one run each way (for screenshots and a first look).
 export const quick = process.env.QUICK === '1';
-//   PAGES, SIZES   only these pages (docker,dashboard,...) / scenarios (90,300), to look into one case.
+/**
+ *   PAGES, SIZES   only these pages (docker,dashboard,...) / scenarios (90,300), to look into one case.
+ */
 export const onlyPages = name => !process.env.PAGES || process.env.PAGES.split(',').includes(name);
+/**
+ * The fixture sizes to run: only the first with QUICK=1, and only those listed in SIZES when it is
+ * set.
+ */
 export const onlySizes = list => (quick ? list.slice(0, 1) : list).filter(scenario => !process.env.SIZES || process.env.SIZES.split(',').includes(String(scenario.members)));
 const webgui = process.env.UNRAID_WEBGUI ? path.join(process.env.UNRAID_WEBGUI, 'emhttp') : '';
 const theme = process.env.THEME === 'white' ? 'white' : 'black';
@@ -46,7 +53,9 @@ const unraidSheets = ['default-fonts', 'default-cases', 'font-awesome', 'context
     .concat(`/webGui/styles/themes/${theme}.css`, '/webGui/styles/jquery.switchbutton.css');
 const pageSheets = { docker: '/plugins/dynamix.docker.manager/sheets/DockerContainers.css', vms: '/plugins/dynamix.vm.manager/sheets/VMMachines.css', dashboard: '/plugins/dynamix/sheets/DashStats.css' };
 
-// Unraid's part of the page: its stylesheets and theme class, or only its root font size.
+/**
+ * Unraid's part of the page: its stylesheets and theme class, or only its root font size.
+ */
 function withUnraid(html, surface) {
     if (!webgui) return html.replace('<head>', '<head><style>html { font-size: 62.5%; }</style>').replace(/<html[^>]*>/, '<html>');
     const sheets = unraidSheets.concat(pageSheets[surface] || []).map(href => `<link type="text/css" rel="stylesheet" href="${href}">`).join('');
@@ -56,8 +65,10 @@ function withUnraid(html, surface) {
         .replace('<head>', '<head>' + sheets);
 }
 
-// Serves Unraid's stylesheets, fonts and images from the webgui checkout; everything else
-// (Unraid's includes, which the hosts answer) is passed on.
+/**
+ * Serves Unraid's stylesheets, fonts and images from the webgui checkout; everything else
+ * (Unraid's includes, which the hosts answer) is passed on.
+ */
 async function routeUnraid(tab) {
     if (!webgui) return;
     await tab.route(/\/(webGui|plugins\/dynamix[^/]*)\/[^?#]*\.(css|woff2?|ttf|eot|svg|png|gif|jpe?g)(\?|#|$)/, route => {
@@ -67,9 +78,11 @@ async function routeUnraid(tab) {
     });
 }
 
-// What AuroraTheme.page adds to every page (page enhancements on): the root classes, the
-// stylesheets, window.auroraDockerView when a FolderView plugin is installed, and enhance.js.
-// aurora: { classes: [...], dockerView: {...} | null, head: '...' }.
+/**
+ * What AuroraTheme.page adds to every page (page enhancements on): the root classes, the
+ * stylesheets, window.auroraDockerView when a FolderView plugin is installed, and enhance.js.
+ * aurora: { classes: [...], dockerView: {...} | null, head: '...' }.
+ */
 function withAurora(html, surface, aurora) {
     const classes = [`Theme--${theme}`, 'Theme--nav-top', 'tp-enhance', `tp-on-${surface}`, ...(aurora.classes || [])].join(' ');
     return html
@@ -81,7 +94,9 @@ function withAurora(html, surface, aurora) {
             + '<script defer src="/plugins/Aurora-Theme/scripts/enhance.js"></script></head>');
 }
 
-// One page load. page: { url, ready(count), inspect(), prepare(html), sameLists }; aurora: as above or null.
+/**
+ * One page load. page: { url, ready(count), inspect(), prepare(html), sameLists }; aurora: as above or null.
+ */
 async function measureOnce(browser, page, count, aurora) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const tab = await context.newPage();
@@ -114,6 +129,7 @@ async function measureOnce(browser, page, count, aurora) {
     }
     const ready = Date.now() - start;
     const windowMs = 8000;
+    /** Measures how long the page's main thread was blocked during the next 8 seconds. */
     const blockedFor = async () => {
         await tab.evaluate(() => { window.tpBlocked = 0; });
         await tab.waitForTimeout(windowMs);
@@ -128,8 +144,10 @@ async function measureOnce(browser, page, count, aurora) {
     return result;
 }
 
-// Measures a page alone and with Aurora, prints both, returns the problems found ([] = pass).
-// expect: compare(alone, aurora) => extra problems, for checks particular to the plugin.
+/**
+ * Measures a page alone and with Aurora, prints both, returns the problems found ([] = pass).
+ * expect: compare(alone, aurora) => extra problems, for checks particular to the plugin.
+ */
 export async function comparePage(browser, page, count, aurora, label, compare) {
     const runs = { alone: [], aurora: [] };
     for (let run = 0; run < (quick ? 1 : 2); run++) {
@@ -137,9 +155,13 @@ export async function comparePage(browser, page, count, aurora, label, compare) 
         runs.alone.push(await measureOnce(browser, { ...page, shot }, count, null));
         runs.aurora.push(await measureOnce(browser, { ...page, shot }, count, aurora));
     }
+    /**
+     * Picks the run that got ready and blocked the page least; the first run when none got ready.
+     */
     const best = list => list.filter(item => item.ready !== null).sort((a, b) => (a.settling + a.steady) - (b.settling + b.steady))[0] || list[0];
     const alone = best(runs.alone);
     const withTheme = best(runs.aurora);
+    /** One run's result as a line for the log. */
     const line = item => item.ready === null ? 'never ready'
         : `ready after ${item.ready} ms, blocked ${item.settling} ms settling + ${item.steady} ms steady (8 s each)`;
     console.log(`${label}\n  plugin alone: ${line(alone)}\n  with Aurora:  ${line(withTheme)}`);
@@ -163,6 +185,10 @@ export async function comparePage(browser, page, count, aurora, label, compare) 
     return problems;
 }
 
+/**
+ * Returns the plugin checkout named by envName, or prints usage and exits with 2 when it is missing
+ * or lacks the marker file.
+ */
 export function requireCheckout(envName, marker, usage) {
     const dir = process.env[envName];
     if (!dir || !fs.existsSync(path.join(dir, marker))) {

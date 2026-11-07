@@ -18,26 +18,40 @@ foreach (['VIR_DOMAIN_XML_INACTIVE' => 2, 'VIR_CRED_AUTHNAME' => 2, 'VIR_CRED_PA
 // Domains are resources, as libvirt's are (Unraid uses them as array keys and checks
 // is_resource()): a memory stream per domain, mapped to the VM's name.
 $GLOBALS['libvirtStubHandles'] = [];
+/**
+ * The domain resource of the VM with this name, the same one on every call, as libvirt hands out
+ * one per domain.
+ */
 function libvirt_stub_handle($name) {
     foreach ($GLOBALS['libvirtStubHandles'] as $handle) if ($handle[1] === $name) return $handle[0];
     $resource = fopen('php://memory', 'r');
     $GLOBALS['libvirtStubHandles'][(int)$resource] = [$resource, $name];
     return $resource;
 }
+/** The VM name behind a domain resource; a name or uuid given as a string is passed on as it is. */
 function libvirt_stub_name($dom) {
     if (is_resource($dom)) return $GLOBALS['libvirtStubHandles'][(int)$dom][1] ?? null;
     return (string)$dom;
 }
 
+/** Every VM of the scenario, from the state file scenario.mjs writes. */
 function libvirt_stub_vms() {
     $data = @json_decode(@file_get_contents(LIBVIRT_STUB_FILE), true);
     return is_array($data['vms'] ?? null) ? $data['vms'] : [];
 }
+/**
+ * The VM for a domain resource, name or uuid, with its position in the list; null when there is
+ * none.
+ */
 function libvirt_stub_vm($dom) {
     $name = libvirt_stub_name($dom);
     foreach (libvirt_stub_vms() as $index => $vm) if ($vm['name'] === $name || $vm['uuid'] === $name) return $vm + ['index' => $index];
     return null;
 }
+/**
+ * Changes a VM in the state file (running, paused, autostart), as a start, stop or setting would;
+ * false when there is no such VM.
+ */
 function libvirt_stub_set($dom, $changes) {
     $data = @json_decode(@file_get_contents(LIBVIRT_STUB_FILE), true) ?: ['vms' => []];
     $name = libvirt_stub_name($dom);
@@ -45,6 +59,10 @@ function libvirt_stub_set($dom, $changes) {
     file_put_contents(LIBVIRT_STUB_FILE, json_encode($data));
     return true;
 }
+/**
+ * A VM as the domain XML libvirt returns (memory, CPUs, disks, graphics, Unraid's metadata), as
+ * far as Unraid's pages read it.
+ */
 function libvirt_stub_xml($vm) {
     $mem = (int)($vm['memoryKiB'] ?? 4194304);
     $name = htmlspecialchars($vm['name']);
@@ -73,12 +91,19 @@ function libvirt_stub_xml($vm) {
         . "<video><model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1' primary='yes'/></video><memballoon model='none'/></devices></domain>";
 }
 
-// Connecting also writes each VM's definition where libvirt keeps it (the VM editor reads it).
+/**
+ * Connecting also writes each VM's definition where libvirt keeps it (the VM editor reads it).
+ */
 function libvirt_connect($uri = null, $readonly = false, $credentials = []) {
     @mkdir('/etc/libvirt/qemu', 0755, true);
     foreach (libvirt_stub_vms() as $index => $vm) @file_put_contents("/etc/libvirt/qemu/{$vm['name']}.xml", libvirt_stub_xml($vm + ['index' => $index]));
     return 'libvirt-stub-connection';
 }
+/**
+ * No error to report. From here on come libvirt's own functions, each answering as libvirt would
+ * for the scenario's VMs; the one-line ones only return a fixed answer or pass to
+ * libvirt_stub_set(), so they carry no comment of their own.
+ */
 function libvirt_get_last_error() { return ''; }
 function libvirt_logfile_set(...$args) { return true; }
 function libvirt_has_feature($name) { return false; }
@@ -112,6 +137,10 @@ function libvirt_domain_get_id($dom) { $vm = libvirt_stub_vm($dom); return $vm &
 function libvirt_domain_is_active($dom) { return !empty(libvirt_stub_vm($dom)['running']); }
 function libvirt_domain_get_autostart($dom) { return !empty(libvirt_stub_vm($dom)['autostart']) ? 1 : 0; }
 function libvirt_domain_set_autostart($dom, $on) { return libvirt_stub_set($dom, ['autostart' => (bool)$on]); }
+/**
+ * A VM's state (running 1, paused 3, shut off 5), memory and CPUs, as libvirt_domain_get_info()
+ * reports them.
+ */
 function libvirt_domain_get_info($dom) {
     $vm = libvirt_stub_vm($dom);
     if (!$vm) return false;
@@ -120,6 +149,10 @@ function libvirt_domain_get_info($dom) {
     return ['maxMem' => $mem, 'memory' => $mem, 'state' => $state, 'nrVirtCpu' => (int)($vm['vcpus'] ?? 2), 'cpuUsed' => $state === 1 ? 1234.5 : 0];
 }
 function libvirt_domain_get_xml_desc($dom, $xpath = null, $flags = 0) { $vm = libvirt_stub_vm($dom); return $vm ? libvirt_stub_xml($vm) : false; }
+/**
+ * Runs an XPath query on a VM's domain XML and returns the matches in libvirt's numbered-array
+ * form.
+ */
 function libvirt_domain_xml_xpath($dom, $xpath, $flags = 0) {
     $vm = libvirt_stub_vm($dom);
     if (!$vm) return false;
@@ -131,6 +164,9 @@ function libvirt_domain_xml_xpath($dom, $xpath, $flags = 0) {
     return $result;
 }
 function libvirt_domain_get_block_info($dom, $dev) { return ['device' => $dev, 'file' => '', 'type' => 'raw', 'capacity' => 32 * 1024 ** 3, 'allocation' => 12 * 1024 ** 3, 'physical' => 12 * 1024 ** 3]; }
+/**
+ * A running VM's network address, as the guest agent would report it; false while it is shut off.
+ */
 function libvirt_domain_interface_addresses($dom, $source = 0) {
     $vm = libvirt_stub_vm($dom);
     if (!$vm || empty($vm['running'])) return false;

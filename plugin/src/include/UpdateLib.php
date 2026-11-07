@@ -31,6 +31,7 @@ function aurora_channel(): string
     return aurora_setting('channel') === 'dev' ? 'dev' : 'stable';
 }
 
+/** Whether a version string is a dev build (ends in "-dev"). */
 function aurora_is_dev(string $version): bool
 {
     return substr($version, -4) === '-dev';
@@ -61,6 +62,7 @@ function aurora_plg_version(string $file): string
     return $xml && (string) $xml['name'] === AURORA_PLUGIN ? (string) $xml['version'] : '';
 }
 
+/** The version of the installed plugin, read from the .plg Unraid keeps on the flash drive. */
 function aurora_installed_version(): string
 {
     return aurora_plg_version('/boot/config/plugins/' . AURORA_PLUGIN . '.plg');
