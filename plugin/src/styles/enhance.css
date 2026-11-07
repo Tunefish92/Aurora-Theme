@@ -3026,8 +3026,23 @@ select.tp-select-open {
     background-color: var(--tp-danger-soft, transparent);
 }
 
-.tp-ct-modal .tp-ct-action.tp-ct-accent .fa {
+/* "Update" (only there when an update is available) in the amber of the "Update available" tag,
+   so it stands out from the other buttons (#33). */
+.tp-ct-modal .tp-ct-action.tp-ct-accent {
+    border-color: color-mix(in srgb, var(--tp-warn-text, #b45309) 45%, transparent);
     color: var(--tp-warn-text, #b45309);
+    background-color: var(--tp-warn-bg, #fef3c7);
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-accent .fa {
+    color: inherit;
+}
+
+.tp-ct-modal .tp-ct-action.tp-ct-accent:hover,
+.tp-ct-modal .tp-ct-action.tp-ct-accent:focus-visible {
+    border-color: var(--tp-warn-text, #b45309);
+    color: var(--tp-warn-text, #b45309);
+    background-color: color-mix(in srgb, var(--tp-warn-text, #b45309) 22%, var(--tp-warn-bg, #fef3c7));
 }
 
 .tp-ct-modal .tp-ct-link:after {
