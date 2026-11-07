@@ -12,6 +12,10 @@ require '/usr/local/emhttp/plugins/Aurora-Theme/include/UpdateLib.php';
 
 const STATUS_FILE = '/var/lib/aurora-theme/autoupdate.json';
 
+/**
+ * Records the outcome of this run for the settings page and the system log, prints it and exits
+ * (status 1 when the update failed).
+ */
 function finish(string $result, string $message, string $version = ''): void
 {
     @mkdir(dirname(STATUS_FILE), 0755, true);
@@ -22,6 +26,10 @@ function finish(string $result, string $message, string $version = ''): void
     exit($result === 'failed' ? 1 : 0);
 }
 
+/**
+ * Sends an Unraid notification about this run, unless "Update notifications" (autoupdate_notify)
+ * leaves this kind out.
+ */
 function notify(string $subject, string $description, string $level): void
 {
     $wanted = aurora_setting('autoupdate_notify');

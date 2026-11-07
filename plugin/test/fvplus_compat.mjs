@@ -15,8 +15,10 @@ import { comparePage, loadPlaywright, onlyPages, onlySizes, requireCheckout } fr
 
 const fvp = requireCheckout('FVP', 'scripts/lib/production-perf-fixture.mjs', 'Set FVP to a FolderView Plus checkout (see the top of this file).');
 
-// Docker page: Unraid's page frame and its live values, every container's CPU and memory every
-// second (the Dashboard and VMs pages of fvplus_host.mjs bring their own).
+/**
+ * Docker page: Unraid's page frame and its live values, every container's CPU and memory every
+ * second (the Dashboard and VMs pages of fvplus_host.mjs bring their own).
+ */
 const dockerHost = html => html
     .replace(/data-name="([^"]+)"([\s\S]*?)<td>bridge<\/td><td><\/td>/g, (match, name, between) =>
         `data-name="${name}"${between}<td>bridge</td><td class="advanced"><span class="cpu-${name}">0.5%</span><br><span class="mem-${name}">20MiB / 15GiB</span></td>`)

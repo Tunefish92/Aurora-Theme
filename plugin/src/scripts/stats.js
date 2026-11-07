@@ -23,6 +23,10 @@
   let timer;
   let request = 0;
 
+  /**
+   * Creates an element with an optional class and text; the shorthand the page builds its markup
+   * with.
+   */
   function element(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -78,13 +82,19 @@
   const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
   const secondFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  /**
+   * Formats a sample's time for the chart axis and tooltip: seconds for the live view, the weekday
+   * for a week or month, else hours and minutes.
+   */
   function formatTime(seconds) {
     const date = new Date(seconds * 1000);
     return (range === 'live' ? secondFormat : range === 'week' || range === 'month' ? dayFormat : timeFormat).format(date);
   }
+  /** Rounds a reading to about three significant digits for display. */
   function formatValue(value) {
     return value >= 100 ? value.toFixed(0) : value >= 10 ? value.toFixed(1) : value.toFixed(2);
   }
+  /** Formats a size given in KiB with the largest fitting unit, KB up to PB. */
   function formatSize(kib) {
     const units = ['KB', 'MB', 'GB', 'TB', 'PB'];
     let value = kib;
@@ -92,7 +102,9 @@
     while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
     return (value >= 100 ? value.toFixed(0) : value.toFixed(1)) + ' ' + units[unit];
   }
-  // 1, 2 or 5 times a power of ten: a readable top for the value axis.
+  /**
+   * 1, 2 or 5 times a power of ten: a readable top for the value axis.
+   */
   function niceMax(value) {
     if (value <= 0) return 1;
     const power = Math.pow(10, Math.floor(Math.log10(value)));
@@ -100,7 +112,9 @@
     return step * power;
   }
 
-  // ---- Charts
+  /**
+   * ---- Charts
+   */
   function drawChart(host, chart) {
     const data = chart.series.map(function (series) {
       return points.map(function (point) { return point[series.column] * series.scale; });
@@ -207,6 +221,10 @@
     };
   }
 
+  /**
+   * Fills the summary tiles (average and peak CPU, memory, network) from the points of the chosen
+   * range.
+   */
   function renderSummary() {
     const column = function (index, scale) { return points.map(function (point) { return point[index] * scale; }); };
     const average = function (values) { return values.length ? values.reduce(function (sum, value) { return sum + value; }, 0) / values.length : null; };
@@ -227,6 +245,10 @@
     }));
   }
 
+  /**
+   * Redraws the page for the chosen range: the selected tab, the note under the tabs, the summary
+   * tiles and every chart.
+   */
   function render() {
     tabs.querySelectorAll('.tp-tab').forEach(function (tab) {
       tab.setAttribute('aria-selected', String(tab.dataset.range === range));
@@ -238,6 +260,10 @@
     hosts.forEach(function (host, index) { drawChart(host, CHARTS[index]); });
   }
 
+  /**
+   * Adds the disk utilisation card, one bar per disk, from the list the page delivered with its
+   * markup.
+   */
   function renderDisks() {
     let disks = [];
     try { disks = JSON.parse(root.dataset.disks || '[]'); } catch (error) { disks = []; }
@@ -257,7 +283,9 @@
     root.append(element('h2', 'tfs-section', 'Disk utilisation'), card);
   }
 
-  // ---- Data
+  /**
+   * ---- Data
+   */
   function load() {
     const current = ++request;
     fetch(root.dataset.endpoint + '?range=' + encodeURIComponent(range), { credentials: 'same-origin' })
@@ -274,6 +302,10 @@
       });
   }
 
+  /**
+   * Switches to another time range: the old points are dropped, the page is redrawn and the new
+   * range's data is loaded.
+   */
   function setRange(next) {
     range = next;
     points = [];

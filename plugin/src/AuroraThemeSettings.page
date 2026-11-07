@@ -27,8 +27,10 @@ _(Accent colour)_:
 > the text on buttons are worked out from it.
 
 <script>
-// The colour picker and the code field follow each other; changes are announced so that
-// Unraid enables "Apply".
+/**
+ * The colour picker and the code field follow each other; changes are announced so that
+ * Unraid enables "Apply".
+ */
 function auroraAccent(value) {
   var field = document.getElementById('tft-accent');
   field.value = value;
@@ -122,7 +124,9 @@ _(Update notifications)_:
 
 <input type="hidden" name="#command" value="/plugins/Aurora-Theme/scripts/schedule.php">
 <script>
-// The weekday only for "Every week", the time for daily and weekly checks.
+/**
+ * The weekday only for "Every week", the time for daily and weekly checks.
+ */
 function auroraSchedule() {
   var when = document.getElementById('tft-when').value;
   document.getElementById('tft-day').hidden = when !== 'weekly';
@@ -172,8 +176,10 @@ if (!$auroraAutoOn) {
 </div>
 <p class="tft-source-problem" id="tft-update-note" role="status"></p>
 <script>
-// "Check for updates": asks the server for the newest GitHub release and shows the answer in
-// the card; the update button appears when there is something newer.
+/**
+ * "Check for updates": asks the server for the newest GitHub release and shows the answer in
+ * the card; the update button appears when there is something newer.
+ */
 function auroraCheck(button) {
   if (button.disabled) return;
   var label = button.innerHTML;
@@ -217,12 +223,14 @@ function auroraCheck(button) {
     });
 }
 
+/**
+ * Installs the exact release the check found (its own download address; the "latest" address
+ * can still point to the previous release for a minute after a new one is published). Without
+ * a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
+ * Unraid gives up silently when the plugin manager cannot start the task right now (for
+ * example while the automatic update runs), so the button says what is happening.
+ */
 function auroraUpdate(button) {
-  // Installs the exact release the check found (its own download address; the "latest" address
-  // can still point to the previous release for a minute after a new one is published). Without
-  // a check on this page yet, it checks first. Progress shows in Unraid's install dialog.
-  // Unraid gives up silently when the plugin manager cannot start the task right now (for
-  // example while the automatic update runs), so the button says what is happening.
   if (button) {
     if (button.disabled) return;
     button.disabled = true;
@@ -240,7 +248,9 @@ function auroraUpdate(button) {
     .catch(function () { auroraInstall(button, latest); });
 }
 
-// "forced": back from a dev build to the stable release, which Unraid otherwise refuses as older.
+/**
+ * "forced": back from a dev build to the stable release, which Unraid otherwise refuses as older.
+ */
 function auroraInstall(button, plg, forced) {
   openPlugin('plugin install ' + plg + (forced ? ' forced' : ''), 'Update Aurora Theme', '', 'refresh');
   if (!button) return;
@@ -299,9 +309,11 @@ function auroraInstall(button, plg, forced) {
       options.forEach(function (other) { other.setAttribute('aria-checked', String(other === option)); });
     });
   });
-  // The browser as a name and major version ("Brave 141", "Firefox 157"), not the whole
-  // user-agent string, which every Chromium browser fills with "Chrome" and "Safari". Chromium
-  // browsers name themselves in userAgentData; Brave also marks itself with navigator.brave.
+  /**
+   * The browser as a name and major version ("Brave 141", "Firefox 157"), not the whole
+   * user-agent string, which every Chromium browser fills with "Chrome" and "Safari". Chromium
+   * browsers name themselves in userAgentData; Brave also marks itself with navigator.brave.
+   */
   function browserName() {
     var ua = navigator.userAgent;
     var data = navigator.userAgentData;

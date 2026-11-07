@@ -8,13 +8,13 @@ reports what Aurora makes worse.
 git clone --depth 1 -b 7.3 https://github.com/unraid/webgui.git /tmp/webgui
 git clone --depth 1 https://github.com/alexphillips-dev/FolderView-Plus.git /tmp/fvp
 git clone --depth 1 https://github.com/chodeus/folder.view3.git /tmp/fv3
-npm install --no-save --no-package-lock playwright@1.64.1 && npx playwright install --with-deps chromium
+npm install --no-save --no-package-lock playwright@1.65.0 && npx playwright install --with-deps chromium
 sudo -E plugin/test/unraid-sim/run.sh --webgui /tmp/webgui --fvp /tmp/fvp --fv3 /tmp/fv3 --shots /tmp/shots
 ```
 
 Options: `--only REGEX` (case names), `--shard i/n` (every n-th case, to split a run), `--port`
 (default 8080; the server uses it and the next one). Needs Linux, root, PHP 8.3 CLI (with curl,
-dom and mbstring), Node 22 and Playwright. Everything runs in its own mount and process
+dom and mbstring), Node 22 or newer (CI uses Node 26) and Playwright. Everything runs in its own mount and process
 namespace (`unshare`): Unraid's paths there are temporary directories, the machine's own are left
 alone. The run exits with 1 when a case fails; `--shots` keeps every step's screenshots, alone and
 with Aurora, and `report-<shard>.json`.

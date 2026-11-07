@@ -10,14 +10,18 @@ import { orderFiles } from './files.mjs';
 export const { chromium } = createRequire(import.meta.url)('playwright');
 export const ORIGIN = process.env.SIM_ORIGIN || 'http://127.0.0.1:8080';
 
-// In the page: what is on screen now. Elements are named by tag, a class and their text, so the
-// same element can be found in both runs.
+/**
+ * In the page: what is on screen now. Elements are named by tag, a class and their text, so the
+ * same element can be found in both runs.
+ */
 export function snapshot() {
+    /** A readable name for an element (tag, two classes, its text), the same in both runs. */
     const name = element => {
         const text = (element.innerText || element.value || element.title || element.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 40);
         const cls = [...element.classList].filter(c => !/^(tp-|hover|active|focus)/.test(c)).slice(0, 2).join('.');
         return `${element.tagName.toLowerCase()}${cls ? '.' + cls : ''}${text ? ' "' + text + '"' : ''}`;
     };
+    /** True when an element takes up room on screen and is not hidden or transparent. */
     const visible = element => {
         if (!element.isConnected) return false;
         const rect = element.getBoundingClientRect();
@@ -69,9 +73,11 @@ export function snapshot() {
         const textRight = Math.max(...[...range.getClientRects()].map(rect => rect.right));
         if (textRight > inner + 2) result.clipped.push(name(element));
     }
-    // Controls: covered by another element at their centre, or out of reach sideways. Only the
-    // part of a control its boxes let show counts (a folder hiding its second line of icons is
-    // the plugin's choice); out of reach means outside the window with no scrolling to it.
+    /**
+     * Controls: covered by another element at their centre, or out of reach sideways. Only the
+     * part of a control its boxes let show counts (a folder hiding its second line of icons is
+     * the plugin's choice); out of reach means outside the window with no scrolling to it.
+     */
     const scrollable = value => /(auto|scroll)/.test(value);
     const atEnd = document.scrollingElement.scrollTop + innerHeight >= document.scrollingElement.scrollHeight - 2;
     const controls = [...content.querySelectorAll('button, a[href], a[onclick], input:not([type=hidden]), select, .switch-button-background, [role=button], [role=tab]')].filter(visible).slice(0, 800);
@@ -117,10 +123,14 @@ export function snapshot() {
     return result;
 }
 
+/** Counts one more of key in map. */
 const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+/** A request's path on the fake server, or the host name for requests elsewhere. */
 const endpoint = url => { const u = new URL(url); return u.origin === ORIGIN ? u.pathname : u.host; };
 
-// Opens the page once and runs the steps. page: { path, cookies, viewport, ready(), steps: [{ name, run(tab), wait }] }.
+/**
+ * Opens the page once and runs the steps. page: { path, cookies, viewport, ready(), steps: [{ name, run(tab), wait }] }.
+ */
 export async function visit(browser, page, auroraOn, shotDir, label) {
     const context = await browser.newContext({ viewport: page.viewport || { width: 1440, height: 900 } });
     const cookies = { ...(page.cookies || {}), ...(auroraOn ? {} : { aurora_off: '1' }) };
@@ -180,6 +190,10 @@ export async function visit(browser, page, auroraOn, shotDir, label) {
     if (page.files) {
         await tab.waitForTimeout(1500);
         const volatile = /(id|Id|At|at|time|Time|revision|stamp|nonce|hash|token)$/;
+        /**
+         * Removes keys that change on every run (ids, times, tokens) from saved data, so only real
+         * differences remain.
+         */
         const strip = value => Array.isArray(value) ? value.map(strip) : value && typeof value === 'object'
             ? Object.fromEntries(Object.entries(value).filter(([key]) => !volatile.test(key)).map(([key, item]) => [key, strip(item)])) : value;
         result.files = Object.fromEntries(Object.entries(orderFiles()).filter(([key]) => !/diagnostics|security|audit/.test(key)).map(([key, text]) => {
@@ -191,7 +205,9 @@ export async function visit(browser, page, auroraOn, shotDir, label) {
     return result;
 }
 
-// What Aurora changes for the worse. Returns a list of problems ([] = fine).
+/**
+ * What Aurora changes for the worse. Returns a list of problems ([] = fine).
+ */
 export function compare(alone, aurora, page = {}) {
     const problems = [];
     if (alone.ready === null) return ['the page never got ready without Aurora (case out of date?)'];
@@ -223,6 +239,7 @@ export function compare(alone, aurora, page = {}) {
         if (step.blocked > base.blocked * (page.blockedFactor || 1.5) + (page.blockedAllowance || 300)) problems.push(at + `blocked ${step.blocked} ms instead of ${base.blocked} ms`);
         if (step.pageOverflow > base.pageOverflow + 2) problems.push(at + `page ${step.pageOverflow} px wider than the window`);
         if (step.tableClipped > base.tableClipped + 2) problems.push(at + `table cut off by ${step.tableClipped} px`);
+        /** The items of a list that this step has and the baseline does not. */
         const fresh = key => (step[key] || []).filter(item => !(base[key] || []).includes(item));
         const clipped = fresh('clipped');
         if (clipped.length) problems.push(at + `${clipped.length} texts cut off: ` + clipped.slice(0, 4).join(', '));
@@ -235,7 +252,9 @@ export function compare(alone, aurora, page = {}) {
     return problems;
 }
 
-// reset(): puts the server back to the case's start (plugins remember open folders and more).
+/**
+ * reset(): puts the server back to the case's start (plugins remember open folders and more).
+ */
 export async function compareCase(browser, page, shotDir, label, reset = () => {}) {
     reset();
     const alone = await visit(browser, page, false, shotDir, label);
@@ -244,4 +263,5 @@ export async function compareCase(browser, page, shotDir, label, reset = () => {
     return { alone, aurora, problems: compare(alone, aurora, page) };
 }
 
+/** Creates the directory when one is given, and returns it. */
 export function ensureDir(dir) { if (dir) fs.mkdirSync(dir, { recursive: true }); return dir; }

@@ -14,11 +14,14 @@ const shots = ensureDir(process.env.SHOTS || '');
 const browser = await chromium.launch();
 const report = [];
 let failed = 0;
-// A plugin without a checkout (FVP, FV3) has its cases left out.
+/**
+ * A plugin without a checkout (FVP, FV3) has its cases left out.
+ */
 const available = entry => !entry.scenario.plugin || process.env[{ fvplus: 'FVP', fv3: 'FV3' }[entry.scenario.plugin]];
 for (const item of cases.filter((entry, index) => (!filter || filter.test(entry.name)) && available(entry) && index % shards === shard)) {
     const started = Date.now();
     const { alone, aurora, problems } = await compareCase(browser, item.page, shots, item.name, () => applyScenario(item.scenario));
+    /** One side's result (alone or with Aurora) as a short line for the log. */
     const summary = side => side.ready === null ? 'never ready' : `ready ${side.ready} ms, blocked ${side.settling}+${side.steady} ms, ${side.steps.at(-1)?.containers} containers / ${side.steps.at(-1)?.folders} folders`;
     console.log(`${problems.length ? 'FAIL' : 'ok  '} ${item.name} (${Math.round((Date.now() - started) / 1000)} s)\n     alone:  ${summary(alone)}\n     aurora: ${summary(aurora)}`);
     problems.forEach(problem => console.log('     - ' + problem));

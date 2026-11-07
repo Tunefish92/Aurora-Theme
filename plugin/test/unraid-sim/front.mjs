@@ -10,6 +10,7 @@ import http from 'node:http';
 const PORT = Number(process.env.PORT || 8080);
 const PHP = { host: '127.0.0.1', port: Number(process.env.PHP_PORT || 8081) };
 const STATE = '/tmp/sim/containers.json';
+/** Reads the fake Docker's state file; an empty state when there is none yet. */
 const load = () => { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch { return { containers: [] }; } };
 
 const server = http.createServer((req, res) => {
@@ -21,7 +22,9 @@ const server = http.createServer((req, res) => {
     req.pipe(upstream);
 });
 
-// A websocket text frame (server to client, unmasked).
+/**
+ * A websocket text frame (server to client, unmasked).
+ */
 const frame = text => {
     const data = Buffer.from(text);
     const head = data.length < 126 ? Buffer.from([0x81, data.length])
@@ -48,6 +51,10 @@ server.on('upgrade', (req, socket) => {
     const protocol = (req.headers['sec-websocket-protocol'] || '').includes('ws+meta.nchan');
     socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
         + `Sec-WebSocket-Accept: ${accept}\r\n` + (protocol ? 'Sec-WebSocket-Protocol: ws+meta.nchan\r\n' : '') + '\r\n');
+    /**
+     * Sends one message on the socket, with the id and headers nchan adds when the client asked for
+     * its meta protocol.
+     */
     const send = text => socket.write(frame(protocol ? `id: ${Date.now()}:${messageId++}\ncontent-type: text/plain\n\n${text}` : text));
     const publish = publishers[channel.split(',')[0]];
     const timer = publish && setInterval(() => { const text = publish(); if (text !== null) send(text); }, 1000);

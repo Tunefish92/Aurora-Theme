@@ -2,7 +2,9 @@
 // setting changed at a time from a base, with the clicks a user makes, on the Docker, VMs and
 // Dashboard pages, the plugins' settings pages and their folder editor.
 
-// Ready: the list is there and has not changed for two seconds (folders built).
+/**
+ * Ready: the list is there and has not changed for two seconds (folders built).
+ */
 const listReady = () => {
     const list = document.getElementById('docker_list') || document.getElementById('kvm_list');
     if (!list) return false;
@@ -11,6 +13,7 @@ const listReady = () => {
     if (window.tpSig !== sig) { window.tpSig = sig; window.tpSigAt = Date.now(); return false; }
     return Boolean(filled) && Date.now() - window.tpSigAt > 2000;
 };
+/** In the page: true once the Dashboard's app and VM chips have stayed the same for two seconds. */
 const dashboardReady = () => {
     const tile = document.getElementById('docker_view');
     if (!tile || !tile.querySelector('span.outer')) return false;
@@ -18,14 +21,18 @@ const dashboardReady = () => {
     if (window.tpSig !== sig) { window.tpSig = sig; window.tpSigAt = Date.now(); return false; }
     return Date.now() - window.tpSigAt > 2000;
 };
+/** In the page: true once the page has finished loading and two more seconds have passed. */
 const pageReady = () => document.readyState === 'complete' && (window.tpLoadedAt = window.tpLoadedAt || Date.now()) && Date.now() - window.tpLoadedAt > 3000;
 
-// Steps (the same in both runs).
+/**
+ * Steps (the same in both runs).
+ */
 const click = (selector, index = 0) => async tab => {
     const target = tab.locator(selector).nth(index);
     await target.scrollIntoViewIfNeeded({ timeout: 3000 });
     await target.click({ timeout: 3000 });
 };
+/** The selector of a FolderView folder's dropdown button in the given list. */
 const folderButton = list => `#${list} tr.folder button.folder-dropdown`;
 const steps = {
     openFolder: { name: 'open first folder', run: click(folderButton('docker_list'), 0), wait: 1500 },
@@ -95,16 +102,28 @@ const steps = {
 const full = [steps.openFolder, steps.closeFolder, steps.expandAll, steps.advanced, steps.containerMenu, steps.escape, steps.folderMenu, steps.escape, steps.stopOne, steps.unlock, steps.bottom, steps.tablet, steps.phone];
 const short = [steps.openFolder, steps.advanced, steps.bottom, steps.phone];
 
+/**
+ * The default containers of a case (40, some stopped, paused, with updates or without a template),
+ * with extra settings on top.
+ */
 const containers = (extra = {}) => ({ count: 40, stopped: 3, updates: [2, 9], paused: [4], noTemplate: [7], thirdParty: [11], compose: [13], ...extra });
+/** A case on the Docker tab with the short list of steps. */
 const docker = (extra = {}) => ({ path: '/Docker', ready: listReady, steps: short, ...extra });
+/** A case on the VMs tab with its folder, details, menu and phone steps. */
 const vms = (extra = {}) => ({ path: '/VMs', ready: listReady, steps: [steps.openVmFolder, steps.vmDetails, steps.vmMenu, steps.escape, steps.startVm, steps.bottom, steps.phone], ...extra });
+/** A case on the Dashboard with its tile, folder and app steps. */
 const dashboard = (extra = {}) => ({ path: '/Dashboard', ready: dashboardReady, steps: [steps.dashTile, steps.dashFolder, steps.dashAllApps, steps.phone, steps.dashTile], ...extra });
+/** A case on any other page: load it, scroll to the bottom and check the phone width. */
 const page = (path, extra = {}) => ({ path, ready: pageReady, settle: 2000, steady: 4000, steps: [steps.bottom, steps.phone], ...extra });
 
 export const cases = [];
 const add = (name, scenario, pageSpec = docker()) => cases.push({ name, scenario, page: pageSpec });
 
 for (const plugin of ['fvplus', 'fv3']) {
+    /**
+     * The scenario every case starts from (containers, VMs, VM folders, plugin, folders), with the
+     * case's own settings on top.
+     */
     const base = (extra = {}) => ({ containers: containers(), vms: { count: 10, paused: [3] }, vmFolders: { count: 3 }, plugin, folders: { count: 6 }, aurora: {}, display: {}, ...extra });
     const tag = plugin === 'fvplus' ? 'plus' : 'fv3';
     add(`${tag} base`, base(), docker({ steps: full }));

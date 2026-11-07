@@ -7,6 +7,10 @@ const TFT_PLUGIN = 'Aurora-Theme';
 const TFT_STATS_DIR = '/var/lib/aurora-theme';
 const TFT_STATS_KEEP_DAYS = 31;
 
+/**
+ * Whether the Stats page and its collector are switched on, from the plugin's settings with
+ * default.cfg as fallback; the collector stops early when they are off.
+ */
 function tft_stats_enabled(): bool
 {
     $cfg = [];
