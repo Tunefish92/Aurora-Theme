@@ -5986,10 +5986,13 @@
         }
 
         /* ---- The tab row: sticky, frosted, tabs as pills with icons */
+        /* z-index 101 as in Unraid: the Dashboard's tile buttons and header icons have
+           z-index 100 (DashStats.css), and at the same value they came later in the page and
+           were drawn over the bar while scrolling (#34). */
         #menu {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 101;
             display: flex;
             align-items: center;
             gap: 1.2rem;
