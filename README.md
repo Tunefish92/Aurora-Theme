@@ -70,7 +70,7 @@ Between releases, new fixes and features first come out as dev builds. To try th
 
 - Open any page with `?aurora=off` added to the address (for example `/Dashboard?aurora=off`, also `/login?aurora=off`) to switch the plugin off in that browser; `?aurora=on` turns it back on.
 - Remove it under **Plugins**, or with `plugin remove Aurora-Theme.plg` over SSH. This also restores Unraid's own login page.
-- Your own CSS and JavaScript can go in `/boot/config/plugins/Aurora-Theme/custom.css` and `custom.js`; they load after the theme and survive updates.
+- Your own CSS and JavaScript can go in `/boot/config/plugins/Aurora-Theme/custom.css` and `custom.js`; they load after the theme and survive updates. For the login page, put CSS in `custom-login.css` in the same folder; its colours are variables (`--tp-primary`, `--tp-bg`, `--tp-card`, ...), for example `:root { --tp-primary: #e8590c; --tp-primary-ii: #f59f00; }`.
 
 Please report bugs and ideas as [issues](https://github.com/Tunefish92/Aurora-Theme/issues); the settings page can fill one in for you, including the system details.
 

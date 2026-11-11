@@ -35,6 +35,13 @@
         $css
     );
     echo '<style id="aurora-login">' . "\n" . str_ireplace('</style', '<\/style', $css) . "\n</style>\n";
+    // The user's own rules for this page, after the theme's (#35): the login page's colours are
+    // variables (--tp-primary, --tp-bg, --tp-card, ...), so a few lines can match it to custom.css.
+    // Only CSS: no script of the user's runs on the page where the password is typed.
+    $custom = @file_get_contents('/boot/config/plugins/Aurora-Theme/custom-login.css');
+    if ($custom !== false && trim($custom) !== '') {
+        echo '<style id="aurora-custom-login-css">' . "\n" . str_ireplace('</style', '<\/style', $custom) . "\n</style>\n";
+    }
     // "Successfully logged out" is shown with the error style; it gets the calm one instead.
     echo "<script>document.addEventListener('DOMContentLoaded', function () {\n"
         . "  var note = document.getElementById('error');\n"
