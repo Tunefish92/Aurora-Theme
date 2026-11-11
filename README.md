@@ -43,7 +43,7 @@ Or over SSH:
 plugin install https://github.com/Tunefish92/Aurora-Theme/releases/latest/download/Aurora-Theme.plg
 ```
 
-Requires Unraid 7.2 or newer. The theme follows the Dynamix colour theme in *Settings → Display Settings*: **Black** gives the dark look, **White** the light one; the round button at the top right switches between the two. Other Dynamix themes are left unchanged.
+Requires Unraid 7.2 or newer; it supports the new header of Unraid 7.4. The theme follows the Dynamix colour theme in *Settings → Display Settings*: **Black** gives the dark look, **White** the light one; the round button at the top right switches between the two. Other Dynamix themes are left unchanged.
 
 Settings are under **Settings → User Utilities → Aurora Theme**.
 
@@ -51,16 +51,16 @@ Settings are under **Settings → User Utilities → Aurora Theme**.
 
 - **Look**: Inter and Space Grotesk fonts (bundled, no external requests), a blue–cyan accent, rounded cards, pill buttons, themed drop-down lists, switches, tab bars, dialogs, tooltips and notifications. Every table, including those of plugins, gets the same card style.
 - **Layout**: a top bar with the server controls in one row and pill tabs with icons, the quick actions as round buttons; or an optional sidebar with the main menu, server card and quick actions (phones and tablets keep the top bar). A dark / light switch and page headings on every tab.
-- **Login page**: a glass card on an aurora background, in the dark or light palette.
-- **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, the processor's cores as a compact grid with power and temperature chips, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
+- **Login page**: a glass card on an aurora background, in the dark or light palette and in your accent colour. Your own CSS for it goes in `custom-login.css` (see [Your own CSS and JavaScript](#your-own-css-and-javascript)).
+- **Dashboard**: tiles as cards, a summary strip (uptime, CPU, memory, array), restyled load charts, the processor's cores as a compact grid with power and temperature chips, usage rings, fans and disk bays as small cards. Clicking a container opens a dialog with all its actions; when an update is ready, its Update button stands out in amber. The processor tile keeps showing load, power and temperature when the Unraid API service is not running.
 - **Main**: device tables with status dots, temperature and error chips and slim usage bars; Array Operation as cards (array, parity check with live progress, last check, disks, mover, power).
-- **Docker**: a compact list with status, CPU, memory and a one-click WebUI button, filters and search, collapsible application groups with start/stop for a whole group, an "Orphans" section that removes unused images in one click, and a card layout on phones that also shows each container's addresses and mounts. The list refreshes by itself when containers were updated in the background. Containers keep Unraid's order and start in the order they are listed; unlock the list to drag them within and between groups or to move whole groups. With the FolderView3 plugin installed, a switch chooses between Aurora's groups and FolderView3's folders. With FolderView Plus installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout, as FolderView Plus asks of themes. Support for both FolderView plugins is in beta (a note in the top bar says so); please report anything that looks off. In the container editor every port is checked while typing (range, duplicates, ports used by other containers or by the server), and the "docker allocations" list becomes a searchable overview.
-- **VMs**: groups like on the Docker tab, a column with start / stop, group and menu buttons, and an expand button per VM for its disks, interfaces and snapshots, with buttons to create, revert and remove snapshots.
+- **Docker**: a compact list with status, CPU, memory and a one-click WebUI button (while a container starts or stops, its status pill spins and says "starting" or "stopping"), filters and search, collapsible application groups with start/stop for a whole group, an "Orphans" section that removes unused images in one click, and a card layout on phones that also shows each container's addresses and mounts. The list refreshes by itself when containers were updated in the background. Containers keep Unraid's order and start in the order they are listed; unlock the list to drag them within and between groups or to move whole groups. With the FolderView3 plugin installed, a switch chooses between Aurora's groups and FolderView3's folders. With FolderView Plus installed, its folders arrange the Docker and VMs tabs and the Dashboard, and Aurora keeps to colours and layout, as FolderView Plus asks of themes. Support for both FolderView plugins is in beta (a note in the top bar says so); please report anything that looks off. In the container editor every port is checked while typing (range, duplicates, ports used by other containers or by the server), and the "docker allocations" list becomes a searchable overview.
+- **VMs**: groups like on the Docker tab, status pills that spin while a VM starts or stops, a column with start / stop, group and menu buttons, and an expand button per VM for its disks, interfaces and snapshots, with buttons to create, revert and remove snapshots.
 - **Apps** (Community Applications): a nav-style menu, the search centred in the title row with themed suggestions, "Installed", "Official" and spotlight badges as pills, page numbers that stay in place, and Change Log, Credits and Statistics as modals.
 - **Settings and Tools**: a search field and a Favourites section; star any card to pin it at the top. The tool pages get readable help text: notes and warnings as callouts, command output in monospaced boxes, and the Diagnostics file list as cards. Help boxes and notices look the same everywhere.
 - **Users**: user cards with avatars or coloured initials, roles, search and an "Add user" button.
 - **Stats**: its own Stats tab with CPU, memory, network and disk charts, collected once a minute. It replaces the Dynamix System Statistics plugin, so remove that one first.
-- **Settings page**: switches for colours, layout, enhancements and the Stats tab, an accent colour, and the fonts (Aurora's Inter and Space Grotesk, or Unraid's own Clear Sans); updates from the GitHub releases, automatically (on by default, checked weekly; after an update the next page shows what changed, with the notes of every release since your previous version) or with "Check for updates" and "Update now", from the stable releases or, if you like to test, the dev builds; a form that opens a pre-filled GitHub issue.
+- **Settings page**: switches for colours, layout, enhancements and the Stats tab, an accent colour, and the fonts (Aurora's Inter and Space Grotesk, or Unraid's own Clear Sans); updates from the GitHub releases, automatically (on by default, checked weekly; after an update the next page shows what changed, with the notes of every release since your previous version) or with "Check for updates" and "Update now", from the stable releases or, if you like to test, the dev builds, with a choice of which automatic updates send an Unraid notification (all, failures only, none); a form that opens a pre-filled GitHub issue.
 
 ## Dev builds
 
@@ -70,9 +70,22 @@ Between releases, new fixes and features first come out as dev builds. To try th
 
 - Open any page with `?aurora=off` added to the address (for example `/Dashboard?aurora=off`, also `/login?aurora=off`) to switch the plugin off in that browser; `?aurora=on` turns it back on.
 - Remove it under **Plugins**, or with `plugin remove Aurora-Theme.plg` over SSH. This also restores Unraid's own login page.
-- Your own CSS and JavaScript can go in `/boot/config/plugins/Aurora-Theme/custom.css` and `custom.js`; they load after the theme and survive updates. The login page follows the accent colour setting; for anything more, put CSS in `custom-login.css` in the same folder; its colours are variables (`--tp-primary`, `--tp-bg`, `--tp-card`, ...), for example `:root { --tp-primary: #e8590c; --tp-primary-ii: #f59f00; }` (and `--tp-primary-text: #ffffff;` if the button text should be white on a colour that differs from your accent setting).
+- Your own CSS can override what looks wrong; see below.
 
 Please report bugs and ideas as [issues](https://github.com/Tunefish92/Aurora-Theme/issues); the settings page can fill one in for you, including the system details.
+
+## Your own CSS and JavaScript
+
+Files in `/boot/config/plugins/Aurora-Theme/` on the flash drive load after the theme and survive updates:
+
+- `custom.css` and `custom.js`: every page of the webGUI.
+- `custom-login.css`: the login page (CSS only; no script of yours runs where the password is typed). The login page already follows the accent colour setting. Its colours are variables, so a few lines change them, for example:
+
+  ```css
+  :root { --tp-primary: #e8590c; --tp-primary-ii: #f59f00; }
+  ```
+
+  `--tp-bg`, `--tp-card`, `--tp-primary-soft` and `--tp-aurora-a` / `-b` / `-c` (the background glow) work the same way. On a colour that differs from your accent setting, `--tp-primary-text` sets the button text (white or dark).
 
 ## Building from source
 
