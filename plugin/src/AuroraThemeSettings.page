@@ -351,11 +351,13 @@ function auroraInstall(button, plg, forced) {
 
 <div class="title"><span class="left"><i class="fa fa-code title"></i>_(Your own changes)_</span></div>
 
-Put your own rules in these files on the flash drive. They are loaded on every page, after the
-theme, and survive plugin updates:
+Put your own rules in these files on the flash drive. They are loaded after the theme and survive
+plugin updates. `custom.css` and `custom.js` apply to every page of the webGUI, `custom-login.css`
+to the login page only (its colours are variables such as `--tp-primary`, `--tp-bg` and `--tp-card`):
 
 - `/boot/config/plugins/Aurora-Theme/custom.css` <?= is_file('/boot/config/plugins/Aurora-Theme/custom.css') ? '&mdash; found' : '&mdash; not present' ?>
 - `/boot/config/plugins/Aurora-Theme/custom.js` <?= is_file('/boot/config/plugins/Aurora-Theme/custom.js') ? '&mdash; found' : '&mdash; not present' ?>
+- `/boot/config/plugins/Aurora-Theme/custom-login.css` <?= is_file('/boot/config/plugins/Aurora-Theme/custom-login.css') ? '&mdash; found' : '&mdash; not present' ?>
 
 <div class="title"><span class="left"><i class="fa fa-life-ring title"></i>_(Emergency switch)_</span></div>
 
