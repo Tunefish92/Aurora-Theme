@@ -283,7 +283,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 #header .tp-dev-badge i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--tp-primary, #3b82f6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--tp-primary, #3b82f6) 60%, transparent); animation: tp-dev-pulse 2.4s ease-out infinite; }
 #header .tp-dev-badge:hover { box-shadow: 0 0 1.2rem -0.1rem color-mix(in srgb, var(--tp-primary, #3b82f6) 75%, transparent); }
 @keyframes tp-dev-pulse { 70% { box-shadow: 0 0 0 0.6rem transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
-#UserProfile > .tp-dev-badge { margin: 0 0.2rem 0 0; }
+:is(#UserProfile, #UnraidHeader) > .tp-dev-badge { margin: 0 0.2rem 0 0; }
 #header .tp-dev-badge.tp-dev-in-sidebar { align-self: center; margin: 0.8rem 0 0; padding: 0.2rem 0.9rem 0.2rem 0.7rem; font-size: 1.1rem; }
 :root.tp-sidebar:not(.tp-topbar, .tp-sidebar-collapsed) #menu { padding-top: 14.6rem !important; }
 @media (prefers-reduced-motion: reduce) { #header .tp-dev-badge i { animation: none; } }
@@ -304,12 +304,14 @@ document.addEventListener('DOMContentLoaded', function () {
   // profile has rendered). That row lies over the rest of the top bar, so anything placed under
   // it would be hidden, and in the sidebar layout the breadcrumb leaves no room for it. Without
   // the switch: right after Unraid's version. Placed again when the layout or the sidebar changes.
+  // Unraid 7.4 and newer draw the header as one component: the logo block holds logo and version,
+  // and the switch sits in the component's row (#36).
   var root = document.documentElement;
   var place = function () {
-    var version = header.querySelector('unraid-header-os-version');
+    var version = header.querySelector('unraid-header-os-version, #UnraidHeader > .uh-logo-block');
     var sidebar = root.classList.contains('tp-sidebar') && !root.classList.contains('tp-topbar') && !root.classList.contains('tp-sidebar-collapsed');
-    var row = sidebar && version && version.querySelector(':scope > div');
-    var toggle = header.querySelector('#UserProfile > .tp-theme-switch');
+    var row = sidebar && version && (version.matches('.uh-logo-block') ? version : version.querySelector(':scope > div'));
+    var toggle = header.querySelector(':is(#UserProfile, #UnraidHeader) > .tp-theme-switch');
     badge.classList.toggle('tp-dev-in-sidebar', !!row);
     if (row) { if (badge.parentNode !== row) row.append(badge); }
     else if (toggle) { if (badge.nextSibling !== toggle) toggle.before(badge); }
@@ -323,6 +325,47 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () { watch.disconnect(); }, 15000);
   new MutationObserver(place).observe(root, { attributes: true, attributeFilter: ['class'] });
 });
+</script>
+<?php endif; ?>
+<?php
+// Unraid 7.4's task window (plugin installs, updates, ...) labels its button and the task tray's
+// remove links "Dismiss", a word the language packs do not have yet (German, #36), so it stays
+// English. Where the pack lacks it but has "Close", that word is used instead; English and a pack
+// that translates "Dismiss" are left alone. Unraid prints the label before this page runs, so it
+// is swapped in the browser, after each of Unraid's functions that sets it.
+$auroraDismiss = html_entity_decode(_('Dismiss'), ENT_QUOTES);
+$auroraClose = html_entity_decode(_('Close'), ENT_QUOTES);
+if ($auroraDismiss === 'Dismiss' && $auroraClose !== 'Close'):
+?>
+<script>
+(function (from, to) {
+  /** Replaces the untranslated label on the task window's button and in the task tray. */
+  var relabel = function () {
+    if (!window.jQuery) return;
+    jQuery('.sweet-alert button.confirm').filter(function () { return jQuery(this).text() === from; }).text(to);
+    jQuery('a.op-act[title="' + from + '"]').attr('title', to);
+  };
+  /** Wraps one of Unraid's global functions so the label is replaced after it ran; only once. */
+  var wrap = function (name) {
+    var original = window[name];
+    if (typeof original !== 'function' || original.tpRelabel) return;
+    var wrapped = function () {
+      var result = original.apply(this, arguments);
+      relabel();
+      return result;
+    };
+    // swal also carries functions of its own (swal.close, ...).
+    for (var key in original) {
+      if (Object.prototype.hasOwnProperty.call(original, key)) wrapped[key] = original[key];
+    }
+    wrapped.tpRelabel = true;
+    window[name] = wrapped;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    ['swal', 'openDone', 'openError', 'trayRender'].forEach(wrap);
+    relabel();
+  });
+})(<?= json_encode($auroraDismiss) ?>, <?= json_encode($auroraClose) ?>);
 </script>
 <?php endif; ?>
 <?php if (in_array('tp-no-favourites', $auroraClasses)): ?>

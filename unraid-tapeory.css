@@ -483,6 +483,78 @@
         color: var(--tp-header-text);
     }
 
+    /* Unraid 7.4 and newer draw the whole header as one component, <unraid-header>, a grid of
+       logo block, licence line, and server name with its buttons. Aurora lays these out in one
+       row, as it did with the separate header elements of Unraid 7.2 / 7.3: the logo first,
+       everything else at the right end (#36). The rules for each part list both versions. */
+    #header.unraid-consolidated-header {
+        --unraid-header-inset: 0px;
+        --unraid-header-padding-block: 0px;
+        /* Unraid stretches the items; the sidebar toggle and breadcrumb stay centred. */
+        align-items: center;
+    }
+
+    #header.unraid-consolidated-header > unraid-header {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+
+    #header #UnraidHeader {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1.2rem;
+    }
+
+    /* The logo block takes the free space, so the rest sits at the right end. Unraid's own
+       placement of the parts (grid areas, the licence line pinned to the top, the version
+       nudged down, and below 640px the blocks dissolved into the grid) is undone. */
+    #header #UnraidHeader > :is(.uh-logo-block, .uh-nav-right) {
+        display: flex;
+        align-self: center;
+    }
+
+    #header #UnraidHeader > .uh-meta-right {
+        align-self: center;
+    }
+
+    #header #UnraidHeader > .uh-logo-block {
+        flex: 1 1 auto;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    #header #UnraidHeader .uh-version {
+        top: 0;
+    }
+
+    /* Aurora's dev badge and dark / light switch (enhance.js), then the licence line, then the
+       server name and buttons. */
+    #UnraidHeader > :is(.tp-dev-badge, .tp-theme-switch) {
+        order: 1;
+    }
+
+    #UnraidHeader > .uh-meta-right {
+        order: 2;
+    }
+
+    #UnraidHeader > .uh-nav-right {
+        order: 3;
+    }
+
+    /* Aurora draws the banner fade itself (Display Settings, "Show banner background color
+       fade"). */
+    #UnraidHeader > .unraid-banner-gradient-layer {
+        display: none;
+    }
+
+    /* Until the component has loaded, Unraid shows a placeholder laid out as its own header;
+       hidden, so the logo does not jump into Aurora's place a moment later. */
+    #header .unraid-header-boot {
+        visibility: hidden;
+    }
+
     #menu {
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -5728,7 +5800,7 @@
        marked text-gray-950) in the accent, a reboot it still needs ("Reboot to Update", yellow)
        in amber. Newer Unraid releases render a <button>, older ones a span; Unraid's own icon
        and text give way to the theme's icon. */
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])) {
         display: inline-flex;
         flex: none;
         align-items: center;
@@ -5759,30 +5831,30 @@
         transition: filter 0.2s, transform 0.2s;
     }
 
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])).text-gray-950 {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])).text-gray-950 {
         border-color: transparent;
         color: #ffffff;
         background: var(--tp-gradient, var(--brand-orange));
         box-shadow: 0 6px 16px -8px var(--tp-primary, var(--brand-orange));
     }
 
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])):hover {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])):hover {
         filter: brightness(1.08);
         transform: translateY(-1px);
     }
 
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])):focus-visible {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])):focus-visible {
         outline: 2px solid var(--tp-primary, var(--brand-orange));
         outline-offset: 2px;
     }
 
     /* Unraid's icon (bell, warning triangle) and text give way to the theme's icon: a download
        arrow for an update, a restart arrow for a reboot. */
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])) * {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])) * {
         display: none !important;
     }
 
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup]))::before {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup]))::before {
         flex: none;
         width: 1.4rem;
         height: 1.4rem;
@@ -5793,7 +5865,7 @@
         content: "";
     }
 
-    #header unraid-header-os-version :is(.header-update-status, span[role="button"]:not([aria-haspopup])).text-gray-950::before {
+    #header :is(unraid-header-os-version, .uh-version) :is(.header-update-status, span[role="button"]:not([aria-haspopup])).text-gray-950::before {
         -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v11'/%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3Cpath d='M4.5 20h15'/%3E%3C/svg%3E");
         mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5v11'/%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3Cpath d='M4.5 20h15'/%3E%3C/svg%3E");
     }
@@ -5836,14 +5908,14 @@
 
         /* On a banner the see-through version and licence pills get a frosted backing, so
            their text stays readable whatever the image shows. */
-        #header.image :is(#UserProfile > div:first-of-type, unraid-header-os-version span[role="button"][aria-haspopup]) {
+        #header.image :is(#UserProfile > div:first-of-type, #UnraidHeader .uh-server-status, :is(unraid-header-os-version, .uh-version) span[role="button"][aria-haspopup]) {
             background: color-mix(in srgb, var(--tp-header-bg) 72%, transparent);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
 
         /* Logo and version in one row. */
-        #header unraid-header-os-version > div {
+        #header :is(unraid-header-os-version > div, #UnraidHeader > .uh-logo-block) {
             flex-direction: row;
             align-items: center;
             gap: 1.4rem;
@@ -5851,17 +5923,17 @@
             margin: 0;
         }
 
-        #header unraid-header-os-version > div > a :is(svg, img) {
+        #header :is(unraid-header-os-version > div > a, #UnraidHeader .uh-logo) :is(svg, img) {
             width: auto;
             height: 2.2rem;
         }
 
-        #header unraid-header-os-version > div > div {
+        #header :is(unraid-header-os-version > div > div, #UnraidHeader .uh-version > .header-version) {
             flex-wrap: nowrap;
             gap: 0.8rem;
         }
 
-        #header unraid-header-os-version span[role="button"][aria-haspopup] {
+        #header :is(unraid-header-os-version, .uh-version) span[role="button"][aria-haspopup] {
             gap: 0.5rem;
             padding: 0.3rem 0.9rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -5872,7 +5944,7 @@
             background: rgba(255, 255, 255, 0.04);
         }
 
-        #header unraid-header-os-version span[role="button"][aria-haspopup]:hover {
+        #header :is(unraid-header-os-version, .uh-version) span[role="button"][aria-haspopup]:hover {
             border-color: var(--tp-primary);
             color: var(--tp-header-text);
         }
@@ -5889,7 +5961,7 @@
             padding: 0 2.4rem 0 0;
         }
 
-        #UserProfile > div:first-of-type {
+        :is(#UserProfile > div:first-of-type, #UnraidHeader .uh-server-status) {
             flex-direction: row;
             align-items: center;
             gap: 0.8rem;
@@ -5903,7 +5975,7 @@
             background: rgba(255, 255, 255, 0.04);
         }
 
-        #UserProfile > div:first-of-type em {
+        :is(#UserProfile > div:first-of-type, #UnraidHeader .uh-server-status) em {
             margin-left: 0.2rem;
             padding: 0.2rem 0.8rem;
             border-radius: 999px;
@@ -5912,12 +5984,12 @@
             background: var(--tp-gradient);
         }
 
-        #UserProfile > div ~ div {
+        :is(#UserProfile > div ~ div, #UnraidHeader .uh-nav-right) {
             height: auto;
             gap: 0.8rem;
         }
 
-        #UserProfile > div ~ div > div:first-child {
+        :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) {
             display: grid;
             grid-template-columns: auto auto;
             align-items: center;
@@ -5925,7 +5997,7 @@
             margin-right: 0.4rem;
         }
 
-        #UserProfile > div ~ div > div:first-child::before {
+        :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name)::before {
             display: grid;
             grid-row: 1 / span 2;
             place-items: center;
@@ -5939,7 +6011,7 @@
             content: "\f233";
         }
 
-        #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
+        :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) > span:nth-child(1) {
             grid-row: 2;
             grid-column: 2;
             color: var(--tp-header-muted);
@@ -5948,11 +6020,11 @@
             text-align: left;
         }
 
-        #UserProfile > div ~ div > div:first-child > span:nth-child(2) {
+        :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) > span:nth-child(2) {
             display: none !important;
         }
 
-        #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
+        :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) > span:nth-child(3) {
             grid-row: 1;
             grid-column: 2;
             color: var(--tp-header-text);
@@ -5960,7 +6032,7 @@
             letter-spacing: -0.01em;
         }
 
-        #UserProfile > div ~ div > span[role="button"] {
+        :is(#UserProfile > div ~ div, #UnraidHeader .uh-actions) > span[role="button"] {
             justify-content: center;
             width: 3.6rem;
             height: 3.6rem;
@@ -5973,13 +6045,13 @@
             transition: border-color 0.3s, color 0.3s;
         }
 
-        #UserProfile > div ~ div > span[role="button"]:hover,
-        #UserProfile > div ~ div > span[role="button"][data-state="open"] {
+        :is(#UserProfile > div ~ div, #UnraidHeader .uh-actions) > span[role="button"]:hover,
+        :is(#UserProfile > div ~ div, #UnraidHeader .uh-actions) > span[role="button"][data-state="open"] {
             border-color: var(--tp-primary);
             color: var(--tp-primary-ii);
         }
 
-        #UserProfile > div ~ div > span[role="button"] svg[data-slot="icon"]:first-child {
+        :is(#UserProfile > div ~ div, #UnraidHeader .uh-actions) > span[role="button"] svg[data-slot="icon"]:first-child {
             width: 1.8rem;
             height: 1.8rem;
             color: inherit;
@@ -6182,14 +6254,14 @@
 
         /* Narrower screens: the licence chip and then the server description give way. */
         @media (max-width: 1279px) {
-            #UserProfile > div:first-of-type {
+            :is(#UserProfile > div:first-of-type, #UnraidHeader > .uh-meta-right) {
                 display: none;
             }
         }
 
         /* Below 900px the quick actions move to a row of their own under the tabs. */
         @media (max-width: 899px) {
-            #UserProfile > div ~ div > div:first-child > span:nth-child(1) {
+            :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) > span:nth-child(1) {
                 display: none !important;
             }
 
@@ -6215,7 +6287,7 @@
                 padding: 0 1.6rem;
             }
 
-            #header unraid-header-os-version > div > a :is(svg, img) {
+            #header :is(unraid-header-os-version > div > a, #UnraidHeader .uh-logo) :is(svg, img) {
                 height: 1.8rem;
             }
 
@@ -6223,13 +6295,13 @@
                 padding-right: 1.6rem;
             }
 
-            #UserProfile > div ~ div > div:first-child::before {
+            :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name)::before {
                 display: none;
             }
 
             /* Unraid places the server controls over the header's right end, so a long server
                name would run into the version and update notice. */
-            #UserProfile > div ~ div > div:first-child > span:nth-child(3) {
+            :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) > span:nth-child(3) {
                 display: block;
                 max-width: 12rem;
                 overflow: hidden;
@@ -6264,17 +6336,17 @@
 
         /* Small phones: only the notification and menu buttons stay on the right. */
         @media (max-width: 479px) {
-            #UserProfile > div ~ div > div:first-child {
+            :is(#UserProfile > div ~ div > div:first-child, #UnraidHeader .uh-name) {
                 display: none;
             }
         }
 
         @media (max-width: 379px) {
-            #header unraid-header-os-version > div {
+            #header :is(unraid-header-os-version > div, #UnraidHeader > .uh-logo-block) {
                 gap: 1rem;
             }
 
-            #header unraid-header-os-version > div > a :is(svg, img) {
+            #header :is(unraid-header-os-version > div > a, #UnraidHeader .uh-logo) :is(svg, img) {
                 height: 1.5rem;
             }
         }

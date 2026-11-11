@@ -239,12 +239,12 @@ button.tp-fv-beta.tp-fv-conflict > .fa,
 /* ---- Top right: dark / light switch */
 /* Phones: the header has no room for it; the theme stays switchable in Display Settings. */
 @media (max-width: 767px) {
-    #UserProfile > .tp-theme-switch {
+    :is(#UserProfile, #UnraidHeader) > .tp-theme-switch {
         display: none !important;
     }
 }
 
-#UserProfile > .tp-theme-switch {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch {
     display: grid;
     flex: none;
     place-items: center;
@@ -266,32 +266,32 @@ button.tp-fv-beta.tp-fv-conflict > .fa,
 }
 
 /* The icon shows the active theme: moon in blue while dark, sun in amber while light. */
-#UserProfile > .tp-theme-switch.tp-dark {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch.tp-dark {
     color: var(--tp-primary, var(--brand-orange));
 }
 
-#UserProfile > .tp-theme-switch:not(.tp-dark) {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch:not(.tp-dark) {
     color: #f59e0b;
 }
 
-#UserProfile > .tp-theme-switch:hover,
-#UserProfile > .tp-theme-switch:focus-visible {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch:hover,
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch:focus-visible {
     border-color: currentColor;
 }
 
-#UserProfile > .tp-theme-switch .fa {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch .fa {
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-#UserProfile > .tp-theme-switch:hover .fa {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch:hover .fa {
     transform: rotate(-20deg) scale(1.1);
 }
 
-#UserProfile > .tp-theme-switch.tp-busy {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch.tp-busy {
     cursor: progress;
 }
 
-#UserProfile > .tp-theme-switch.tp-busy .fa {
+:is(#UserProfile, #UnraidHeader) > .tp-theme-switch.tp-busy .fa {
     animation: fa-spin 1s linear infinite;
 }
 
@@ -459,6 +459,17 @@ tr.tp-busy .tp-pill:before {
     border-color: color-mix(in srgb, var(--tp-header-text, #ffffff) 12%, transparent);
     border-radius: 999px;
     background: color-mix(in srgb, var(--tp-header-text, #ffffff) 5%, transparent);
+}
+
+/* Unraid 7.4 and newer draw the whole header as one component (<unraid-header>), so the widget
+   is laid over it, after the logo block (enhance.js measures where that ends, #36). */
+#header > .tp-usage.tp-usage-header.tp-usage-over {
+    position: absolute;
+    top: 50%;
+    left: var(--tp-usage-left, 20rem);
+    z-index: 30;
+    margin: 0 0 0 2.4rem;
+    transform: translateY(-50%);
 }
 
 #header > .tp-usage.tp-usage-header .tp-usage-track {

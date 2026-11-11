@@ -877,15 +877,15 @@
     button.addEventListener('pointerenter', function () { pointerOn = true; });
     button.addEventListener('pointerleave', function () { pointerOn = false; place(); });
     /**
-     * Puts the theme switch first in Unraid's profile row, again after the component redraws, but
-     * never while the pointer is on it.
+     * Puts the theme switch first in Unraid's profile row (Unraid 7.2 / 7.3) or in the row of
+     * Unraid 7.4's header component, where the theme's CSS orders it before the licence line;
+     * again after the component redraws, but never while the pointer is on it.
      */
     function place() {
-      const profile = document.getElementById('UserProfile');
-      if (!profile || pointerOn) return;
-      if (profile.firstElementChild === button) return;
-      if (profile.contains(button) && button.parentElement === profile) return;
-      profile.prepend(button);
+      const row = document.getElementById('UserProfile') || document.getElementById('UnraidHeader');
+      if (!row || pointerOn) return;
+      if (button.parentElement === row) return;
+      row.prepend(button);
     }
     place();
     new MutationObserver(place).observe(document.getElementById('header') || document.body, { childList: true, subtree: true });
@@ -2796,19 +2796,47 @@
     // Unraid's logo; in the sidebar and on phones it stays with the quick actions.
     const row = native.parentElement;
     const wide = window.matchMedia('(min-width: 1024px)');
+    const header = document.getElementById('header');
+    // Unraid 7.4 and newer: the whole header is one component, <unraid-header>.
+    const host = header && header.querySelector(':scope > unraid-header');
     const place = function () {
-      const header = document.getElementById('header');
+      // Unraid 7.2 / 7.3: the logo is an element of its own in the header's row.
       const logo = header && header.querySelector(':scope > unraid-header-os-version');
-      const inHeader = Boolean(logo) && wide.matches && document.documentElement.classList.contains('tp-topbar');
+      const inHeader = Boolean(logo || host) && wide.matches && document.documentElement.classList.contains('tp-topbar');
       widget.classList.toggle('tp-usage-header', inHeader);
-      if (inHeader) {
+      widget.classList.toggle('tp-usage-over', inHeader && !logo);
+      if (!inHeader) {
+        if (widget.parentElement !== row) row.prepend(widget);
+      } else if (logo) {
         if (widget.previousElementSibling !== logo) logo.after(widget);
-      } else if (widget.parentElement !== row) {
-        row.prepend(widget);
+      } else {
+        if (widget.parentElement !== header) header.append(widget);
+        alignToLogo();
       }
+    };
+    /**
+     * Unraid 7.4+: the widget is laid over the header (inside Unraid's component it could be
+     * lost when the component redraws), so it is moved to where the logo and version end. The
+     * logo block itself is wider: it takes the header's free space.
+     */
+    const alignToLogo = function () {
+      if (!widget.classList.contains('tp-usage-over')) return;
+      const logo = host.querySelector('.uh-logo-block, .unraid-header-boot-logo');
+      if (!logo) return;
+      let end = 0;
+      for (const part of logo.children) {
+        end = Math.max(end, part.getBoundingClientRect().right);
+      }
+      widget.style.setProperty('--tp-usage-left', Math.round(end - header.getBoundingClientRect().left) + 'px');
     };
     place();
     wide.addEventListener('change', place);
+    if (host) {
+      // The component replaces its placeholder once it has loaded, and its columns change with
+      // the window width: measure again after both.
+      new MutationObserver(alignToLogo).observe(host, { childList: true });
+      if (window.ResizeObserver) new ResizeObserver(alignToLogo).observe(host);
+    }
   }
 
   /**
