@@ -48,18 +48,11 @@ foreach (['header' => '--tp-custom-header-text', 'headermetacolor' => '--tp-cust
 <?php
 // Accent colour from the plugin's settings ("#e11d48"; empty keeps the theme's blue). The
 // theme's shades are mixed from it, and the text on accent buttons is white or near-black,
-// whichever stands out more.
-$auroraAccent = strtolower(ltrim(trim((string) ($aurora['accent'] ?? '')), '#'));
-if (preg_match('/^[0-9a-f]{3}$/', $auroraAccent)) $auroraAccent = preg_replace('/(.)/', '$1$1', $auroraAccent);
-if (preg_match('/^[0-9a-f]{6}$/', $auroraAccent)):
-    $auroraLum = function ($hex) {
-        $l = [];
-        foreach (str_split($hex, 2) as $c) { $v = hexdec($c) / 255; $l[] = $v <= 0.03928 ? $v / 12.92 : (($v + 0.055) / 1.055) ** 2.4; }
-        return 0.2126 * $l[0] + 0.7152 * $l[1] + 0.0722 * $l[2];
-    };
-    $auroraL = $auroraLum($auroraAccent);
-    $auroraOnAccent = (1.05 / ($auroraL + 0.05)) >= (($auroraL + 0.05) / ($auroraLum('06101f') + 0.05)) ? '#ffffff' : '#06101f';
-    $auroraHex = "#$auroraAccent";
+// whichever stands out more (include/accent.php, shared with the login page).
+@include_once '/usr/local/emhttp/plugins/Aurora-Theme/include/accent.php';
+$auroraHex = function_exists('aurora_accent_hex') ? aurora_accent_hex($aurora['accent'] ?? '') : '';
+if ($auroraHex !== ''):
+    $auroraOnAccent = aurora_accent_text($auroraHex);
     $auroraScale = [];
     foreach ([50 => 'white 92%', 100 => 'white 84%', 200 => 'white 68%', 300 => 'white 48%', 400 => 'white 24%', 500 => 'white 6%', 600 => 'black 8%', 700 => 'black 24%', 800 => 'black 40%', 900 => 'black 54%', 950 => 'black 70%'] as $auroraStep => $auroraMix) {
         $auroraScale[] = "--color-primary-$auroraStep: color-mix(in oklab, $auroraHex, $auroraMix); --ui-color-primary-$auroraStep: color-mix(in oklab, $auroraHex, $auroraMix);";

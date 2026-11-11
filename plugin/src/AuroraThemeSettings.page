@@ -24,7 +24,7 @@ _(Accent colour)_:
 
 > The colour of highlights: the active menu entry, buttons, links, switches and bars. Pick one or
 > type its code (such as `#e11d48`); **Default** goes back to the theme's blue. Lighter shades and
-> the text on buttons are worked out from it.
+> the text on buttons are worked out from it. The login page uses it too.
 
 <script>
 /**

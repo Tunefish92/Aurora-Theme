@@ -35,6 +35,25 @@
         $css
     );
     echo '<style id="aurora-login">' . "\n" . str_ireplace('</style', '<\/style', $css) . "\n</style>\n";
+    // The accent colour from the settings, as on every other page: buttons, logo tile and the
+    // background glow follow it, with readable text on a light accent. Plain :root rules, as
+    // weak as login.css's own, so custom-login.css below still wins. The shades are mixed from
+    // var(--tp-primary), so a custom-login.css that only sets --tp-primary recolours them too.
+    @include_once "$dir/include/accent.php";
+    $accent = function_exists('aurora_accent_hex') ? aurora_accent_hex($cfg['accent'] ?? '') : '';
+    if ($accent !== '') {
+        $soft = function (int $percent): string {
+            return "color-mix(in srgb, var(--tp-primary) $percent%, transparent)";
+        };
+        echo '<style id="aurora-login-accent">' . "\n"
+            . ":root { --tp-primary: $accent; --tp-primary-ii: color-mix(in oklab, var(--tp-primary) 62%, white);"
+            . ' --tp-primary-text: ' . aurora_accent_text($accent) . ';'
+            . ' --tp-primary-soft: ' . $soft(18) . '; --tp-aurora-a: ' . $soft(35) . ';'
+            . " --tp-aurora-b: color-mix(in srgb, var(--tp-primary-ii) 22%, transparent); }\n"
+            . ':root:where(.Theme--white, .Theme--azure) { --tp-primary-soft: ' . $soft(12) . '; --tp-aurora-a: ' . $soft(22) . ';'
+            . " --tp-aurora-b: color-mix(in srgb, var(--tp-primary-ii) 18%, transparent); }\n"
+            . "</style>\n";
+    }
     // The user's own rules for this page, after the theme's (#35): the login page's colours are
     // variables (--tp-primary, --tp-bg, --tp-card, ...), so a few lines can match it to custom.css.
     // Only CSS: no script of the user's runs on the page where the password is typed.
