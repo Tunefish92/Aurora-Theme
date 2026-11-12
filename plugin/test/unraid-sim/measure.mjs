@@ -1,7 +1,7 @@
 // One page of the fake Unraid server, opened with Aurora off (cookie aurora_off) and on, with the
 // same clicks in both, and what differs between the two: script errors, containers and folders
-// listed and shown, text cut off, controls covered by something else, the page wider than the
-// window, time the browser is blocked, and requests repeated more often (a reload loop).
+// listed and shown, text cut off, state pills running out of their column, controls covered by
+// something else, the page wider than the window, time the browser is blocked, and requests repeated more often (a reload loop).
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -38,7 +38,7 @@ export function snapshot() {
         folders: list ? list.querySelectorAll('tr.folder').length : 0,
         foldersShown: list ? [...list.querySelectorAll('tr.folder')].filter(visible).length : 0,
         pageOverflow: Math.max(0, document.scrollingElement.scrollWidth - innerWidth),
-        clipped: [], covered: [], offscreen: [], cutShare: {}, tableClipped: 0,
+        clipped: [], covered: [], offscreen: [], cutShare: {}, tableClipped: 0, spilled: [],
     };
     // A table wider than the box around it, where that box hides the rest.
     for (const table of content.querySelectorAll('table')) {
@@ -72,6 +72,13 @@ export function snapshot() {
         range.selectNodeContents(element);
         const textRight = Math.max(...[...range.getClientRects()].map(rect => rect.right));
         if (textRight > inner + 2) result.clipped.push(name(element));
+    }
+    // Aurora's state pills (the Docker tab's status column, the state under a name) running past
+    // the right edge of their table cell into the next column, as the compose stack line did (#37).
+    for (const pill of content.querySelectorAll('td .tp-pill, td .inner > span.state')) {
+        if (!visible(pill)) continue;
+        const cell = pill.closest('td');
+        if (pill.getBoundingClientRect().right > cell.getBoundingClientRect().right + 2) result.spilled.push(name(pill));
     }
     /**
      * Controls: covered by another element at their centre, or out of reach sideways. Only the
@@ -243,6 +250,8 @@ export function compare(alone, aurora, page = {}) {
         const fresh = key => (step[key] || []).filter(item => !(base[key] || []).includes(item));
         const clipped = fresh('clipped');
         if (clipped.length) problems.push(at + `${clipped.length} texts cut off: ` + clipped.slice(0, 4).join(', '));
+        const spilled = fresh('spilled');
+        if (spilled.length) problems.push(at + `${spilled.length} state pills past their column: ` + spilled.slice(0, 4).join(', '));
         const covered = fresh('covered');
         if (covered.length) problems.push(at + `${covered.length} controls covered: ` + covered.slice(0, 4).join(', '));
         // Cut off as far as without Aurora (to a twentieth of its width) is not worse.

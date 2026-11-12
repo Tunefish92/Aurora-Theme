@@ -1155,6 +1155,29 @@
     }
 
     /**
+     * Splits the text of Unraid's state span into the state ("started") and what follows its
+     * first line break: for a container of a compose stack Unraid prints
+     * "started<br/>Compose Stack: name" there, and textContent would run both together.
+     */
+    function stateParts(state) {
+      const parts = { label: '', more: '' };
+      if (!state) return parts;
+      let afterBreak = false;
+      state.childNodes.forEach(function (node) {
+        if (node.nodeName === 'BR') {
+          afterBreak = true;
+        } else if (afterBreak) {
+          parts.more += ' ' + node.textContent;
+        } else {
+          parts.label += node.textContent;
+        }
+      });
+      parts.label = parts.label.trim();
+      parts.more = parts.more.replace(/\s+/g, ' ').trim();
+      return parts;
+    }
+
+    /**
      * Adds the image name, a status cell and an actions cell to one of Unraid's rows. The actions
      * call the same functions as Unraid's own context menu. Rows are rebuilt on every refresh,
      * so this runs again for each new row.
@@ -1217,8 +1240,13 @@
         });
       });
 
+      // Only the state goes into the pill; the line Unraid adds below it for a container of a
+      // compose stack ("Compose Stack: name") becomes the pill's tooltip (#37).
+      const stateText = stateParts(state);
+      const pill = element('span', 'tp-pill' + (running ? ' tp-good' : paused ? ' tp-warn' : ''), stateText.label);
+      if (stateText.more) pill.title = stateText.more;
       const statusCell = element('td', 'tp-extra tp-c-status');
-      statusCell.append(element('span', 'tp-pill' + (running ? ' tp-good' : paused ? ' tp-warn' : ''), state ? state.textContent.trim() : ''));
+      statusCell.append(pill);
 
       const actions = element('div', 'tp-actions');
       const control = function (action) {
