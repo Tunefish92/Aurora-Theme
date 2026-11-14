@@ -81,6 +81,15 @@ jobs:
           node plugin/test/fv3_compat.mjs
           QUICK=1 THEME=white node plugin/test/fv3_compat.mjs
 
+      # Not FolderView, but needs nothing more than Playwright: the Dashboard's core tiles (#38).
+      - name: Check Dashboard core tiles
+        if: matrix.plugin == 'fvplus'
+        env:
+          SCREENSHOTS: ${{ runner.temp }}/screenshots
+        run: |
+          node plugin/test/dashboard_cores.mjs
+          THEME=white node plugin/test/dashboard_cores.mjs
+
       # Every page alone and with Aurora, Black and White, for the visual review.
       - name: Screenshots
         if: always()

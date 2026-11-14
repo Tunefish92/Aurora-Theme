@@ -4134,10 +4134,11 @@ select.tp-select-open {
     text-transform: uppercase;
 }
 
-/* The core rows flow into a grid: the tile's rows become blocks, the core rows share a line. */
+/* The core rows flow into a grid: the tile's rows become blocks, the core rows share a line.
+   --tp-core-min is the width the widest core tile needs, measured by enhance.js (#38). */
 table.dashboard > tbody.tp-cpu-tile {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(10.5rem, var(--tp-core-min, 0px))), 1fr));
     column-gap: 0.6rem;
 }
 
@@ -4195,6 +4196,7 @@ tbody.tp-cpu-tile > tr.tp-core span.w26 {
     margin: 0;
     color: var(--tp-muted);
     font: 600 1.15rem/1.2 var(--tp-font-heading);
+    font-variant-numeric: tabular-nums; /* same width for every label of the same length (#38) */
     white-space: nowrap;
 }
 
