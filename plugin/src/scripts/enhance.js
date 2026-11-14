@@ -2368,6 +2368,49 @@
       }
       if (match[3]) row.classList.add('tp-core-pair');
     });
+    dashboardCoreWidth(tile);
+  }
+
+  /**
+   * Dashboard, Processor tile: the grid's columns get at least the width the widest core tile
+   * needs, measured on a hidden copy of the core with the longest label ("14 · 15" and its "P"
+   * badge) showing "100%" for every thread. With a fixed minimum the label was cut when the loads
+   * had two digits (#38). Measured again whenever fonts finish loading, and when the tile first
+   * gets a size if it was hidden.
+   */
+  function dashboardCoreWidth(tile) {
+    const labelLength = function (row) {
+      const label = row.querySelector('span.w26');
+      return label ? label.textContent.length : 0;
+    };
+    const measure = function () {
+      const rows = [...tile.querySelectorAll(':scope > tr.tp-core')];
+      const groups = [rows.filter(function (row) { return row.classList.contains('tp-core-pair'); }), rows.filter(function (row) { return !row.classList.contains('tp-core-pair'); })];
+      let width = 0;
+      groups.forEach(function (group) {
+        if (!group.length) return;
+        const longest = group.reduce(function (best, row) { return labelLength(row) > labelLength(best) ? row : best; });
+        const probe = longest.cloneNode(true);
+        probe.removeAttribute('title');
+        probe.querySelectorAll('[id]').forEach(function (node) { node.removeAttribute('id'); });
+        probe.querySelectorAll('.load').forEach(function (node) { node.textContent = '100%'; });
+        probe.setAttribute('aria-hidden', 'true');
+        probe.style.cssText = 'position: absolute; display: block; width: max-content; visibility: hidden; pointer-events: none;';
+        tile.append(probe);
+        width = Math.max(width, probe.getBoundingClientRect().width);
+        probe.remove();
+      });
+      if (width > 0) tile.style.setProperty('--tp-core-min', Math.ceil(width + 2) + 'px');
+      return width > 0;
+    };
+    if (!measure() && typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(function () {
+        if (measure()) observer.disconnect();
+      });
+      observer.observe(tile);
+    }
+    // fonts.ready can resolve before the theme's fonts are even requested; loadingdone follows them.
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', measure);
   }
 
   /**
