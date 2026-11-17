@@ -8,7 +8,8 @@
 // This check builds such an editor (made-up class names, StaXX's structure), loads Aurora's
 // theme.css, enhance.css and enhance.js from this working tree, and fails when the textarea's
 // text metrics differ from the layer's, when a plain control in Unraid's own components loses
-// Aurora's font, or when a drop-down list in the dialog or on the page cannot be used.
+// Aurora's font, when a drop-down list in the dialog or on the page cannot be used, or when a
+// list on the plugin's page does not take the plugin's accent (StaXX's --sm-accent).
 //
 // Usage: node plugin/test/plugin_controls.mjs   (THEME=white for the light palette)
 import fs from 'node:fs';
@@ -28,6 +29,7 @@ const pageHtml = `<!doctype html><html class="Theme--${theme}"><head><meta chars
 html { font-size: 62.5%; }
 .unapi *, .unapi ::before, .unapi ::after { box-sizing: border-box; border: 0 solid; margin: 0; padding: 0; }
 .unapi button, .unapi input, .unapi select, .unapi textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+.fixture-scaffold { --sm-accent: #ff8c2f; }
 .fixture-scaffold .fixture-wrap { position: relative; width: 600px; height: 200px; }
 .fixture-scaffold .fixture-code,
 .fixture-scaffold .fixture-ink {
@@ -50,6 +52,7 @@ html { font-size: 62.5%; }
     <textarea class="fixture-code" id="code" wrap="off" spellcheck="false"></textarea>
   </div>
   <input class="fixture-field" id="field" type="text" value="fixture-app-1">
+  <select class="fixture-field" id="protocol"><option selected>tcp</option><option>udp</option></select>
   <dialog class="fixture-modal" id="modal">
     <label>Restart policy <select class="fixture-field" id="restart"><option>no</option><option>always</option><option selected>unless-stopped</option><option>on-failure</option></select></label>
   </dialog>
@@ -102,7 +105,7 @@ function inspect(text) {
  * Clicks a select, checks that Aurora's list is the topmost element where it shows, picks an
  * entry by clicking it and returns what went wrong (an empty list when nothing did).
  */
-async function chooseFrom(tab, selector, entry) {
+async function chooseFrom(tab, selector, entry, accent) {
     const problems = [];
     await tab.locator(selector).click();
     const state = await tab.evaluate(() => {
@@ -111,11 +114,14 @@ async function chooseFrom(tab, selector, entry) {
         const box = panel.getBoundingClientRect();
         const top = document.elementFromPoint(box.left + box.width / 2, box.top + 12);
         const option = panel.querySelector('.tp-select-option');
-        return { onTop: !!(top && panel.contains(top)), padding: parseFloat(getComputedStyle(option).paddingLeft) };
+        const selected = panel.querySelector('.tp-select-option.tp-selected');
+        return { onTop: !!(top && panel.contains(top)), padding: parseFloat(getComputedStyle(option).paddingLeft), colour: getComputedStyle(selected).color };
     });
     if (!state) return [`${selector}: no list opened`];
     if (!state.onTop) problems.push(`${selector}: the list is covered by something else`);
     if (!(state.padding > 4)) problems.push(`${selector}: the list's entries lost their padding`);
+    if (accent && state.colour !== accent) problems.push(`${selector}: selected entry is ${state.colour}, not the app's accent ${accent}`);
+    if (!accent && state.colour === orange) problems.push(`${selector}: selected entry has the app's accent on an Unraid page`);
     await tab.locator('.tp-select-option', { hasText: new RegExp('^' + entry + '$') }).click({ timeout: 3000 })
         .catch(() => problems.push(`${selector}: "${entry}" could not be clicked`));
     const value = await tab.locator(selector).inputValue();
@@ -134,6 +140,7 @@ async function escapeCloses(tab, selector) {
     return problems;
 }
 
+const orange = 'rgb(255, 140, 47)';
 const browser = await chromium.launch();
 const tab = await browser.newPage({ viewport: { width: 1000, height: 600 } });
 const errors = [];
@@ -142,9 +149,10 @@ await serve(tab);
 await tab.goto('http://aurora.test/Stacks');
 await tab.evaluate(() => document.fonts.ready);
 const result = await tab.evaluate(inspect, yaml);
-const pageList = await chooseFrom(tab, '#page-select', 'third');
+const pageList = await chooseFrom(tab, '#page-select', 'third', null);
+const pluginList = await chooseFrom(tab, '#protocol', 'udp', orange);
 await tab.evaluate(() => document.getElementById('modal').showModal());
-const dialogList = await chooseFrom(tab, '#restart', 'always');
+const dialogList = await chooseFrom(tab, '#restart', 'always', orange);
 const escape = await escapeCloses(tab, '#restart');
 await browser.close();
 
@@ -154,7 +162,7 @@ if (result.drift > 0.5) problems.push(`caret ${result.drift.toFixed(1)} px away 
 if (!/monospace/.test(result.field)) problems.push(`plugin's own input lost its font: "${result.field}"`);
 if (!/^"?Inter"?/.test(result.plain)) problems.push(`textarea in Unraid's components has "${result.plain}", not Aurora's font`);
 if (!/^"?Inter"?/.test(result.plainInput)) problems.push(`input in Unraid's components has "${result.plainInput}", not Aurora's font`);
-problems.push(...pageList, ...dialogList, ...escape);
+problems.push(...pageList, ...pluginList, ...dialogList, ...escape);
 
 if (problems.length) {
     console.log(`FAIL plugin controls, ${theme}:\n  ` + problems.join('\n  '));

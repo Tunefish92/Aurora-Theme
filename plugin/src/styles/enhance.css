@@ -2753,6 +2753,22 @@ body .tp-select-panel[popover] .tp-select-group {
     padding: 1rem 1.2rem 0.4rem;
 }
 
+/* Plugin pages with an accent of their own (StaXX's orange, --sm-accent): the list and the open
+   select take the app's colour instead of Aurora's, with the same soft wash as Aurora's own. */
+.tp-select-panel.tp-app-accent {
+    --tp-primary: var(--tp-select-accent);
+    --tp-primary-soft: color-mix(in srgb, var(--tp-select-accent) 16%, transparent);
+}
+
+.staxx-scaffold select.tp-select-open {
+    --tp-primary: var(--sm-accent);
+    --tp-primary-soft: color-mix(in srgb, var(--sm-accent) 16%, transparent);
+}
+
+:root.Theme--white :is(.tp-select-panel.tp-app-accent, .staxx-scaffold select.tp-select-open) {
+    --tp-primary-soft: color-mix(in srgb, var(--tp-select-accent, var(--sm-accent)) 10%, transparent);
+}
+
 .tp-select-panel.tp-upwards {
     animation-name: tp-select-up;
 }

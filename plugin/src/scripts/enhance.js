@@ -3313,6 +3313,16 @@
       return select.closest('dialog[open], [popover]');
     }
 
+    /**
+     * The accent colour a plugin gives its own page, so the list matches the app around it:
+     * StaXX's --sm-accent (its orange). Empty on Unraid's own pages, where the list keeps
+     * Aurora's accent. Read from the select, because a list outside a dialog sits in the body,
+     * away from the plugin's variables.
+     */
+    function appAccent(select) {
+      return getComputedStyle(select).getPropertyValue('--sm-accent').trim();
+    }
+
     /** Closes the open drop-down list; with returnFocus the focus goes back to its select. */
     function close(returnFocus) {
       if (!open) return;
@@ -3394,6 +3404,11 @@
       });
       if (!entries.length) return;
       panel.addEventListener('mousedown', function (event) { event.preventDefault(); });
+      const accent = appAccent(select);
+      if (accent) {
+        panel.classList.add('tp-app-accent');
+        panel.style.setProperty('--tp-select-accent', accent);
+      }
       const layer = layerOf(select);
       if (layer) {
         panel.popover = 'manual';
