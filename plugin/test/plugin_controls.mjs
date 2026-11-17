@@ -3,9 +3,12 @@
 // classes. Aurora gives Unraid's own components its font there, but must not outweigh the
 // plugin's rules: StaXX's Compose editor draws its coloured text in a monospace layer over a
 // transparent textarea, and with the textarea in Aurora's font the caret no longer sat under the
-// text (#39). This check builds such an editor (made-up class names, StaXX's structure), loads
-// Aurora's theme.css from this working tree, and fails when the textarea's text metrics differ
-// from the layer's, or when a plain control in Unraid's own components loses Aurora's font.
+// text (#39). That editor is a modal <dialog>, drawn above the whole page with everything outside
+// it inert, so Aurora's themed drop-down list must open inside it, on top (#39 as well).
+// This check builds such an editor (made-up class names, StaXX's structure), loads Aurora's
+// theme.css, enhance.css and enhance.js from this working tree, and fails when the textarea's
+// text metrics differ from the layer's, when a plain control in Unraid's own components loses
+// Aurora's font, or when a drop-down list in the dialog or on the page cannot be used.
 //
 // Usage: node plugin/test/plugin_controls.mjs   (THEME=white for the light palette)
 import fs from 'node:fs';
@@ -23,6 +26,7 @@ const pageHtml = `<!doctype html><html class="Theme--${theme}"><head><meta chars
 <title>Tower/Stacks</title>
 <style>
 html { font-size: 62.5%; }
+.unapi *, .unapi ::before, .unapi ::after { box-sizing: border-box; border: 0 solid; margin: 0; padding: 0; }
 .unapi button, .unapi input, .unapi select, .unapi textarea { font: inherit; letter-spacing: inherit; color: inherit; }
 .fixture-scaffold .fixture-wrap { position: relative; width: 600px; height: 200px; }
 .fixture-scaffold .fixture-code,
@@ -37,18 +41,24 @@ html { font-size: 62.5%; }
 .fixture-scaffold .fixture-field { font-family: ui-monospace, monospace; }
 </style>
 <link rel="stylesheet" href="/plugins/Aurora-Theme/styles/theme.css">
+<link rel="stylesheet" href="/plugins/Aurora-Theme/styles/enhance.css">
 </head><body>
+<select id="page-select"><option>first</option><option selected>second</option><option>third</option></select>
 <div class="fixture-scaffold unapi">
   <div class="fixture-wrap">
     <div class="fixture-ink" id="ink"></div>
     <textarea class="fixture-code" id="code" wrap="off" spellcheck="false"></textarea>
   </div>
   <input class="fixture-field" id="field" type="text" value="fixture-app-1">
+  <dialog class="fixture-modal" id="modal">
+    <label>Restart policy <select class="fixture-field" id="restart"><option>no</option><option>always</option><option selected>unless-stopped</option><option>on-failure</option></select></label>
+  </dialog>
 </div>
 <div class="unapi" id="component"><textarea id="plain"></textarea><input id="plain-input" type="text"></div>
+<script src="/plugins/Aurora-Theme/scripts/enhance.js"></script>
 </body></html>`;
 
-/** Serves the test page and Aurora's theme.css (the repo's unraid-tapeory.css) and fonts. */
+/** Serves the test page and Aurora's files (theme.css is the repo's unraid-tapeory.css). */
 async function serve(tab) {
     await tab.route('http://aurora.test/**', route => {
         const url = new URL(route.request().url());
@@ -56,7 +66,7 @@ async function serve(tab) {
         const rel = url.pathname.replace('/plugins/Aurora-Theme/', '');
         const file = rel === 'styles/theme.css' ? path.join(repo, 'unraid-tapeory.css') : path.join(repo, 'plugin/src', rel);
         if (!file.startsWith(repo) || !fs.existsSync(file)) return route.fulfill({ status: 404, body: '' });
-        const type = file.endsWith('.css') ? 'text/css' : 'font/woff2';
+        const type = file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : 'font/woff2';
         return route.fulfill({ contentType: type, body: fs.readFileSync(file) });
     });
 }
@@ -88,6 +98,42 @@ function inspect(text) {
     };
 }
 
+/**
+ * Clicks a select, checks that Aurora's list is the topmost element where it shows, picks an
+ * entry by clicking it and returns what went wrong (an empty list when nothing did).
+ */
+async function chooseFrom(tab, selector, entry) {
+    const problems = [];
+    await tab.locator(selector).click();
+    const state = await tab.evaluate(() => {
+        const panel = document.querySelector('.tp-select-panel');
+        if (!panel) return null;
+        const box = panel.getBoundingClientRect();
+        const top = document.elementFromPoint(box.left + box.width / 2, box.top + 12);
+        const option = panel.querySelector('.tp-select-option');
+        return { onTop: !!(top && panel.contains(top)), padding: parseFloat(getComputedStyle(option).paddingLeft) };
+    });
+    if (!state) return [`${selector}: no list opened`];
+    if (!state.onTop) problems.push(`${selector}: the list is covered by something else`);
+    if (!(state.padding > 4)) problems.push(`${selector}: the list's entries lost their padding`);
+    await tab.locator('.tp-select-option', { hasText: new RegExp('^' + entry + '$') }).click({ timeout: 3000 })
+        .catch(() => problems.push(`${selector}: "${entry}" could not be clicked`));
+    const value = await tab.locator(selector).inputValue();
+    if (value !== entry) problems.push(`${selector}: value is "${value}", not "${entry}"`);
+    return problems;
+}
+
+/** Opens the list of a select in the modal dialog and checks that Escape closes only the list. */
+async function escapeCloses(tab, selector) {
+    await tab.locator(selector).click();
+    await tab.keyboard.press('Escape');
+    const state = await tab.evaluate(() => ({ list: !!document.querySelector('.tp-select-panel'), dialog: document.getElementById('modal').open }));
+    const problems = [];
+    if (state.list) problems.push(`${selector}: Escape left the list open`);
+    if (!state.dialog) problems.push(`${selector}: Escape closed the dialog along with the list`);
+    return problems;
+}
+
 const browser = await chromium.launch();
 const tab = await browser.newPage({ viewport: { width: 1000, height: 600 } });
 const errors = [];
@@ -96,6 +142,10 @@ await serve(tab);
 await tab.goto('http://aurora.test/Stacks');
 await tab.evaluate(() => document.fonts.ready);
 const result = await tab.evaluate(inspect, yaml);
+const pageList = await chooseFrom(tab, '#page-select', 'third');
+await tab.evaluate(() => document.getElementById('modal').showModal());
+const dialogList = await chooseFrom(tab, '#restart', 'always');
+const escape = await escapeCloses(tab, '#restart');
 await browser.close();
 
 const problems = errors.map(message => 'script error: ' + message);
@@ -104,6 +154,7 @@ if (result.drift > 0.5) problems.push(`caret ${result.drift.toFixed(1)} px away 
 if (!/monospace/.test(result.field)) problems.push(`plugin's own input lost its font: "${result.field}"`);
 if (!/^"?Inter"?/.test(result.plain)) problems.push(`textarea in Unraid's components has "${result.plain}", not Aurora's font`);
 if (!/^"?Inter"?/.test(result.plainInput)) problems.push(`input in Unraid's components has "${result.plainInput}", not Aurora's font`);
+problems.push(...pageList, ...dialogList, ...escape);
 
 if (problems.length) {
     console.log(`FAIL plugin controls, ${theme}:\n  ` + problems.join('\n  '));

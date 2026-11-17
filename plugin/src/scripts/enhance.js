@@ -3295,11 +3295,23 @@
   function selectLists() {
     if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
     let open = null;
+    const popovers = typeof HTMLElement.prototype.showPopover === 'function';
 
     const usable = function (select) {
       return select.matches('select') && !select.multiple && !select.disabled && (!select.size || select.size <= 1) &&
-        !select.closest('.tp-native-select') && select.options.length > 0;
+        !select.closest('.tp-native-select') && select.options.length > 0 && (popovers || !layerOf(select));
     };
+
+    /**
+     * The open dialog or popover a select sits in, or null. A modal dialog (StaXX's editor) is
+     * drawn above the whole page and makes everything outside it inert, so a list added to the
+     * body opened unseen behind it and the select seemed dead (#39). There the list goes into
+     * the dialog and is shown as a popover of its own, above the dialog; without popover
+     * support such selects keep the browser's list.
+     */
+    function layerOf(select) {
+      return select.closest('dialog[open], [popover]');
+    }
 
     /** Closes the open drop-down list; with returnFocus the focus goes back to its select. */
     function close(returnFocus) {
@@ -3382,7 +3394,14 @@
       });
       if (!entries.length) return;
       panel.addEventListener('mousedown', function (event) { event.preventDefault(); });
-      document.body.append(panel);
+      const layer = layerOf(select);
+      if (layer) {
+        panel.popover = 'manual';
+        layer.append(panel);
+        panel.showPopover();
+      } else {
+        document.body.append(panel);
+      }
 
       // Under the field, or above it when there is more room there.
       const rect = select.getBoundingClientRect();

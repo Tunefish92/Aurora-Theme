@@ -2734,6 +2734,25 @@ select.tp-select-open {
     animation: tp-select-down 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Inside an open dialog (StaXX's editor) the list is a popover in the browser's top layer: placed
+   by the script, not centred as popovers are by default. "body" weighs these over the reset
+   Unraid's component sheet scopes to .unapi pages (`.unapi * { padding: 0; border: 0 solid }`),
+   where such dialogs live (#39). */
+body .tp-select-panel[popover] {
+    inset: auto;
+    margin: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+}
+
+body .tp-select-panel[popover] .tp-select-option {
+    padding: 0.85rem 3.4rem 0.85rem 1.2rem;
+}
+
+body .tp-select-panel[popover] .tp-select-group {
+    padding: 1rem 1.2rem 0.4rem;
+}
+
 .tp-select-panel.tp-upwards {
     animation-name: tp-select-up;
 }
