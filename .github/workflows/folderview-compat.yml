@@ -90,6 +90,13 @@ jobs:
           node plugin/test/dashboard_cores.mjs
           THEME=white node plugin/test/dashboard_cores.mjs
 
+      # Also only Playwright: plugin controls inside Unraid's .unapi marker keep their own font (#39).
+      - name: Check plugin controls
+        if: matrix.plugin == 'fvplus'
+        run: |
+          node plugin/test/plugin_controls.mjs
+          THEME=white node plugin/test/plugin_controls.mjs
+
       # Every page alone and with Aurora, Black and White, for the visual review.
       - name: Screenshots
         if: always()

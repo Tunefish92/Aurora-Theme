@@ -453,8 +453,15 @@
     }
 
     /* Unraid's newer components bring their own system-font stack. */
-    .unapi,
-    .unapi :where(button, input, select, textarea) {
+    .unapi {
+        font-family: var(--tp-font-body);
+    }
+
+    /* Their controls, at the weight of Unraid's own reset there (one class and the element):
+       plugins such as StaXX put `unapi` on their page and style their controls with two
+       classes, which must win. StaXX's Compose editor draws its text in a monospace layer over
+       the textarea, so a textarea in Aurora's font put the caret in the wrong place (#39). */
+    :where(&) .unapi :is(button, input, select, textarea) {
         font-family: var(--tp-font-body);
     }
 
