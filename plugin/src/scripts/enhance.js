@@ -216,22 +216,95 @@
     return icons;
   }
 
+  const GROUP_ICON_MAX_BYTES = 1048576;
+  const GROUP_ICON_MAX_SIDE = 2048;
+
   /**
-   * Sends a new group icon to the server: a file from the PC (FormData field "icon") or a web
-   * address the server downloads. Resolves with the stored icon value; rejects with a message.
+   * The image type of a file from its first bytes (what the server checks too): 'png', 'jpeg',
+   * 'gif', 'webp', or '' for anything else, whatever the file is called.
    */
-  function uploadGroupIcon(fields) {
-    const body = new FormData();
-    Object.keys(fields).forEach(function (key) { body.append(key, fields[key]); });
-    body.append('csrf_token', window.csrf_token || '');
-    return fetch(GROUP_ICON_URL, { method: 'POST', credentials: 'same-origin', body: body })
-      .then(function (response) {
-        return response.json().catch(function () { return { error: 'The server answered with status ' + response.status + '.' }; });
-      })
-      .then(function (data) {
-        if (data && typeof data.icon === 'string' && validGroupIcon(data.icon)) return data.icon;
-        throw new Error((data && data.error) || 'The image was not accepted.');
+  function groupIconType(bytes) {
+    const text = function (from, to) { return String.fromCharCode.apply(null, bytes.subarray(from, to)); };
+    if (bytes.length >= 8 && bytes[0] === 0x89 && text(1, 4) === 'PNG') return 'png';
+    if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg';
+    if (bytes.length >= 6 && /^GIF8[79]a$/.test(text(0, 6))) return 'gif';
+    if (bytes.length >= 12 && text(0, 4) === 'RIFF' && text(8, 12) === 'WEBP') return 'webp';
+    return '';
+  }
+
+  /**
+   * A file size for messages: "820 KB", "1.05 MB" (two decimals, so a file just over the 1 MB
+   * limit does not read as "1.0 MB"), "12.4 MB".
+   */
+  function fileSize(bytes) {
+    if (bytes < 1048576) return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    return (bytes / 1048576).toFixed(bytes < 10485760 ? 2 : 1) + ' MB';
+  }
+
+  /**
+   * Checks a file from the PC before anything is sent: at most 1 MB, a PNG, JPEG, GIF or WebP by
+   * its content, at most 2048 × 2048 pixels and readable as an image. Resolves with { data
+   * (base64), width, height }; rejects with a message for the user.
+   */
+  function readGroupIcon(file) {
+    if (file.size > GROUP_ICON_MAX_BYTES) {
+      return Promise.reject(new Error('"' + file.name + '" is ' + fileSize(file.size) + '; an icon can be at most 1 MB.'));
+    }
+    if (!file.size) return Promise.reject(new Error('"' + file.name + '" is empty.'));
+    return file.arrayBuffer().then(function (buffer) {
+      const bytes = new Uint8Array(buffer);
+      const type = groupIconType(bytes);
+      if (!type) throw new Error('"' + file.name + '" is not a PNG, JPEG, GIF or WebP image.');
+      const encode = function () {
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 32768) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + 32768));
+        }
+        return window.btoa(binary);
+      };
+      if (typeof window.createImageBitmap !== 'function') return { data: encode(), width: 0, height: 0 };
+      return window.createImageBitmap(new Blob([buffer], { type: 'image/' + type })).then(function (bitmap) {
+        const size = { width: bitmap.width, height: bitmap.height };
+        if (bitmap.close) bitmap.close();
+        if (size.width > GROUP_ICON_MAX_SIDE || size.height > GROUP_ICON_MAX_SIDE) {
+          throw new Error('"' + file.name + '" is ' + size.width + ' × ' + size.height + ' pixels; an icon can be at most 2048 × 2048.');
+        }
+        return { data: encode(), width: size.width, height: size.height };
+      }, function () {
+        throw new Error('"' + file.name + '" could not be read as an image; the file may be damaged.');
       });
+    });
+  }
+
+  /**
+   * Sends a new group icon to the server: an image from the PC (base64 in "data") or a web
+   * address the server downloads. A URL-encoded form, like every other Aurora request: Unraid's
+   * login check in front of PHP waits for ever on a multipart body. onProgress(fraction) follows
+   * the upload. Resolves with the stored icon value; rejects with a message for the user, also
+   * when the server does not answer within a minute.
+   */
+  function uploadGroupIcon(fields, onProgress) {
+    return new Promise(function (resolve, reject) {
+      const request = new XMLHttpRequest();
+      request.open('POST', GROUP_ICON_URL);
+      request.timeout = 60000;
+      request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      request.upload.addEventListener('progress', function (event) {
+        if (event.lengthComputable && onProgress) onProgress(event.loaded / event.total);
+      });
+      request.addEventListener('load', function () {
+        let data = null;
+        try { data = JSON.parse(request.responseText); } catch (error) { data = null; }
+        if (request.status === 200 && data && validGroupIcon(data.icon)) return resolve(data.icon);
+        if (data && typeof data.error === 'string' && data.error) return reject(new Error(/csrf_token/.test(data.error) ? 'The server refused the request; reload the page and try again.' : data.error));
+        reject(new Error(request.status === 413 ? 'The image is too large for the server.' : 'The server answered with status ' + request.status + '.'));
+      });
+      request.addEventListener('error', function () { reject(new Error('The server could not be reached.')); });
+      request.addEventListener('timeout', function () { reject(new Error('The server did not answer within a minute.')); });
+      const body = new URLSearchParams(fields);
+      body.append('csrf_token', window.csrf_token || '');
+      request.send(body.toString());
+    });
   }
 
   /**
@@ -298,35 +371,73 @@
       const fromUrl = element('div', 'tp-icon-url');
       fromUrl.append(address, get);
       own.append(pick, file, fromUrl);
-      box.append(own, element('p', 'tp-modal-message tp-icon-hint', 'PNG, JPEG, GIF or WebP, up to 1 MB. It is saved on the flash drive.'));
+      box.append(own, element('p', 'tp-modal-message tp-icon-hint', 'PNG, JPEG, GIF or WebP, up to 1 MB and 2048 × 2048 pixels. It is saved on the flash drive.'));
+      // What is happening: a line of text and a bar (with a share while uploading, moving while
+      // the server works), then the result or the problem.
+      const status = element('p', 'tp-modal-message tp-icon-status');
+      status.setAttribute('aria-live', 'polite');
+      status.hidden = true;
+      const progress = element('div', 'tp-icon-progress');
+      progress.setAttribute('role', 'progressbar');
+      progress.setAttribute('aria-label', 'Progress');
+      progress.setAttribute('aria-valuemin', '0');
+      progress.setAttribute('aria-valuemax', '100');
+      progress.hidden = true;
+      const bar = element('div', 'tp-icon-progress-bar');
+      progress.append(bar);
       const problem = element('p', 'tp-modal-problem');
       problem.setAttribute('role', 'alert');
-      box.append(problem);
+      box.append(status, progress, problem);
 
-      /** Sends an upload or a web address and chooses the stored image, or shows the problem. */
-      const send = function (fields, busyText) {
-        problem.textContent = busyText;
-        pick.disabled = get.disabled = true;
-        uploadGroupIcon(fields)
-          .then(function (icon) { close(icon); })
-          .catch(function (error) {
-            problem.textContent = error.message;
-            pick.disabled = get.disabled = false;
-          });
+      /**
+       * Shows what is being done: text, and the bar at fraction (0 to 1), moving without one
+       * (null); hides both with no text. Buttons for new uploads are off meanwhile.
+       */
+      const busy = function (text, fraction) {
+        status.textContent = text || '';
+        status.hidden = !text;
+        progress.hidden = !text;
+        progress.classList.toggle('tp-indeterminate', Boolean(text) && fraction === null);
+        if (fraction === null || !text) {
+          progress.removeAttribute('aria-valuenow');
+          bar.style.width = '';
+        } else {
+          const percent = Math.round(Math.max(0, Math.min(1, fraction)) * 100);
+          progress.setAttribute('aria-valuenow', String(percent));
+          bar.style.width = percent + '%';
+        }
+        pick.disabled = get.disabled = address.disabled = Boolean(text);
+        if (text) problem.textContent = '';
       };
+      /** Ends a failed attempt: the problem is shown and everything can be used again. */
+      const failed = function (error) {
+        busy('');
+        problem.textContent = error.message;
+      };
+
       pick.addEventListener('click', function () { file.click(); });
       file.addEventListener('change', function () {
-        if (file.files && file.files[0]) send({ action: 'upload', icon: file.files[0] }, 'Uploading…');
+        const chosen = file.files && file.files[0];
         file.value = '';
+        if (!chosen) return;
+        busy('Checking "' + chosen.name + '"…', null);
+        readGroupIcon(chosen).then(function (image) {
+          const label = '"' + chosen.name + '" (' + fileSize(chosen.size) + (image.width ? ', ' + image.width + ' × ' + image.height + ' pixels' : '') + ')';
+          busy('Uploading ' + label + '…', 0);
+          return uploadGroupIcon({ action: 'upload', data: image.data }, function (fraction) {
+            busy(fraction < 1 ? 'Uploading ' + label + '… ' + Math.round(fraction * 100) + ' %' : 'Saving ' + label + ' on the server…', fraction < 1 ? fraction : null);
+          });
+        }).then(function (icon) { close(icon); }, failed);
       });
       const fetchAddress = function () {
         const url = address.value.trim();
-        if (!/^https?:\/\/\S+$/i.test(url)) {
+        if (!/^https?:\/\/[^\s/?#]+\S*$/i.test(url)) {
           problem.textContent = 'Enter a web address that starts with http:// or https://.';
           address.focus();
           return;
         }
-        send({ action: 'fetch', url: url }, 'Downloading…');
+        busy('The server downloads and checks the image…', null);
+        uploadGroupIcon({ action: 'fetch', url: url }).then(function (icon) { close(icon); }, failed);
       };
       get.addEventListener('click', fetchAddress);
       address.addEventListener('keydown', function (event) {

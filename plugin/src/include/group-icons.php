@@ -1,10 +1,12 @@
 <?php
 // Group icons uploaded from the PC or fetched from a URL (#40); see GroupIconsLib.php.
 //   GET  ?file=<sha1>.<ext>             the stored image
-//   POST action=upload, file "icon"     stores an image from the PC
+//   POST action=upload, data=<base64>   stores an image from the PC
 //   POST action=fetch, url=<http(s)>    downloads an image and stores it
 // Both POSTs answer {"icon": "upload:<sha1>.<ext>"} or {"error": "..."}; the group itself is saved
 // by docker-groups.php. Unraid checks its csrf_token on every POST before this file runs.
+// The POSTs are URL-encoded forms, as Unraid's own uploads up to 7.2 are: a multipart body never
+// reaches this file, because Unraid's login check in front of it waits for that body for ever.
 
 require_once __DIR__ . '/GroupIconsLib.php';
 
@@ -40,15 +42,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
 $action = (string) ($_POST['action'] ?? '');
 if ($action === 'upload') {
-    $upload = $_FILES['icon'] ?? null;
-    if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file((string) $upload['tmp_name'])) {
-        $tooLarge = in_array($upload['error'] ?? null, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
-        aurora_group_icon_answer(['error' => $tooLarge ? 'The image is larger than 1 MB.' : 'No image was received.'], 400);
-    }
-    if ((int) $upload['size'] > AURORA_GROUP_ICON_MAX_BYTES) {
+    $data = (string) ($_POST['data'] ?? '');
+    // Base64 makes 4 characters of 3 bytes.
+    if (strlen($data) > intdiv(AURORA_GROUP_ICON_MAX_BYTES + 2, 3) * 4) {
         aurora_group_icon_answer(['error' => 'The image is larger than 1 MB.'], 400);
     }
-    $bytes = (string) file_get_contents((string) $upload['tmp_name']);
+    $bytes = base64_decode($data, true);
+    if (!is_string($bytes) || $bytes === '') {
+        aurora_group_icon_answer(['error' => 'No image was received.'], 400);
+    }
 } elseif ($action === 'fetch') {
     [$bytes, $error] = aurora_group_icon_download(trim((string) ($_POST['url'] ?? '')));
     if ($error !== '') {
