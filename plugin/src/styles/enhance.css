@@ -1330,6 +1330,14 @@ table.dashboard > :where(tbody:not([data-fv-dashboard-layout]:not([data-fv-dashb
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    /* With a group icon (#40): arrow, icon, then the name with the count under it. */
+    #docker_containers.tp-compact .tp-group-head > button.tp-group-toggle.tp-has-icon {
+        grid-template-columns: auto auto minmax(0, 1fr);
+    }
+
+    #docker_containers.tp-compact .tp-group-toggle.tp-has-icon > .tp-group-icon { grid-row: 1 / span 2; grid-column: 2; }
+    #docker_containers.tp-compact .tp-group-toggle.tp-has-icon > :is(.tp-group-name, .tp-group-count) { grid-column: 3; }
+
     #docker_containers.tp-compact .tp-group-head > .tp-group-apps { grid-column: 2 / 5; }
     #docker_containers.tp-compact .tp-group-head > .tp-group-load { display: contents; }
     #docker_containers.tp-compact .tp-group-head .tp-group-cpu { grid-column: 5; }
@@ -1669,6 +1677,140 @@ nav.tabs > .tp-segment.tp-title-switch {
 
 .tp-group-head .tp-actions {
     margin-left: auto;
+}
+
+/* ---- Group icons (#40): in a section header between the arrow and the name, on the Dashboard's
+   group chips, and the picker that sets them. A symbol sits on a soft accent tile; an image
+   (a container's icon, an upload) fills its box without a tile. */
+.tp-group-icon {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    overflow: hidden;
+    border-radius: 7px;
+    color: var(--tp-primary, var(--brand-orange));
+    font-size: 1.3rem;
+    background: color-mix(in srgb, var(--tp-primary, var(--brand-orange)) 14%, transparent);
+}
+
+.tp-group-icon[hidden] {
+    display: none;
+}
+
+.tp-group .tp-group-toggle .tp-group-icon .fa {
+    width: auto;
+    color: inherit;
+    font-size: inherit;
+    transform: none;
+    transition: none;
+}
+
+:is(.tp-group-icon, .tp-group-chip-icon).tp-icon-image {
+    background: transparent;
+}
+
+.tp-group-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.tp-group-chip-icon img {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+.tp-modal.tp-icon-picker {
+    width: min(62rem, 100%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.tp-icon-picker-heading {
+    margin: 2rem 0 0.8rem;
+    color: var(--tp-muted, var(--alt-text-color));
+    font: 600 1.1rem var(--tp-font-heading, inherit);
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.tp-icon-grid {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(auto-fill, minmax(4.4rem, 1fr));
+    gap: 0.6rem;
+}
+
+.tp-modal button.tp-icon-choice {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0;
+    padding: 0.7rem;
+    border: 1px solid var(--tp-border, var(--border-color));
+    border-radius: 10px;
+    color: var(--text-color);
+    font-size: 1.8rem;
+    text-transform: none;
+    background: var(--tp-subtle, transparent);
+    box-shadow: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.tp-modal button.tp-icon-choice:hover,
+.tp-modal button.tp-icon-choice:focus-visible {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+    background: var(--tp-subtle, transparent);
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+
+.tp-modal button.tp-icon-choice.tp-current {
+    border-color: var(--tp-primary, var(--brand-orange));
+    color: var(--tp-primary, var(--brand-orange));
+    box-shadow: 0 0 0 3px var(--tp-primary-soft, rgba(79, 139, 255, 0.2));
+}
+
+.tp-icon-choice img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.tp-icon-own {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tp-icon-url {
+    display: flex;
+    flex: 1 1 26rem;
+    gap: 0.8rem;
+    min-width: 0;
+}
+
+.tp-modal .tp-icon-url input.tp-modal-input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.tp-modal .tp-icon-hint {
+    flex: none;
+    font-size: 1.2rem;
 }
 
 .tp-group-menu .fa {

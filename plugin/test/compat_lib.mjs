@@ -95,10 +95,12 @@ function withAurora(html, surface, aurora) {
 }
 
 /**
- * One page load. page: { url, ready(count), inspect(), prepare(html), sameLists }; aurora: as above or null.
+ * A new browser tab that loads page (and Unraid's and Aurora's files) as on a server, with Aurora
+ * added when aurora is given. Counts the time the page is blocked in window.tpBlocked. Resolves
+ * with { context, tab, errors } (errors collects the page's script errors).
  */
-async function measureOnce(browser, page, count, aurora) {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+async function prepareTab(browser, page, aurora, viewport = { width: 1440, height: 900 }) {
+    const context = await browser.newContext({ viewport });
     const tab = await context.newPage();
     const errors = [];
     tab.on('pageerror', error => errors.push(error.message));
@@ -119,6 +121,28 @@ async function measureOnce(browser, page, count, aurora) {
         if (aurora) html = withAurora(html, page.name, aurora);
         await route.fulfill({ response, body: html, headers: { ...response.headers(), 'content-type': 'text/html' } });
     });
+    return { context, tab, errors };
+}
+
+/**
+ * Opens one page with Aurora for a check of Aurora's own features (no comparison): routes are
+ * [pattern, handler] pairs for requests the test answers itself, such as Aurora's PHP endpoints;
+ * they are added last, so they come before Aurora's files. Waits for page.ready(count). Resolves
+ * with { context, tab, errors }.
+ */
+export async function openWithAurora(browser, page, count, aurora, routes = [], viewport = undefined) {
+    const opened = await prepareTab(browser, page, aurora, viewport);
+    for (const [pattern, handler] of routes) await opened.tab.route(pattern, handler);
+    await opened.tab.goto(page.url, { waitUntil: 'load', timeout: 60000 });
+    await opened.tab.waitForFunction(page.ready, count, { timeout: 60000 });
+    return opened;
+}
+
+/**
+ * One page load. page: { url, ready(count), inspect(), prepare(html), sameLists }; aurora: as above or null.
+ */
+async function measureOnce(browser, page, count, aurora) {
+    const { context, tab, errors } = await prepareTab(browser, page, aurora);
     const start = Date.now();
     try {
         await tab.goto(page.url, { waitUntil: 'load', timeout: 60000 });
