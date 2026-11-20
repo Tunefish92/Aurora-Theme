@@ -12,7 +12,7 @@
 
 ## Group icons for Docker and VM groups (#40)
 
-- **Status:** built on `feature/group-icons` (not committed yet); open: the checks below that need a server.
+- **Status:** in dev builds. 2026.11.20.1424-dev: upload and URL fetch hung on real servers (multipart POSTs never pass Unraid's login check); fixed on `fix/group-icon-upload` (URL-encoded, progress bar, checks before upload), tested through `group_icons_stack.sh`. Open: the checks below that need a server.
 - **Reported:** #40 (bfox135, 2026-11-20): FolderView lets each folder have an icon; Aurora's groups should too.
 - **Plan:**
   - [x] `group.icon` in docker-groups.json / vm-groups.json: `fa-<name>`, a local image path (a container's or VM's icon), or `upload:<sha1>.<ext>`; validated in docker-groups.php, unknown values dropped.

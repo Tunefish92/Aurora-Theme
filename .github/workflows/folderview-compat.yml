@@ -98,7 +98,8 @@ jobs:
           THEME=white node plugin/test/plugin_controls.mjs
 
       # Group icons (#40): the browser side on FolderView3's host pages, the server side in PHP
-      # (the runner image brings PHP 8.3).
+      # (the runner image brings PHP 8.3), and both through a server set up like Unraid's
+      # (nginx with Unraid's login check, PHP-FPM with its csrf check; Docker).
       - name: Check group icons
         if: matrix.plugin == 'fv3'
         env:
@@ -109,6 +110,7 @@ jobs:
           php plugin/test/group_icons_lib.php
           node plugin/test/group_icons.mjs
           THEME=white node plugin/test/group_icons.mjs
+          plugin/test/group_icons_stack.sh
 
       # Every page alone and with Aurora, Black and White, for the visual review.
       - name: Screenshots
