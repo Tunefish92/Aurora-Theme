@@ -97,6 +97,19 @@ jobs:
           node plugin/test/plugin_controls.mjs
           THEME=white node plugin/test/plugin_controls.mjs
 
+      # Group icons (#40): the browser side on FolderView3's host pages, the server side in PHP
+      # (the runner image brings PHP 8.3).
+      - name: Check group icons
+        if: matrix.plugin == 'fv3'
+        env:
+          FV3: ${{ runner.temp }}/fv3
+          UNRAID_WEBGUI: ${{ runner.temp }}/webgui
+          SCREENSHOTS: ${{ runner.temp }}/screenshots
+        run: |
+          php plugin/test/group_icons_lib.php
+          node plugin/test/group_icons.mjs
+          THEME=white node plugin/test/group_icons.mjs
+
       # Every page alone and with Aurora, Black and White, for the visual review.
       - name: Screenshots
         if: always()

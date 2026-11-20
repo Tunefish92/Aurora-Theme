@@ -1,14 +1,19 @@
 <?php
 // Application groups for the Docker tab, the VMs tab ("?type=vm") and the Dashboard.
-//   GET                      returns {"groups": [{"name": "...", "containers": ["...", ...]}, ...]}
+//   GET                      returns {"groups": [{"name": "...", "containers": ["...", ...], "icon": "..."}, ...]}
 //   POST groups=<that JSON>  replaces the stored groups
-// "containers" holds the members' names for both kinds.
+// "containers" holds the members' names for both kinds; "icon" is optional (GroupIconsLib.php).
 // Unraid checks its csrf_token on every POST before this file runs, so writes can only come
 // from a logged-in webGUI page. The groups live on the flash drive and survive reboots.
 
+require_once __DIR__ . '/GroupIconsLib.php';
+
 define('TFT_GROUPS_FILE', '/boot/config/plugins/Aurora-Theme/' . (($_GET['type'] ?? '') === 'vm' ? 'vm-groups.json' : 'docker-groups.json'));
 
-/** Keeps only well-formed groups; a container can be in one group, the first that names it. */
+/**
+ * Keeps only well-formed groups; a container can be in one group, the first that names it. An
+ * icon is kept only in one of the forms GroupIconsLib.php accepts.
+ */
 function tft_clean_groups($groups): array
 {
     $clean = [];
@@ -28,7 +33,11 @@ function tft_clean_groups($groups): array
             $seenContainers[$container] = true;
             $containers[] = $container;
         }
-        $clean[] = ['name' => $name, 'containers' => $containers];
+        $entry = ['name' => $name, 'containers' => $containers];
+        if (aurora_group_icon_valid($group['icon'] ?? null)) {
+            $entry['icon'] = $group['icon'];
+        }
+        $clean[] = $entry;
     }
     return $clean;
 }
@@ -52,6 +61,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         echo json_encode(['error' => 'could not write ' . TFT_GROUPS_FILE]);
         exit;
     }
+    aurora_group_icons_prune([dirname(TFT_GROUPS_FILE) . '/docker-groups.json', dirname(TFT_GROUPS_FILE) . '/vm-groups.json']);
     echo json_encode(['groups' => $groups]);
     exit;
 }

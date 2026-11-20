@@ -140,6 +140,238 @@
     return Array.isArray(list) ? list.filter(function (group) { return group && typeof group.name === 'string' && Array.isArray(group.containers); }) : [];
   }
 
+  // Symbols offered for a group's icon: Font Awesome 4.7, which Unraid ships.
+  const GROUP_ICON_SYMBOLS = ['folder', 'film', 'music', 'television', 'picture-o', 'camera', 'video-camera', 'headphones',
+    'microphone', 'podcast', 'book', 'newspaper-o', 'gamepad', 'download', 'cloud', 'cloud-download', 'magnet', 'database',
+    'server', 'hdd-o', 'archive', 'shield', 'lock', 'key', 'user-secret', 'globe', 'wifi', 'sitemap', 'exchange', 'plug',
+    'envelope', 'comments', 'rss', 'home', 'lightbulb-o', 'bolt', 'code', 'terminal', 'cogs', 'wrench', 'bug', 'bar-chart',
+    'line-chart', 'area-chart', 'heartbeat', 'search', 'calendar', 'tasks', 'users', 'briefcase', 'money', 'shopping-cart',
+    'gift', 'graduation-cap', 'flask', 'cube', 'cubes', 'puzzle-piece', 'rocket', 'desktop', 'print', 'windows', 'linux',
+    'apple', 'android', 'github', 'coffee', 'paw', 'leaf', 'tree', 'car', 'star', 'heart'];
+  const GROUP_ICON_URL = (PLUGIN_BASE || '/plugins/Aurora-Theme') + '/include/group-icons.php';
+
+  /**
+   * Whether a group's icon has one of the forms the server keeps (include/GroupIconsLib.php): a
+   * Font Awesome name, an image path on this server, or an uploaded image. Anything else is not
+   * drawn, so a stored value can never become markup or an outside address.
+   */
+  function validGroupIcon(icon) {
+    if (typeof icon !== 'string' || !icon || icon.length > 300) return false;
+    if (/^fa-[a-z0-9-]{1,40}$/.test(icon) || /^upload:[0-9a-f]{40}\.(png|jpg|gif|webp)$/.test(icon)) return true;
+    return /^\/(?!\/)[A-Za-z0-9._~%+/-]+\.(png|jpe?g|gif|webp|svg|ico)(\?[A-Za-z0-9=&._-]{0,80})?$/i.test(icon) && !/(^|\/)\.\.(\/|$)|\/\//.test(icon);
+  }
+
+  /**
+   * The element that shows a group icon: a Font Awesome <i>, or an <img> for an image path or an
+   * upload (one that fails to load shows the folder symbol instead). Null for no or a bad icon.
+   */
+  function groupIconNode(icon) {
+    if (!validGroupIcon(icon)) return null;
+    if (icon.startsWith('fa-')) return element('i', 'fa ' + icon);
+    const image = element('img');
+    image.alt = '';
+    image.src = icon.startsWith('upload:') ? GROUP_ICON_URL + '?file=' + encodeURIComponent(icon.slice('upload:'.length)) : icon;
+    image.addEventListener('error', function () {
+      if (image.parentElement) image.parentElement.classList.remove('tp-icon-image');
+      image.replaceWith(element('i', 'fa fa-folder'));
+    }, { once: true });
+    return image;
+  }
+
+  /**
+   * Shows icon in slot (a group header's or chip's icon place), or hides the slot when there is
+   * none. Only redrawn when the icon changed: writing inside the lists wakes their observers.
+   * Remembered as data-tp-icon: Unraid draws a glyph for any element with a data-icon attribute.
+   */
+  function paintGroupIcon(slot, icon) {
+    const value = validGroupIcon(icon) ? icon : '';
+    if (slot.dataset.tpIcon === value && slot.childNodes.length === (value ? 1 : 0)) return;
+    slot.dataset.tpIcon = value;
+    const node = groupIconNode(value);
+    slot.replaceChildren(...(node ? [node] : []));
+    slot.hidden = !node;
+    slot.classList.toggle('tp-icon-image', Boolean(node) && node.tagName === 'IMG');
+  }
+
+  /**
+   * The container (type 'docker') or VM icons on the current tab, once each, as image paths on
+   * this server: the first choices of the icon picker.
+   */
+  function pageAppIcons(type) {
+    const cells = type === 'vm'
+      ? [...document.querySelectorAll('#kvm_list > tr[parent-id] td.vm-name')]
+      : [...document.querySelectorAll('#docker_list td.ct-name:not(.folder-name)')];
+    const seen = new Set();
+    const icons = [];
+    cells.forEach(function (cell) {
+      const image = cell.querySelector(type === 'vm' ? 'img' : 'img.img');
+      const label = cell.querySelector(type === 'vm' ? '.inner > a' : '.appname');
+      if (!image || !image.getAttribute('src')) return;
+      const url = new URL(image.getAttribute('src'), location.href);
+      const path = url.pathname + url.search;
+      if (url.origin !== location.origin || !validGroupIcon(path) || seen.has(path)) return;
+      seen.add(path);
+      icons.push({ name: label ? label.textContent.trim() : '', icon: path });
+    });
+    return icons;
+  }
+
+  /**
+   * Sends a new group icon to the server: a file from the PC (FormData field "icon") or a web
+   * address the server downloads. Resolves with the stored icon value; rejects with a message.
+   */
+  function uploadGroupIcon(fields) {
+    const body = new FormData();
+    Object.keys(fields).forEach(function (key) { body.append(key, fields[key]); });
+    body.append('csrf_token', window.csrf_token || '');
+    return fetch(GROUP_ICON_URL, { method: 'POST', credentials: 'same-origin', body: body })
+      .then(function (response) {
+        return response.json().catch(function () { return { error: 'The server answered with status ' + response.status + '.' }; });
+      })
+      .then(function (data) {
+        if (data && typeof data.icon === 'string' && validGroupIcon(data.icon)) return data.icon;
+        throw new Error((data && data.error) || 'The image was not accepted.');
+      });
+  }
+
+  /**
+   * The icon picker of a group (#40): the icons of the containers or VMs on the tab, symbols,
+   * an image from the PC or from a web address, or the default. Resolves with the chosen icon,
+   * '' for the default, or null when closed without a choice.
+   */
+  function pickGroupIcon(group, type) {
+    return new Promise(function (resolve) {
+      const previousFocus = document.activeElement;
+      const backdrop = element('div', 'tp-modal-backdrop');
+      const box = element('div', 'tp-modal tp-icon-picker');
+      const titleId = 'tp-modal-title-' + Date.now();
+      box.setAttribute('role', 'dialog');
+      box.setAttribute('aria-modal', 'true');
+      box.setAttribute('aria-labelledby', titleId);
+      const title = element('h2', 'tp-modal-title', 'Icon for "' + group.name + '"');
+      title.id = titleId;
+      box.append(title);
+
+      /** Closes the picker, gives the focus back and resolves with result. */
+      function close(result) {
+        document.removeEventListener('keydown', onKey, true);
+        backdrop.remove();
+        if (previousFocus && previousFocus.focus) previousFocus.focus();
+        resolve(result);
+      }
+
+      /** A grid of icon buttons under a heading; a click on one chooses it. */
+      const grid = function (heading, choices) {
+        if (!choices.length) return;
+        box.append(element('h3', 'tp-icon-picker-heading', heading));
+        const list = element('div', 'tp-icon-grid');
+        choices.forEach(function (choice) {
+          const button = element('button', 'tp-icon-choice' + (choice.icon === group.icon ? ' tp-current' : ''));
+          button.type = 'button';
+          button.title = choice.name;
+          button.setAttribute('aria-label', choice.name);
+          button.setAttribute('aria-pressed', String(choice.icon === group.icon));
+          const node = groupIconNode(choice.icon);
+          if (node) button.append(node);
+          button.addEventListener('click', function () { close(choice.icon); });
+          list.append(button);
+        });
+        box.append(list);
+      };
+      grid(type === 'vm' ? 'VM icons' : 'Container icons', pageAppIcons(type));
+      grid('Symbols', GROUP_ICON_SYMBOLS.map(function (name) { return { name: name.replace(/-o$/, '').replace(/-/g, ' '), icon: 'fa-' + name }; }));
+
+      box.append(element('h3', 'tp-icon-picker-heading', 'Your own image'));
+      const own = element('div', 'tp-icon-own');
+      const file = element('input');
+      file.type = 'file';
+      file.accept = 'image/png,image/jpeg,image/gif,image/webp';
+      file.hidden = true;
+      const pick = element('button', 'tp-modal-button', 'Upload from PC…');
+      pick.type = 'button';
+      const address = element('input', 'tp-modal-input');
+      address.type = 'url';
+      address.placeholder = 'https://example.com/icon.png';
+      address.setAttribute('aria-label', 'Web address of an image');
+      const get = element('button', 'tp-modal-button', 'Fetch');
+      get.type = 'button';
+      const fromUrl = element('div', 'tp-icon-url');
+      fromUrl.append(address, get);
+      own.append(pick, file, fromUrl);
+      box.append(own, element('p', 'tp-modal-message tp-icon-hint', 'PNG, JPEG, GIF or WebP, up to 1 MB. It is saved on the flash drive.'));
+      const problem = element('p', 'tp-modal-problem');
+      problem.setAttribute('role', 'alert');
+      box.append(problem);
+
+      /** Sends an upload or a web address and chooses the stored image, or shows the problem. */
+      const send = function (fields, busyText) {
+        problem.textContent = busyText;
+        pick.disabled = get.disabled = true;
+        uploadGroupIcon(fields)
+          .then(function (icon) { close(icon); })
+          .catch(function (error) {
+            problem.textContent = error.message;
+            pick.disabled = get.disabled = false;
+          });
+      };
+      pick.addEventListener('click', function () { file.click(); });
+      file.addEventListener('change', function () {
+        if (file.files && file.files[0]) send({ action: 'upload', icon: file.files[0] }, 'Uploading…');
+        file.value = '';
+      });
+      const fetchAddress = function () {
+        const url = address.value.trim();
+        if (!/^https?:\/\/\S+$/i.test(url)) {
+          problem.textContent = 'Enter a web address that starts with http:// or https://.';
+          address.focus();
+          return;
+        }
+        send({ action: 'fetch', url: url }, 'Downloading…');
+      };
+      get.addEventListener('click', fetchAddress);
+      address.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          fetchAddress();
+        }
+      });
+
+      const actions = element('div', 'tp-modal-actions');
+      const reset = element('button', 'tp-modal-button', 'Default icon');
+      reset.type = 'button';
+      reset.addEventListener('click', function () { close(''); });
+      const cancel = element('button', 'tp-modal-button tp-modal-primary', 'Cancel');
+      cancel.type = 'button';
+      cancel.addEventListener('click', function () { close(null); });
+      actions.append(reset, cancel);
+      box.append(actions);
+      backdrop.append(box);
+
+      /**
+       * Keyboard handling while the picker is open: Escape closes it, Tab keeps the focus inside.
+       */
+      function onKey(event) {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          close(null);
+        } else if (event.key === 'Tab') {
+          const stops = [...box.querySelectorAll('button:not([disabled]), input:not([type="file"])')];
+          const index = stops.indexOf(document.activeElement);
+          event.preventDefault();
+          stops[(index + (event.shiftKey ? stops.length - 1 : 1) + stops.length) % stops.length].focus();
+        }
+      }
+      // A click on the dimmed area closes; clicks inside the box must not reach the page.
+      backdrop.addEventListener('click', function (event) {
+        event.stopPropagation();
+        if (event.target === backdrop) close(null);
+      });
+      document.addEventListener('keydown', onKey, true);
+      document.body.append(backdrop);
+      (box.querySelector('.tp-icon-choice.tp-current') || box.querySelector('.tp-icon-choice') || cancel).focus();
+    });
+  }
+
   /**
    * Which sections are collapsed, remembered per browser (shared by the tab and the Dashboard).
    */
@@ -254,6 +486,15 @@
           store.save();
         });
       },
+      // Opens the icon picker; a choice is saved ('' goes back to the default icon).
+      chooseIcon: function (group) {
+        pickGroupIcon(group, type).then(function (icon) {
+          if (icon === null || icon === (group.icon || '')) return;
+          if (icon) group.icon = icon;
+          else delete group.icon;
+          store.save();
+        });
+      },
       remove: function (group) {
         modal({
           title: 'Delete "' + group.name + '"?',
@@ -318,7 +559,10 @@
     const head = element('div', 'tp-group-head');
     const toggle = element('button', 'tp-group-toggle');
     toggle.type = 'button';
-    toggle.append(element('i', 'fa fa-chevron-down'), element('span', 'tp-group-name'), element('span', 'tp-group-count'));
+    const icon = element('span', 'tp-group-icon');
+    icon.hidden = true;
+    icon.setAttribute('aria-hidden', 'true');
+    toggle.append(element('i', 'fa fa-chevron-down'), icon, element('span', 'tp-group-name'), element('span', 'tp-group-count'));
     toggle.addEventListener('click', options.onToggle);
     if (group) {
       row.tpGroup = group;
@@ -366,6 +610,7 @@
       row.tpUp = iconButton('arrow-up', 'Move group up', function () { store.move(group, -1); }, 'tp-group-move');
       row.tpDown = iconButton('arrow-down', 'Move group down', function () { store.move(group, 1); }, 'tp-group-move');
       actions.append(row.tpUp, row.tpDown);
+      actions.append(iconButton('picture-o', 'Change the group icon', function () { store.chooseIcon(group); }, 'tp-group-icon-button'));
       actions.append(iconButton('pencil', 'Rename group', function () { store.rename(group); }));
       actions.append(iconButton('trash-o', 'Delete group (its ' + plural + ' stay)', function () { store.remove(group); }, 'tp-danger'));
     }
@@ -471,11 +716,15 @@
   }
 
   /**
-   * Fills in a section header: name, count, icons, open or closed, and which move buttons work.
+   * Fills in a section header: the group's icon, name, count, the members' icons, open or closed,
+   * and which move buttons work.
    */
   function updateSectionHeader(header, section, options) {
     const running = section.items.filter(function (item) { return item.running; }).length;
     const setText = function (node, text) { if (node.textContent !== text) node.textContent = text; };
+    const icon = header.querySelector('.tp-group-icon');
+    paintGroupIcon(icon, section.group && section.group.icon);
+    header.querySelector('.tp-group-toggle').classList.toggle('tp-has-icon', !icon.hidden);
     setText(header.querySelector('.tp-group-name'), section.title);
     const toggle = header.querySelector('.tp-group-toggle');
     if (toggle.title !== section.title) toggle.title = section.title;
@@ -2650,7 +2899,6 @@
       chip.setAttribute('role', 'button');
       chip.tabIndex = 0;
       const icon = element('span', 'tp-group-chip-icon');
-      icon.append(element('i', 'fa fa-folder-open'));
       const inner = element('span', 'inner');
       inner.append(element('span', 'tp-group-chip-name', name), element('span', 'tp-group-chip-count'), element('span', 'tp-group-apps'));
       chip.append(icon, inner, element('i', 'fa fa-chevron-down tp-group-chip-caret'));
@@ -2663,7 +2911,7 @@
       chip.addEventListener('keydown', function (event) {
         if (event.target === chip && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggle(); }
       });
-      const part = { chip: chip, panel: panel, name: inner.firstChild, icon: icon.firstChild, count: inner.children[1], apps: inner.children[2] };
+      const part = { chip: chip, panel: panel, name: inner.firstChild, icon: icon, count: inner.children[1], apps: inner.children[2] };
       parts.set(key, part);
       return part;
     };
@@ -2678,7 +2926,7 @@
       const sections = store.groups.map(function (group) {
         const members = chips.filter(function (chip) { return !placed.has(chip) && group.containers.includes(chipName(chip)); });
         members.forEach(function (chip) { placed.add(chip); });
-        return { name: group.name, key: 'g:' + group.name, members: members };
+        return { name: group.name, key: 'g:' + group.name, group: group, members: members };
       });
       if (sections.some(function (section) { return section.members.length; })) {
         sections.push({ name: 'Ungrouped', key: UNGROUPED_KEY, members: chips.filter(function (chip) { return !placed.has(chip); }) });
@@ -2710,7 +2958,10 @@
         part.chip.title = section.name + ': ' + count;
         part.chip.setAttribute('aria-expanded', String(!isCollapsed));
         part.chip.classList.toggle('tp-collapsed', isCollapsed);
-        part.icon.className = 'fa ' + (isCollapsed ? 'fa-folder' : 'fa-folder-open');
+        // The group's own icon, else a folder that shows open or closed.
+        const own = section.group && validGroupIcon(section.group.icon) ? section.group.icon : '';
+        paintGroupIcon(part.icon, own || (isCollapsed ? 'fa-folder' : 'fa-folder-open'));
+        part.icon.classList.toggle('tp-own-icon', Boolean(own));
         part.panel.hidden = isCollapsed;
         wanted.push(part.chip, part.panel);
       });
